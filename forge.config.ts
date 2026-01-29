@@ -51,6 +51,18 @@ const config: ForgeConfig = {
             [FuseV1Options.OnlyLoadAppFromAsar]: true,
         }),
     ],
+    publishers: [
+        {
+            name: "@electron-forge/publisher-github",
+            config: {
+                repository: {
+                    owner: "loarsaw",
+                    name: "vigilant",
+                },
+                prerelease: true,
+            },
+        },
+    ],
     hooks: {
         async packageAfterCopy(_forgeConfig, buildPath) {
             const projectRoot = process.cwd();
