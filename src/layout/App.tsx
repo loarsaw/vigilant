@@ -19,9 +19,6 @@ function ProcessWidget() {
         }
 
         loadProcesses();
-        const interval = setInterval(loadProcesses, 2000)
-
-        return () => clearInterval(interval);
     }, []);
 
     return (
