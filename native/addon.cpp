@@ -13,22 +13,20 @@ Napi::Value GetProcesses(const Napi::CallbackInfo& info) {
         uint32_t index = 0;
         
         for (const auto& p : processes) {
+            uint32_t currentUid = 0;
+            std::string currentUsername = "unknown";
+            
             #ifndef _WIN32
-            // Classify the process
+            currentUid = p.uid;
+            currentUsername = p.username;
+            #endif
+
             ProcessClassification classification = classifier.classify(
-                p.name,
-                p.cmd,
-                p.path,
-                p.pid,
-                p.uid,
-                p.memory,
-                p.isGuiApp,
-                p.isUserApp
+                p.name, p.cmd, p.path, p.pid, currentUid, p.memory, p.isGuiApp, p.isUserApp
             );
             
-            // ONLY ADD IF SHOULD DISPLAY
             if (!classification.shouldDisplay) {
-                continue;  // Skip this process
+                continue; 
             }
             
             Napi::Object obj = Napi::Object::New(env);
@@ -38,12 +36,14 @@ Napi::Value GetProcesses(const Napi::CallbackInfo& info) {
             obj.Set("name", Napi::String::New(env, p.name));
             obj.Set("path", Napi::String::New(env, p.path));
             obj.Set("cmd", Napi::String::New(env, p.cmd));
-            obj.Set("uid", Napi::Number::New(env, p.uid));
-            obj.Set("cpu", Napi::Number::New(env, p.cpu));
             obj.Set("memory", Napi::Number::New(env, p.memory));
-            obj.Set("username", Napi::String::New(env, p.username));
             obj.Set("isUserApp", Napi::Boolean::New(env, p.isUserApp));
             obj.Set("isGuiApp", Napi::Boolean::New(env, p.isGuiApp));
+            obj.Set("username", Napi::String::New(env, currentUsername));
+
+            #ifndef _WIN32
+            obj.Set("uid", Napi::Number::New(env, p.uid));
+            obj.Set("cpu", Napi::Number::New(env, p.cpu));
             obj.Set("cwd", Napi::String::New(env, p.cwd));
             
             if (p.startTime > 0) {
@@ -52,14 +52,13 @@ Napi::Value GetProcesses(const Napi::CallbackInfo& info) {
             if (!p.desktopEntry.empty()) {
                 obj.Set("desktopEntry", Napi::String::New(env, p.desktopEntry));
             }
+            #endif
             
-            // Add classification
             obj.Set("processType", Napi::String::New(env, classification.type));
             obj.Set("category", Napi::String::New(env, classification.category));
             obj.Set("confidence", Napi::Number::New(env, classification.confidence));
             
             result[index++] = obj;
-            #endif
         }
         
         return result;
@@ -69,20 +68,24 @@ Napi::Value GetProcesses(const Napi::CallbackInfo& info) {
     }
 }
 
-// Get GUI apps only (filtered)
 Napi::Value GetGuiApps(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    
     try {
         std::vector<ProcessInfo> processes = GetProcessList();
         Napi::Array result = Napi::Array::New(env);
-        
         ProcessClassifier classifier;
         uint32_t index = 0;
         
         for (const auto& p : processes) {
+            uint32_t currentUid = 0;
+            std::string currentUsername = "unknown";
+            #ifndef _WIN32
+            currentUid = p.uid;
+            currentUsername = p.username;
+            #endif
+
             ProcessClassification classification = classifier.classify(
-                p.name, p.cmd, p.path, p.pid, p.uid, p.memory, p.isGuiApp, p.isUserApp
+                p.name, p.cmd, p.path, p.pid, currentUid, p.memory, p.isGuiApp, p.isUserApp
             );
             
             if (classification.type == "gui_app" && classification.shouldDisplay) {
@@ -93,12 +96,11 @@ Napi::Value GetGuiApps(const Napi::CallbackInfo& info) {
                 obj.Set("memory", Napi::Number::New(env, p.memory));
                 obj.Set("category", Napi::String::New(env, classification.category));
                 obj.Set("confidence", Napi::Number::New(env, classification.confidence));
-                obj.Set("username", Napi::String::New(env, p.username));
+                obj.Set("username", Napi::String::New(env, currentUsername));
                 
                 result[index++] = obj;
             }
         }
-        
         return result;
     } catch (const std::exception& e) {
         Napi::Error::New(env, e.what()).ThrowAsJavaScriptException();
@@ -106,21 +108,23 @@ Napi::Value GetGuiApps(const Napi::CallbackInfo& info) {
     }
 }
 
-// Get process statistics
 Napi::Value GetProcessStats(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    
     try {
         std::vector<ProcessInfo> processes = GetProcessList();
         ProcessClassifier classifier;
         
-        int totalDisplayable = 0;
-        int guiApps = 0, userApps = 0;
+        int totalDisplayable = 0, guiApps = 0, userApps = 0;
         double totalMemory = 0, guiMemory = 0;
         
         for (const auto& p : processes) {
+            uint32_t currentUid = 0;
+            #ifndef _WIN32
+            currentUid = p.uid;
+            #endif
+
             ProcessClassification classification = classifier.classify(
-                p.name, p.cmd, p.path, p.pid, p.uid, p.memory, p.isGuiApp, p.isUserApp
+                p.name, p.cmd, p.path, p.pid, currentUid, p.memory, p.isGuiApp, p.isUserApp
             );
             
             if (classification.shouldDisplay) {
