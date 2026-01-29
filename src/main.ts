@@ -1,17 +1,20 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, screen } from "electron";
 import path from "path";
+
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
+
 import started from "electron-squirrel-startup";
 import { getExternalApps } from "./main/screen";
+
 let nativeAddon: any;
 try {
     nativeAddon = require(
         path.join(__dirname, "../../build/Release/process_monitor.node")
     );
-    console.log(" Native addon loaded successfully");
+    console.log("✅ Native addon loaded successfully");
 } catch (error) {
-    console.error(" Failed to load native addon:", error);
+    console.error("❌ Failed to load native addon:", error);
 }
 
 if (started) {
@@ -19,10 +22,29 @@ if (started) {
 }
 
 const createWindow = () => {
-    // Create the browser window.
+    // Get primary display dimensions
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+    // Define window dimensions
+    const windowWidth = 300;
+    const windowHeight = 400;
+
+    // Calculate position for top-right corner
+    const x = screenWidth - windowWidth;
+    const y = 0;
+
+    // Create the browser window
     const mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
+        width: windowWidth,
+        height: windowHeight,
+        x: x,
+        y: y,
+        frame: false, // Frameless window
+        transparent: true, // Optional: makes window background transparent
+        alwaysOnTop: true, // Keeps window on top
+        resizable: false, // Prevent resizing
+        skipTaskbar: true, // Don't show in taskbar (optional)
         webPreferences: {
             preload: path.join(__dirname, "preload.js"),
         },
@@ -40,8 +62,8 @@ const createWindow = () => {
         );
     }
 
-    // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    // Open the DevTools (comment out in production)
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
 };
 
 // This method will be called when Electron has finished
@@ -56,11 +78,25 @@ ipcMain.handle("get-all-processes", async () => {
         }
         const processes = nativeAddon.getProcesses();
         const value = await getExternalApps(processes);
-        console.log(value , value.length);
+        console.log(value, value.length);
         return { success: true, data: value };
     } catch (error: any) {
         console.error("Error getting processes:", error);
         return { success: false, error: error.message };
+    }
+});
+
+// Add IPC handler to close the window
+ipcMain.on("close-window", () => {
+    const windows = BrowserWindow.getAllWindows();
+    windows.forEach(window => window.close());
+});
+
+// Add IPC handler to minimize the window (optional)
+ipcMain.on("minimize-window", () => {
+    const focusedWindow = BrowserWindow.getFocusedWindow();
+    if (focusedWindow) {
+        focusedWindow.minimize();
     }
 });
 
@@ -69,6 +105,13 @@ app.on("activate", () => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
+    }
+});
+
+// Quit when all windows are closed, except on macOS
+app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+        app.quit();
     }
 });
 
