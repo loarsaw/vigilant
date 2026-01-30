@@ -1,11 +1,13 @@
-import ReactDOM from "react-dom/client";
-import "./index.css";
-import App from "./layout/App";
-import { HashRouter, Route, Routes } from "react-router-dom";
-import Team from "./component/Team";
+import ReactDOM from 'react-dom/client';
+
+import './index.css';
+import { HashRouter, Route, Routes } from 'react-router-dom';
+
+import Team from './component/Team';
+import App from './layout/App';
 
 const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
+  document.getElementById('root') as HTMLElement
 );
 
 root.render(

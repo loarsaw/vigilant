@@ -8,18 +8,11 @@ DEFS_Debug := \
 	'-DUSING_V8_SHARED=1' \
 	'-DV8_DEPRECATION_WARNINGS=1' \
 	'-D_GLIBCXX_USE_CXX11_ABI=1' \
-	'-DELECTRON_ENSURE_CONFIG_GYPI' \
-	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
-	'-DUSING_ELECTRON_CONFIG_GYPI' \
-	'-DV8_COMPRESS_POINTERS' \
-	'-DV8_COMPRESS_POINTERS_IN_ISOLATE_CAGE' \
-	'-DV8_31BIT_SMIS_ON_64BIT_ARCH' \
-	'-DV8_ENABLE_SANDBOX' \
+	'-D_LARGEFILE_SOURCE' \
 	'-D__STDC_FORMAT_MACROS' \
 	'-DOPENSSL_NO_PINSHARED' \
 	'-DOPENSSL_THREADS' \
-	'-DOPENSSL_NO_ASM' \
 	'-DNAPI_DISABLE_CPP_EXCEPTIONS' \
 	'-DBUILDING_NODE_EXTENSION' \
 	'-DDEBUG' \
@@ -43,17 +36,18 @@ CFLAGS_C_Debug :=
 # Flags passed to only C++ files.
 CFLAGS_CC_Debug := \
 	-fno-rtti \
+	-fno-strict-aliasing \
 	-std=gnu++20 \
 	-std=c++17
 
 INCS_Debug := \
-	-I/home/json/.electron-gyp/33.0.2/include/node \
-	-I/home/json/.electron-gyp/33.0.2/src \
-	-I/home/json/.electron-gyp/33.0.2/deps/openssl/config \
-	-I/home/json/.electron-gyp/33.0.2/deps/openssl/openssl/include \
-	-I/home/json/.electron-gyp/33.0.2/deps/uv/include \
-	-I/home/json/.electron-gyp/33.0.2/deps/zlib \
-	-I/home/json/.electron-gyp/33.0.2/deps/v8/include \
+	-I/home/json/.cache/node-gyp/24.13.0/include/node \
+	-I/home/json/.cache/node-gyp/24.13.0/src \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/openssl/config \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/openssl/openssl/include \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/uv/include \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/zlib \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/v8/include \
 	-I/home/json/vigilant/node_modules/node-addon-api
 
 DEFS_Release := \
@@ -62,18 +56,11 @@ DEFS_Release := \
 	'-DUSING_V8_SHARED=1' \
 	'-DV8_DEPRECATION_WARNINGS=1' \
 	'-D_GLIBCXX_USE_CXX11_ABI=1' \
-	'-DELECTRON_ENSURE_CONFIG_GYPI' \
-	'-D_LARGEFILE_SOURCE' \
 	'-D_FILE_OFFSET_BITS=64' \
-	'-DUSING_ELECTRON_CONFIG_GYPI' \
-	'-DV8_COMPRESS_POINTERS' \
-	'-DV8_COMPRESS_POINTERS_IN_ISOLATE_CAGE' \
-	'-DV8_31BIT_SMIS_ON_64BIT_ARCH' \
-	'-DV8_ENABLE_SANDBOX' \
+	'-D_LARGEFILE_SOURCE' \
 	'-D__STDC_FORMAT_MACROS' \
 	'-DOPENSSL_NO_PINSHARED' \
 	'-DOPENSSL_THREADS' \
-	'-DOPENSSL_NO_ASM' \
 	'-DNAPI_DISABLE_CPP_EXCEPTIONS' \
 	'-DBUILDING_NODE_EXTENSION'
 
@@ -95,17 +82,18 @@ CFLAGS_C_Release :=
 # Flags passed to only C++ files.
 CFLAGS_CC_Release := \
 	-fno-rtti \
+	-fno-strict-aliasing \
 	-std=gnu++20 \
 	-std=c++17
 
 INCS_Release := \
-	-I/home/json/.electron-gyp/33.0.2/include/node \
-	-I/home/json/.electron-gyp/33.0.2/src \
-	-I/home/json/.electron-gyp/33.0.2/deps/openssl/config \
-	-I/home/json/.electron-gyp/33.0.2/deps/openssl/openssl/include \
-	-I/home/json/.electron-gyp/33.0.2/deps/uv/include \
-	-I/home/json/.electron-gyp/33.0.2/deps/zlib \
-	-I/home/json/.electron-gyp/33.0.2/deps/v8/include \
+	-I/home/json/.cache/node-gyp/24.13.0/include/node \
+	-I/home/json/.cache/node-gyp/24.13.0/src \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/openssl/config \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/openssl/openssl/include \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/uv/include \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/zlib \
+	-I/home/json/.cache/node-gyp/24.13.0/deps/v8/include \
 	-I/home/json/vigilant/node_modules/node-addon-api
 
 OBJS := \

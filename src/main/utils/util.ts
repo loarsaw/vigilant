@@ -9,14 +9,14 @@ export interface ProcessInfo {
 }
 
 const ELECTRON_INDICATORS = [
-  "electron",
-  "electron-forge",
-  "electron-builder",
-  "@electron",
-  "app.asar",
-  "resources/app",
-  "electron-forge-start",
-  "electron.exe",
+  'electron',
+  'electron-forge',
+  'electron-builder',
+  '@electron',
+  'app.asar',
+  'resources/app',
+  'electron-forge-start',
+  'electron.exe',
 ];
 
 export function isElectronProcess(process: ProcessInfo): boolean {
@@ -26,8 +26,6 @@ export function isElectronProcess(process: ProcessInfo): boolean {
   return ELECTRON_INDICATORS.some(indicator => cmd.includes(indicator));
 }
 
-export function findApps(
-  processes: ProcessInfo[]
-): ProcessInfo[] {
+export function findApps(processes: ProcessInfo[]): ProcessInfo[] {
   return processes.filter(isElectronProcess);
 }
