@@ -11,14 +11,19 @@ import type { ForgeConfig } from '@electron-forge/shared-types';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
+    icon: './assets/icons/png/512x512.png',
   },
   rebuildConfig: {},
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({
+      iconUrl: 'https://loarsaw.de/icon.ico',
+      setupIcon: './assets/icons/win/icon.ico',
+    }),
     new MakerDeb({
       options: {
         maintainer: 'loarsaw',
         homepage: 'https://loarsaw.de',
+        icon: './assets/icons/png/512x512.png',
       },
     }),
   ],
@@ -84,7 +89,7 @@ const config: ForgeConfig = {
         });
 
         console.log(`Native addons synced successfully.`);
-      } catch (error) {
+      } catch (error: any) {
         console.error(` Failed to sync build directory:`, error.message);
       }
     },
