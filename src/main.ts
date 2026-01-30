@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, screen } from "electron";
 import path from "path";
-
+import { findApps } from "./main/utils/util";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 
@@ -77,6 +77,8 @@ ipcMain.handle("get-all-processes", async () => {
             throw new Error("Native addon not loaded");
         }
         const processes = nativeAddon.getProcesses();
+        // const values = findApps(processes);
+        // console.log(values, "values");
         return { success: true, data: processes };
     } catch (error: any) {
         console.error("Error getting processes:", error);
@@ -87,7 +89,9 @@ ipcMain.handle("get-gui-apps-only", async () => {
     try {
         if (!nativeAddon) throw new Error("Native addon not loaded");
         const guiApps = nativeAddon.getGuiApps();
-        return { success: true, data: guiApps };
+        const values = findApps(guiApps);
+        console.log(values, "ads");
+        return { success: true, data: values };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

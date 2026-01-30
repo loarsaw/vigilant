@@ -3,14 +3,13 @@
 #include <psapi.h>
 #include <vector>
 
-// Helper to check if a process has any visible windows
 bool HasVisibleWindow(DWORD processID) {
     bool found = false;
     EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
         DWORD lpdwProcessId = 0;
         GetWindowThreadProcessId(hwnd, &lpdwProcessId);
         if (lpdwProcessId == (DWORD)lParam && IsWindowVisible(hwnd)) {
-            *(bool*)lParam = true; // Use pointer trick to return value
+            *(bool*)lParam = true; 
             return FALSE;
         }
         return TRUE;
@@ -24,7 +23,6 @@ ProcessInfo GetWindowsInfo(DWORD pid) {
 
     HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
     if (hProcess) {
-        // User App Check: Session 0 is System, Session 1+ is User
         DWORD sessionId;
         if (ProcessIdToSessionId(pid, &sessionId)) {
             info.isUserApp = (sessionId != 0);
@@ -52,7 +50,6 @@ std::vector<ProcessInfo> GetProcessList() {
         for (unsigned int i = 0; i < cProcesses; i++) {
             if (aProcesses[i] != 0) {
                 ProcessInfo info = GetWindowsInfo(aProcesses[i]);
-                // FILTER: Only include if User App OR GUI App
                 if (info.isUserApp || info.isGuiApp) {
                     processes.push_back(info);
                 }

@@ -339,7 +339,7 @@ endif
 
 quiet_cmd_regen_makefile = ACTION Regenerating $@
 cmd_regen_makefile = cd $(srcdir); /home/json/vigilant/node_modules/@electron/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/home/json/.electron-gyp/33.0.2" "-Dnode_gyp_dir=/home/json/vigilant/node_modules/@electron/node-gyp" "-Dnode_lib_file=/home/json/.electron-gyp/33.0.2/<(target_arch)/node.lib" "-Dmodule_root_dir=/home/json/vigilant" "-Dnode_engine=v8" "--depth=." "-Goutput_dir=." "--generator-output=build" -I/home/json/vigilant/build/config.gypi -I/home/json/vigilant/node_modules/@electron/node-gyp/addon.gypi -I/home/json/.electron-gyp/33.0.2/include/node/common.gypi "--toplevel-dir=." binding.gyp
-Makefile: $(srcdir)/build/config.gypi $(srcdir)/binding.gyp $(srcdir)/node_modules/@electron/node-gyp/addon.gypi $(srcdir)/../.electron-gyp/33.0.2/include/node/common.gypi
+Makefile: $(srcdir)/build/config.gypi $(srcdir)/node_modules/@electron/node-gyp/addon.gypi $(srcdir)/../.electron-gyp/33.0.2/include/node/common.gypi $(srcdir)/binding.gyp
 	$(call do_cmd,regen_makefile)
 
 # "all" is a concatenation of the "all" targets from all the included

@@ -5,7 +5,6 @@
 #include <sstream>
 #include <algorithm>
 
-// Helper to check for GUI environment
 bool IsGui(const std::string& pid) {
     std::ifstream envFile("/proc/" + pid + "/environ");
     std::string env;
@@ -56,7 +55,6 @@ std::vector<ProcessInfo> GetProcessList() {
     while ((entry = readdir(dir)) != nullptr) {
         if (isdigit(entry->d_name[0])) {
             ProcessInfo info = ParseProcStat(entry->d_name);
-            // FILTER: Return only if it is a User App OR a GUI App
             if (info.isUserApp || info.isGuiApp) {
                 processes.push_back(info);
             }
