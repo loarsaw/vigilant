@@ -62,8 +62,9 @@ const createWindow = () => {
         );
     }
 
-    // Open the DevTools (comment out in production)
+if (!app.isPackaged) {
     mainWindow.webContents.openDevTools({ mode: "detach" });
+}
 };
 
 // This method will be called when Electron has finished
@@ -84,6 +85,10 @@ ipcMain.handle("get-all-processes", async () => {
         console.error("Error getting processes:", error);
         return { success: false, error: error.message };
     }
+});
+ipcMain.handle("shutdown-app", () => {
+    console.log("Shutting down application...");
+    app.quit(); 
 });
 ipcMain.handle("get-gui-apps-only", async () => {
     try {

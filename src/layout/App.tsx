@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Code2, AppWindow, MessageSquare, AlertTriangle, Chrome, Send, Terminal, Box } from "lucide-react";
+import { Code2, AppWindow, MessageSquare, AlertTriangle, Chrome, Send, Terminal, Box , X } from "lucide-react";
 
 export interface Process {
     pid: number;
@@ -117,17 +117,32 @@ export default function ProcessWidget() {
 
     return (
         <div className="max-w-md mx-auto bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-700 overflow-hidden font-sans">
-            <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
-                <div className="flex flex-col">
-                    <h2 className="font-bold tracking-tight text-slate-100">Live Monitor</h2>
-                    <span className="text-[10px] text-slate-500 font-bold uppercase">{processes.length} Processes</span>
-                </div>
-                <div className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </div>
-            </div>
+<div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+    <div className="flex flex-col">
+        <h2 className="font-bold tracking-tight text-slate-100">Live Monitor</h2>
+        <span className="text-[10px] text-slate-500 font-bold uppercase">
+            {processes.length} Processes
+        </span>
+    </div>
 
+    <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500 font-bold uppercase hidden sm:inline">Live</span>
+            <div className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </div>
+        </div>
+
+        <button 
+            onClick={() => { window.processAPI.shutdown()}}
+            className="p-1.5 rounded-md hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            title="Close Monitor"
+        >
+            <X size={18} />
+        </button>
+    </div>
+</div>
             <div className="max-h-[500px] overflow-y-auto bg-slate-950/20 custom-scrollbar">
                 {processes.length > 0 ? (
                     processes.map(p => {
