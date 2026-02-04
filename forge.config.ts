@@ -11,18 +11,19 @@ import type { ForgeConfig } from '@electron-forge/shared-types';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './assets/icons/png/512x512.png',
+    icon: './assets/icons/icon',
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      iconUrl: 'https://loarsaw.de/icon.ico',
       setupIcon: './assets/icons/win/icon.ico',
+      iconUrl:
+        'https://raw.githubusercontent.com/loarsaw/vigilant/refs/heads/master/assets/icons/win/icon.ico',
     }),
     new MakerDeb({
       options: {
         maintainer: 'loarsaw',
-        homepage: 'https://loarsaw.de',
+        homepage: 'https://github.com/loarsaw/vigilant',
         icon: './assets/icons/png/512x512.png',
       },
     }),
@@ -74,14 +75,11 @@ const config: ForgeConfig = {
     async packageAfterCopy(_forgeConfig, buildPath) {
       const projectRoot = process.cwd();
       const sourceBuildDir = path.resolve(projectRoot, 'build');
-
       const destBuildDir = path.resolve(buildPath, 'build');
 
       try {
         await rm(destBuildDir, { recursive: true, force: true });
-
         await mkdir(destBuildDir, { recursive: true });
-
         await cp(sourceBuildDir, destBuildDir, {
           recursive: true,
           preserveTimestamps: true,
@@ -90,7 +88,7 @@ const config: ForgeConfig = {
 
         console.log(`Native addons synced successfully.`);
       } catch (error: any) {
-        console.error(` Failed to sync build directory:`, error.message);
+        console.error(`Failed to sync build directory:`, error.message);
       }
     },
   },
