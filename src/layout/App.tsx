@@ -134,7 +134,12 @@ function getProcessMetadata(p: Process) {
 
   return {
     name: cleanName,
-    icon: <AlertTriangle size={16} className="text-red-500" />,
+    icon: (
+      <AlertTriangle
+        size={16}
+        className={p.memory > 500 ? 'text-red-500' : 'text-yellow-500'}
+      />
+    ),
     isUnknown: true,
   };
 }
@@ -155,7 +160,6 @@ export default function ProcessWidget() {
           string,
           Process & { isUnknown: boolean }
         >();
-
         combinedRaw
           .filter(p => p.cmd?.trim())
           .filter(p => !p.cmd.toLowerCase().includes('vigilant'))
@@ -245,25 +249,26 @@ export default function ProcessWidget() {
           processes.map(p => {
             const { icon } = getProcessMetadata(p);
             const isHighMemUnknown = p.isUnknown && p.memory > 500;
+            const isLowMemUnknown = p.isUnknown && p.memory <= 500;
 
             return (
               <div
                 key={p.name}
                 className={`group p-3 border-b border-slate-800/50 transition-all flex justify-between items-center
-                                    ${p.isUnknown ? 'bg-red-500/5' : 'hover:bg-slate-800/40'}
-                                    ${isHighMemUnknown ? 'bg-red-900/30 border-l-4 border-l-red-500' : ''}`}
+                                    ${p.isUnknown ? (isHighMemUnknown ? 'bg-red-500/5' : 'bg-yellow-500/5') : 'hover:bg-slate-800/40'}
+                                    ${isHighMemUnknown ? 'border-l-4 border-l-red-500' : isLowMemUnknown ? 'border-l-4 border-l-yellow-500' : ''}`}
               >
                 <div className="flex items-center gap-3 overflow-hidden">
                   <div
-                    className={`p-2 rounded-lg transition-transform group-hover:scale-110 
-                                        ${p.isUnknown ? 'bg-red-500/20' : 'bg-slate-800'}`}
+                    className={`p-2 rounded-lg transition-transform group-hover:scale-110
+                                         ${p.isUnknown ? (isHighMemUnknown ? 'bg-red-500/20' : 'bg-yellow-500/20') : 'bg-slate-800'}`}
                   >
                     {icon}
                   </div>
                   <div className="flex flex-col overflow-hidden">
                     <span
-                      className={`text-sm font-semibold truncate 
-                                            ${isHighMemUnknown ? 'text-red-300 animate-pulse' : p.isUnknown ? 'text-red-400' : 'text-slate-100'}`}
+                      className={`text-sm font-semibold truncate
+                                             ${isHighMemUnknown ? 'text-red-300' : isLowMemUnknown ? 'text-yellow-300' : p.isUnknown ? 'text-yellow-400' : 'text-slate-100'}`}
                     >
                       {p.name}
                     </span>
@@ -274,8 +279,8 @@ export default function ProcessWidget() {
                 </div>
                 <div className="flex flex-col items-end min-w-[90px]">
                   <span
-                    className={`text-xs font-mono font-bold 
-                                        ${isHighMemUnknown ? 'text-red-400' : p.isUnknown ? 'text-red-300' : 'text-emerald-400'}`}
+                    className={`text-xs font-mono font-bold
+                                         ${isHighMemUnknown ? 'text-red-400' : isLowMemUnknown ? 'text-yellow-400' : p.isUnknown ? 'text-yellow-300' : 'text-emerald-400'}`}
                   >
                     {p.memory > 1024
                       ? `${(p.memory / 1024).toFixed(1)} GB`
@@ -284,7 +289,7 @@ export default function ProcessWidget() {
                   {p.isUnknown && (
                     <span
                       className={`text-[8px] px-1.5 py-0.5 rounded mt-1 font-black uppercase tracking-wider
-                                            ${isHighMemUnknown ? 'bg-red-600 text-white ring-2 ring-red-400' : 'bg-red-900/40 text-red-400'}`}
+                                            ${isHighMemUnknown ? 'bg-red-600 text-white ring-2 ring-red-400' : 'bg-yellow-600 text-white'}`}
                     >
                       {isHighMemUnknown ? 'Critical Unknown' : 'Unknown'}
                     </span>

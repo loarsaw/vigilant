@@ -1,7 +1,7 @@
 {
   "name": "vigilant",
   "productName": "vigilant",
-  "version": "1.0.0-beta",
+  "version": "1.0.1-beta",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
   "scripts": {
