@@ -24,10 +24,11 @@ export interface Process {
 
 function getProcessMetadata(p: Process) {
   const cmd = p.cmd?.toLowerCase() || '';
+  const name = p.name?.toLowerCase() || '';
 
   if (
     p.category === 'editor' ||
-    cmd.includes('/code') ||
+    cmd.includes('code') ||
     cmd.includes('vscode')
   ) {
     return {
@@ -37,22 +38,34 @@ function getProcessMetadata(p: Process) {
     };
   }
 
-  if (cmd.includes('gnome-text-editor')) {
-    return {
-      name: 'Text Editor',
-      icon: <Code2 size={16} className="text-emerald-400" />,
-      isUnknown: false,
-    };
-  }
-
   if (
     cmd.includes('chrome') ||
     cmd.includes('chromium') ||
-    cmd.includes('firefox')
+    cmd.includes('firefox') ||
+    cmd.includes('msedge')
   ) {
     return {
       name: 'Web Browser',
       icon: <Chrome size={16} className="text-amber-500" />,
+      isUnknown: false,
+    };
+  }
+
+  const isWinShell =
+    cmd.includes('explorer.exe') ||
+    cmd.includes('searchapp.exe') ||
+    cmd.includes('shellexperiencehost.exe') ||
+    cmd.includes('startmenuexperiencehost.exe') ||
+    cmd.includes('taskmgr.exe');
+
+  if (isWinShell) {
+    let displayName = 'Windows Shell';
+    if (cmd.includes('explorer')) displayName = 'File Explorer';
+    if (cmd.includes('search')) displayName = 'Windows Search';
+
+    return {
+      name: displayName,
+      icon: <AppWindow size={16} className="text-blue-300" />,
       isUnknown: false,
     };
   }
@@ -73,6 +86,20 @@ function getProcessMetadata(p: Process) {
   }
 
   if (
+    cmd.includes('gnome-terminal') ||
+    cmd.includes('bash') ||
+    cmd.includes('zsh') ||
+    cmd.includes('powershell.exe') ||
+    cmd.includes('cmd.exe')
+  ) {
+    return {
+      name: 'Terminal',
+      icon: <Terminal size={16} className="text-emerald-400" />,
+      isUnknown: false,
+    };
+  }
+
+  if (
     cmd.includes('npm') ||
     cmd.includes('yarn') ||
     cmd.includes('pnpm') ||
@@ -85,29 +112,20 @@ function getProcessMetadata(p: Process) {
     };
   }
 
-  if (cmd.includes('gnome-shell')) {
+  if (cmd.includes('gnome-shell') || cmd.includes('gnome-text-editor')) {
     return {
-      name: 'Gnome Shell',
+      name: cmd.includes('shell') ? 'Gnome Shell' : 'Text Editor',
       icon: <AppWindow size={16} className="text-purple-400" />,
       isUnknown: false,
     };
   }
-  if (
-    cmd.includes('gnome-terminal') ||
-    cmd.includes('bash') ||
-    cmd.includes('zsh')
-  ) {
-    return {
-      name: 'Terminal',
-      icon: <Terminal size={16} className="text-emerald-400" />,
-      isUnknown: false,
-    };
-  }
 
-  const fallbackName =
+  const rawName =
     p.name?.trim() || p.cmd?.split(' ')[0].split('/').pop() || 'Unknown App';
+  const cleanName = rawName.replace(/\.exe/gi, '');
+
   return {
-    name: fallbackName,
+    name: cleanName,
     icon: <AlertTriangle size={16} className="text-red-500" />,
     isUnknown: true,
   };
