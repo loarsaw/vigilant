@@ -112,6 +112,14 @@ function getProcessMetadata(p: Process) {
     };
   }
 
+  if (cmd.includes('nautilus')) {
+    return {
+      name: 'File Explorer',
+      icon: <AppWindow size={16} className="text-blue-300" />,
+      isUnknown: false,
+    };
+  }
+
   if (cmd.includes('gnome-shell') || cmd.includes('gnome-text-editor')) {
     return {
       name: cmd.includes('shell') ? 'Gnome Shell' : 'Text Editor',
@@ -142,7 +150,6 @@ export default function ProcessWidget() {
       try {
         const { data: guiApps } = await window.processAPI.getGuiAppsOnly();
         const { data: allApps } = await window.processAPI.getAllProcesses();
-
         const combinedRaw: Process[] = [...guiApps, ...allApps];
         const uniqueProcesses = new Map<
           string,
@@ -182,7 +189,7 @@ export default function ProcessWidget() {
           });
 
         const sorted = Array.from(uniqueProcesses.values()).sort((a, b) => {
-          if (a.isUnknown !== b.isUnknown) return a.isUnknown ? 1 : -1;
+          if (a.isUnknown !== b.isUnknown) return a.isUnknown ? -1 : 1;
           return a.name.localeCompare(b.name);
         });
 

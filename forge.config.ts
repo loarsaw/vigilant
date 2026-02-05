@@ -17,8 +17,7 @@ const config: ForgeConfig = {
   makers: [
     new MakerSquirrel({
       setupIcon: './assets/icons/win/icon.ico',
-      iconUrl:
-        'https://raw.githubusercontent.com/loarsaw/vigilant/refs/heads/master/assets/icons/win/icon.ico',
+      iconUrl: './assets/icons/win/icon.ico',
     }),
     new MakerDeb({
       options: {

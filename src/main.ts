@@ -97,9 +97,8 @@ ipcMain.handle('get-gui-apps-only', async () => {
   try {
     if (!nativeAddon) throw new Error('Native addon not loaded');
     const guiApps = nativeAddon.getGuiApps();
-    const values = findApps(guiApps);
-    console.log(values, 'ads');
-    return { success: true, data: values };
+    const apps = findApps(guiApps);
+    return { success: true, data: apps };
   } catch (error: any) {
     return { success: false, error: error.message };
   }
