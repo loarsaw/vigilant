@@ -90,3 +90,9 @@ typings/
 
 # Electron-Forge
 out/
+
+# Build
+build/
+
+# Bin
+bin/
