@@ -1,0 +1,39 @@
+version: '3.8'
+
+x-logging:
+  &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100M
+
+services:
+  server:
+    build: ./server
+    container_name: vigilant-server
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./vigilant.conf:/etc/vigilant/vigilant.conf:ro
+    env_file: vigilant.conf
+    depends_on:
+      - db
+    <<: *default-logging
+    restart: always
+
+  db:
+    image: postgres:16.2
+    container_name: vigilant-db
+    env_file: vigilant.conf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    <<: *default-logging
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vigilant"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
