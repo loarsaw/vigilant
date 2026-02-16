@@ -5,15 +5,80 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
+    "encoding/csv"
+    "time"
+    "strings"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"vigilant/models"
 )
 
+
+type UserData struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}
+
+
+
 type AdminHandlers struct {
 	DB *sql.DB
+}
+
+func (h *AdminHandlers) ParseUserList(c *gin.Context) {
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"error":   "No file was uploaded",
+		})
+		return
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"error":   "Could not process file",
+		})
+		return
+	}
+	defer file.Close()
+
+	reader := csv.NewReader(file)
+
+    records, err := reader.ReadAll()
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"success": false,
+			"error":   "Failed to parse CSV content",
+		})
+		return
+	}
+
+	var users []UserData
+
+	for i, row := range records {
+		if i == 0 && row[0] == "name" {
+			continue
+		}
+
+		if len(row) >= 2 {
+			users = append(users, UserData{
+				Name:  row[0],
+				Email: row[1],
+			})
+		}
+	}
+
+
+    c.JSON(http.StatusOK, gin.H{
+		"success":   true,
+		"count":     len(users),
+		"data":      users,
+		"timestamp": time.Now(),
+	})
 }
 
 func (h *AdminHandlers) CreateCandidate(c *gin.Context) {

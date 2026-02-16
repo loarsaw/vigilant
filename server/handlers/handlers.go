@@ -6,20 +6,29 @@ import (
 	"log"
 	"net/http"
 	"time"
-
 	"github.com/gin-gonic/gin"
 	"vigilant/models"
 )
 
+
 type Handlers struct {
 	DB *sql.DB
 }
+
 
 func (h *Handlers) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":    "ok",
 		"timestamp": time.Now(),
 		"service":   "vigilant-server",
+	})
+}
+
+func (h *AdminHandlers) VerifyToken(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"message":       "Token is valid",
+		"authenticated": true,
 	})
 }
 

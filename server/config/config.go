@@ -26,7 +26,11 @@ type Config struct {
 	JWTSecret             string
 	BcryptCost            string
 
-	DataRetentionHours    string
+
+    // Domain Name
+    DomainName            string
+
+    DataRetentionHours    string
 	RateLimitPerMinute    string
 	ClientUpdateInterval  string
 	HighMemoryThreshold   string

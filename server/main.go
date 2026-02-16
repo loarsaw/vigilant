@@ -52,7 +52,9 @@ func main() {
 	admin := r.Group("/api/v1/admin")
 	admin.Use(middleware.AdminAuthMiddleware(cfg))
 	{
-		admin.POST("/candidates", adminH.CreateCandidate)
+        admin.POST("/access" , adminH.VerifyToken)
+        admin.POST("/csv-upload" , adminH.ParseUserList)
+        admin.POST("/candidates", adminH.CreateCandidate)
 		admin.GET("/candidates", adminH.ListCandidates)
 		admin.GET("/candidates/:id", adminH.GetCandidate)
 		admin.PUT("/candidates/:id", adminH.UpdateCandidate)
