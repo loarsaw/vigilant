@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
+    "vigilant/websocket"
 	"github.com/gin-gonic/gin"
 	"vigilant/config"
 	"vigilant/db"
@@ -56,6 +56,9 @@ func main() {
         admin.POST("/csv-upload" , adminH.ParseUserList)
         admin.POST("/candidates", adminH.CreateCandidate)
 		admin.GET("/candidates", adminH.ListCandidates)
+		admin.POST("/bulk-candidates", adminH.BulkCreateCandidates)
+        admin.GET("/active-users", adminH.GetActiveUsers)
+
 		admin.GET("/candidates/:id", adminH.GetCandidate)
 		admin.PUT("/candidates/:id", adminH.UpdateCandidate)
 		admin.DELETE("/candidates/:id", adminH.DeleteCandidate)
@@ -65,7 +68,13 @@ func main() {
 	api := r.Group("/api/v1")
 	api.Use(middleware.AuthMiddleware(cfg))
 	{
+
+        api.GET("/ws/presence", websocket.Manager.HandleConnection)
+
 		api.POST("/process", h.CreateProcessReport)
+		api.GET("/interview-session/:candidate_id" , h.GetActiveInterview)
+		api.POST("/create-interview" , h.CreateInterviewSession)
+		api.POST("/process-logs" , h.CreateProcessLogs)
 		api.GET("/process/:session_id", h.GetProcessReports)
 		api.GET("/sessions", h.ListSessions)
 		api.POST("/sessions/:session_id/end", h.EndSession)

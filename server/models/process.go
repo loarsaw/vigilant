@@ -39,7 +39,12 @@ type Candidate struct {
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
 	IsActive     bool       `json:"is_active"`
-	LastLogin    *time.Time `json:"last_login,omitempty"`
+    InterviewCurrentStage  string   `json:"interview_current_stage"`
+    InterviewNextStage    string     `json:"interview_next_stage"`
+    CurrentStageQualified bool   `json:"current_stage_qualified"`
+    InterviewCompleted bool   `json:"interview_completed"`
+
+    LastLogin    *time.Time `json:"last_login,omitempty"`
 }
 
 type CandidateLogin struct {

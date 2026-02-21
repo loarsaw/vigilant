@@ -214,6 +214,7 @@ export default function ProcessWidget() {
       try {
         const { data: allApps } = await window.processAPI.getAllProcesses();
 
+        console.log(allApps, 'klaskl');
         const combinedRaw: Process[] = [...allApps];
         const uniqueProcesses = new Map<
           string,

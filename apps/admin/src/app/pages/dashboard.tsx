@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent, ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -7,7 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-
+import { useUploadCsv } from '@/hooks/use-csv';
+import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -18,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useCandidates } from '@/hooks/use-candidates';
 import { apiClient } from '@/lib/axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -30,50 +32,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-export interface CandidateHistory {
-  joinedAt: string;
-  interviewStartedAt?: string;
-  interviewEndedAt?: string;
-  leftAt?: string;
-}
-
-export type CandidateLevel = 'Junior' | 'Intern' | 'Senior';
-export type TestStatus = 'DSA' | 'React' | 'Nextjs' | 'pending';
-
-export interface AppUsage {
-  name: string;
-  duration: number;
-  usageCount: number;
-  lastUsed: string;
-}
-
-export interface CandidateData {
-  id: string;
-  email: string;
-  password: string;
-  interviewConducted: boolean;
-  shortlisted: boolean;
-  createdBy: string;
-  createdAt: string;
-  confidenceScore: number;
-  appsUsed: AppUsage[];
-  history: CandidateHistory;
-  level: CandidateLevel;
-  testStatus: TestStatus;
-  loggedInTime: string;
-  runningProcesses: string[];
-}
-
 export function Dashboard() {
-  const [candidates, setCandidates] = useState<CandidateData[]>([]);
-  const user = {
-    email: '',
-    workspaceName: '',
-  };
-
-  const [shortlistedCandidates, setShortlistedCandidates] = useState<
-    CandidateData[]
-  >([]);
+  const router = useNavigate();
+  const [csv, setCSV] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [newCandidateEmail, setNewCandidateEmail] = useState('');
   const [newCandidatePassword, setNewCandidatePassword] = useState('');
   const [newCandidateName, setNewCandidateName] = useState('');
@@ -81,17 +43,73 @@ export function Dashboard() {
   const [activeTab, setActiveTab] = useState('all');
   const [showPurgeDialog, setShowPurgeDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [importType, setImportType] = useState<'csv' | 'google' | null>(null);
-  const interviewedCandidates = candidates.filter(c => c.interviewConducted);
+
+  const {
+    candidates,
+    isLoading,
+    isError,
+    updateCandidate,
+    isUpdating
+  } = useCandidates();
+
+  const interviewCandidates = candidates.filter(
+    (c) => c.current_stage_qualified && !c.interview_completed
+  );
+
+  const completedCandidates = candidates.filter(
+    (c) => c.interview_completed
+  );
+
+  const uploadMutation = useUploadCsv();
+
+  useEffect(() => {
+    if (csv) {
+      uploadMutation.mutate(csv, {
+        onSuccess: (data) => {
+          if (data.success) {
+            router('/candidate-list');
+          }
+        },
+      });
+    }
+  }, [csv]);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setCSV(selectedFile);
+    }
+  };
+
+  const onClickButton = () => {
+    fileInputRef.current?.click();
+  };
 
   async function addCandidate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     await apiClient.post('/candidates', {
-      full_name: '',
+      full_name: newCandidateName,
       email: newCandidateEmail,
       password: newCandidatePassword,
     });
+    setOpenDialog(false);
   }
+
+  const handleQualifyStage = (id: number) => {
+    updateCandidate({
+      id,
+      payload: { current_stage_qualified: true },
+    });
+  };
+
+  const handleCompleteInterview = (id: number) => {
+    updateCandidate({
+      id,
+      payload: { interview_completed: true },
+    });
+  };
+
+  const user = { email: '', workspaceName: '' };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
@@ -111,21 +129,25 @@ export function Dashboard() {
               </DialogTrigger>
               <DialogContent className="bg-card border-border">
                 <DialogHeader>
-                  <DialogTitle className="text-foreground">
-                    Import Candidates
-                  </DialogTitle>
+                  <DialogTitle className="text-foreground">Import Candidates</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
                     Choose your import source
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-3">
-                  <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+                  <Button
+                    onClick={onClickButton}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
                     Import from CSV
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full border-border text-foreground"
-                  >
+                  <Button variant="outline" className="w-full border-border text-foreground">
                     Import from Google Sheets
                   </Button>
                 </div>
@@ -138,21 +160,15 @@ export function Dashboard() {
               </DialogTrigger>
               <DialogContent className="bg-card border-border">
                 <DialogHeader>
-                  <DialogTitle className="text-destructive">
-                    Archive Candidates
-                  </DialogTitle>
+                  <DialogTitle className="text-destructive">Archive Candidates</DialogTitle>
                   <DialogDescription className="text-muted-foreground">
-                    This action will archive all candidates in the list. This
-                    cannot be undone.
+                    This action will archive all candidates. This cannot be undone.
                   </DialogDescription>
                 </DialogHeader>
-                <p className="text-sm text-foreground">
-                  Are you sure you want to proceed? The candidates list will be
-                  archived and cleared.
-                </p>
                 <div className="flex gap-2 justify-end pt-4">
                   <Button
                     variant="outline"
+                    onClick={() => setShowPurgeDialog(false)}
                     className="border-border text-foreground"
                   >
                     Cancel
@@ -166,7 +182,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Welcome Card */}
+        {/* Stats Card */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Welcome, {user.email}</CardTitle>
@@ -175,33 +191,21 @@ export function Dashboard() {
           <CardContent>
             <div className="grid md:grid-cols-4 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm font-medium text-blue-900">
-                  Total Candidates
-                </p>
-                <p className="text-2xl font-bold text-blue-600 mt-2">
-                  {candidates.length}
-                </p>
+                <p className="text-sm font-medium text-blue-900">Total Candidates</p>
+                <p className="text-2xl font-bold text-blue-600 mt-2">{candidates.length}</p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm font-medium text-green-900">
-                  Interviewed
-                </p>
-                <p className="text-2xl font-bold text-green-600 mt-2">
-                  {interviewedCandidates.length}
-                </p>
+                <p className="text-sm font-medium text-green-900">In Interview</p>
+                <p className="text-2xl font-bold text-green-600 mt-2">{interviewCandidates.length}</p>
               </div>
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <p className="text-sm font-medium text-purple-900">
-                  Shortlisted
-                </p>
-                <p className="text-2xl font-bold text-purple-600 mt-2">
-                  {shortlistedCandidates.length}
-                </p>
+                <p className="text-sm font-medium text-purple-900">Completed</p>
+                <p className="text-2xl font-bold text-purple-600 mt-2">{completedCandidates.length}</p>
               </div>
               <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                 <p className="text-sm font-medium text-amber-900">Pending</p>
                 <p className="text-2xl font-bold text-amber-600 mt-2">
-                  {candidates.length - interviewedCandidates.length}
+                  {candidates.filter((c) => !c.current_stage_qualified && !c.interview_completed).length}
                 </p>
               </div>
             </div>
@@ -210,11 +214,18 @@ export function Dashboard() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="all">All Candidates</TabsTrigger>
-            <TabsTrigger value="interviewed">Interviewed</TabsTrigger>
-            <TabsTrigger value="shortlisted">Shortlisted</TabsTrigger>
+            <TabsTrigger value="all">
+              All Candidates ({candidates.length})
+            </TabsTrigger>
+            <TabsTrigger value="interview">
+              Interview ({interviewCandidates.length + completedCandidates.length})
+            </TabsTrigger>
+            <TabsTrigger value="completed">
+              Completed ({completedCandidates.length})
+            </TabsTrigger>
           </TabsList>
 
+          {/* ALL CANDIDATES TAB */}
           <TabsContent value="all" className="mt-6 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">All Candidates</h2>
@@ -233,13 +244,13 @@ export function Dashboard() {
                   </DialogHeader>
                   <form onSubmit={addCandidate} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="candidate-name">Full Name</Label>
+                      <Label htmlFor="candidate-fullname">Full Name</Label>
                       <Input
                         id="candidate-fullname"
                         type="text"
                         placeholder="John Doe"
                         value={newCandidateName}
-                        onChange={e => setNewCandidateName(e.target.value)}
+                        onChange={(e) => setNewCandidateName(e.target.value)}
                         required
                       />
                       <Label htmlFor="candidate-email">Email</Label>
@@ -248,7 +259,7 @@ export function Dashboard() {
                         type="email"
                         placeholder="candidate@example.com"
                         value={newCandidateEmail}
-                        onChange={e => setNewCandidateEmail(e.target.value)}
+                        onChange={(e) => setNewCandidateEmail(e.target.value)}
                         required
                       />
                     </div>
@@ -259,7 +270,7 @@ export function Dashboard() {
                         type="password"
                         placeholder="Enter password"
                         value={newCandidatePassword}
-                        onChange={e => setNewCandidatePassword(e.target.value)}
+                        onChange={(e) => setNewCandidatePassword(e.target.value)}
                         required
                       />
                     </div>
@@ -274,12 +285,22 @@ export function Dashboard() {
               </Dialog>
             </div>
 
-            {candidates.length === 0 ? (
+            {isLoading ? (
               <Card>
                 <CardContent className="pt-8 text-center">
-                  <p className="text-muted-foreground">
-                    No candidates yet. Create one to get started.
-                  </p>
+                  <p className="text-muted-foreground">Loading candidates...</p>
+                </CardContent>
+              </Card>
+            ) : isError ? (
+              <Card>
+                <CardContent className="pt-8 text-center">
+                  <p className="text-destructive">Failed to load candidates.</p>
+                </CardContent>
+              </Card>
+            ) : candidates.length === 0 ? (
+              <Card>
+                <CardContent className="pt-8 text-center">
+                  <p className="text-muted-foreground">No candidates yet. Create one to get started.</p>
                 </CardContent>
               </Card>
             ) : (
@@ -289,55 +310,68 @@ export function Dashboard() {
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>Full Name</TableHead>
                           <TableHead>Email</TableHead>
-                          <TableHead>Interview</TableHead>
+                          <TableHead>Stage</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {candidates.map(candidate => (
+                        {candidates.map((candidate) => (
                           <TableRow
                             key={candidate.id}
                             className="cursor-pointer hover:bg-secondary/50 transition-colors"
+                            onClick={()=>{
+router(`/candidates/${candidate.id}`);
+                            }}
                           >
                             <TableCell className="font-medium">
-                              {candidate.email}
+                              {candidate.full_name}
+                            </TableCell>
+                            <TableCell>{candidate.email}</TableCell>
+                            <TableCell>
+                              {candidate.interview_current_stage ? (
+                                <Badge variant="outline">
+                                  {candidate.interview_current_stage}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">Not started</span>
+                              )}
                             </TableCell>
                             <TableCell>
-                              {candidate.interviewConducted ? (
-                                <Badge className="bg-green-100 text-green-800">
-                                  Conducted
-                                </Badge>
+                              {candidate.interview_completed ? (
+                                <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                              ) : candidate.current_stage_qualified ? (
+                                <Badge className="bg-blue-100 text-blue-800">In Interview</Badge>
                               ) : (
                                 <Badge variant="outline">Pending</Badge>
                               )}
                             </TableCell>
-                            <TableCell>
-                              {candidate.shortlisted && (
-                                <Badge className="bg-purple-100 text-purple-800">
-                                  Shortlisted
-                                </Badge>
-                              )}
-                            </TableCell>
                             <TableCell
                               className="space-x-2"
-                              onClick={e => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {!candidate.interviewConducted && (
-                                <Button size="sm" variant="outline">
-                                  Mark Interview
+                              {!candidate.current_stage_qualified && !candidate.interview_completed && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isUpdating}
+                                  onClick={() => handleQualifyStage(candidate.id)}
+                                >
+                                  Qualify
                                 </Button>
                               )}
-                              {candidate.interviewConducted &&
-                                !candidate.shortlisted && (
-                                  <Button
-                                    size="sm"
-                                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                                  >
-                                    Shortlist
-                                  </Button>
-                                )}
+                              {candidate.current_stage_qualified && !candidate.interview_completed && (
+                                <Button
+                                  size="sm"
+                                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                  disabled={isUpdating}
+                                  onClick={() => handleCompleteInterview(candidate.id)}
+                                >
+                                  Mark Complete
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -349,51 +383,81 @@ export function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="interviewed" className="mt-6">
+          {/* INTERVIEW TAB - qualified but not yet completed + completed */}
+          <TabsContent value="interview" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Candidates with Interviews Conducted</CardTitle>
+                <CardTitle>Candidates in Interview Process</CardTitle>
+                <CardDescription>
+                  Candidates who have qualified and are actively being interviewed
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {interviewedCandidates.length === 0 ? (
-                  <p className="text-muted-foreground">
-                    No candidates with interviews yet.
-                  </p>
+                {interviewCandidates.length === 0 && completedCandidates.length === 0 ? (
+                  <p className="text-muted-foreground">No candidates in interview yet.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow>
+                          <TableHead>Full Name</TableHead>
                           <TableHead>Email</TableHead>
+                          <TableHead>Current Stage</TableHead>
+                          <TableHead>Next Stage</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {interviewedCandidates.map(candidate => (
-                          <TableRow
-                            key={candidate.id}
-                            className="cursor-pointer hover:bg-secondary/50 transition-colors"
-                          >
-                            <TableCell className="font-medium">
-                              {candidate.email}
+                        {/* Active interview candidates */}
+                        {interviewCandidates.map((candidate) => (
+                          <TableRow key={candidate.id} className="hover:bg-secondary/50">
+                            <TableCell className="font-medium">{candidate.full_name}</TableCell>
+                            <TableCell>{candidate.email}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {candidate.interview_current_stage || 'Initial'}
+                              </Badge>
                             </TableCell>
                             <TableCell>
-                              {candidate.shortlisted && (
-                                <Badge className="bg-purple-100 text-purple-800">
-                                  Shortlisted
-                                </Badge>
-                              )}
+                              <span className="text-muted-foreground text-sm">
+                                {candidate.interview_next_stage || '—'}
+                              </span>
                             </TableCell>
-                            <TableCell onClick={e => e.stopPropagation()}>
-                              {!candidate.shortlisted && (
-                                <Button
-                                  size="sm"
-                                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                                >
-                                  Shortlist
-                                </Button>
-                              )}
+                            <TableCell>
+                              <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
+                            </TableCell>
+                            <TableCell onClick={(e) => e.stopPropagation()}>
+                              <Button
+                                size="sm"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                                disabled={isUpdating}
+                                onClick={() => handleCompleteInterview(candidate.id)}
+                              >
+                                Mark Complete
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+
+                        {/* Completed interview candidates in same list */}
+                        {completedCandidates.map((candidate) => (
+                          <TableRow key={candidate.id} className="hover:bg-secondary/50 opacity-75">
+                            <TableCell className="font-medium">{candidate.full_name}</TableCell>
+                            <TableCell>{candidate.email}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {candidate.interview_current_stage || '—'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-muted-foreground text-sm">—</span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-muted-foreground text-sm">—</span>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -405,38 +469,50 @@ export function Dashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="shortlisted" className="mt-6">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Shortlisted Candidates</h2>
-                {shortlistedCandidates.length > 0 && (
-                  <Button variant="outline">Export to CSV</Button>
-                )}
-              </div>
-              <Card>
-                <CardContent className="pt-6">
-                  {shortlistedCandidates.length === 0 ? (
-                    <p className="text-muted-foreground">
-                      No shortlisted candidates yet.
-                    </p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Interview Conducted</TableHead>
-                            <TableHead>Created Date</TableHead>
-                            <TableHead>Actions</TableHead>
+          {/* COMPLETED TAB */}
+          <TabsContent value="completed" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Completed Interviews</CardTitle>
+                <CardDescription>
+                  Candidates who have finished the interview process
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {completedCandidates.length === 0 ? (
+                  <p className="text-muted-foreground">No completed interviews yet.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Full Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Final Stage</TableHead>
+                          <TableHead>Completed</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {completedCandidates.map((candidate) => (
+                          <TableRow key={candidate.id} className="hover:bg-secondary/50">
+                            <TableCell className="font-medium">{candidate.full_name}</TableCell>
+                            <TableCell>{candidate.email}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {candidate.interview_current_stage || '—'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className="bg-green-100 text-green-800">✓ Done</Badge>
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody></TableBody>
-                      </Table>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

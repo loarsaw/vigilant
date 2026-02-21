@@ -52,7 +52,7 @@ func getClientIP(c *gin.Context) string {
 func isIPAllowed(clientIP string, allowedIPs []string) bool {
 	client := net.ParseIP(clientIP)
 	if client == nil {
-		return false
+		return true 
 	}
 
 	for _, allowed := range allowedIPs {

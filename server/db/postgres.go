@@ -44,6 +44,10 @@ func RunMigrations(db *sql.DB) error {
 			created_at TIMESTAMP DEFAULT NOW(),
 			updated_at TIMESTAMP DEFAULT NOW(),
 			is_active BOOLEAN DEFAULT TRUE,
+            interview_current_stage VARCHAR(255),
+           interview_next_stage VARCHAR(255),
+		   current_stage_qualified BOOLEAN DEFAULT FALSE,
+		   interview_completed BOOLEAN DEFAULT FALSE,
 			last_login TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email)`,

@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+	"fmt"
+	"strings"
 	"github.com/gin-gonic/gin"
 	"vigilant/models"
 )
@@ -30,6 +32,187 @@ func (h *AdminHandlers) VerifyToken(c *gin.Context) {
 		"message":       "Token is valid",
 		"authenticated": true,
 	})
+}
+
+func (h *AdminHandlers) EndInterviewSession(c *gin.Context) {
+    id := c.Param("id")
+
+    var req struct {
+        Notes  string `json:"notes"`
+        Status string `json:"status"`
+    }
+
+    if err := c.ShouldBindJSON(&req); err != nil {
+        req.Status = "completed"
+    }
+
+    query := `
+        UPDATE interview_sessions
+        SET ended_at = NOW(),
+            status = $1,
+            notes = $2
+        WHERE id = $3 AND ended_at IS NULL`
+
+    result, err := h.DB.Exec(query, req.Status, req.Notes, id)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close session"})
+        return
+    }
+
+    rows, _ := result.RowsAffected()
+    if rows == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already closed"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"status": "interview_ended", "id": id})
+}
+
+
+func (h *Handlers) GetActiveInterview(c *gin.Context) {
+    candidateID := c.Param("candidate_id")
+
+    var session models.InterviewSession
+    query := `
+        SELECT id, session_id, status, position
+        FROM interview_sessions
+        WHERE candidate_id = $1 AND status = 'in_progress'
+        ORDER BY started_at DESC LIMIT 1`
+
+    err := h.DB.QueryRow(query, candidateID).Scan(
+        &session.ID,
+        &session.SessionID,
+        &session.Status,
+        &session.Position,
+    )
+
+    if err == sql.ErrNoRows {
+        c.JSON(http.StatusNotFound, gin.H{"error": "no active interview found"})
+        return
+    } else if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+        return
+    }
+
+    c.JSON(http.StatusOK, session)
+}
+
+func (h *Handlers) CreateProcessLogs(c *gin.Context) {
+    var batch models.ProcessLogBatch
+
+    if err := c.ShouldBindJSON(&batch); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid log data format"})
+        return
+    }
+
+    if len(batch.Processes) == 0 {
+        c.JSON(http.StatusOK, gin.H{"message": "No processes to log"})
+        return
+    }
+
+    queryPrefix := `INSERT INTO process_logs (
+        interview_session_id, candidate_session_id, pid, ppid, name,
+        path, cmd, memory, cpu_usage, is_user_app, is_gui_app,
+        username, process_type, category, confidence, is_unknown,
+        is_suspicious, is_electron, alert_level
+    ) VALUES `
+
+    values := []interface{}{}
+    placeholders := []string{}
+    argCount := 1
+
+    for _, p := range batch.Processes {
+        row := fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+            argCount, argCount+1, argCount+2, argCount+3, argCount+4,
+            argCount+5, argCount+6, argCount+7, argCount+8, argCount+9,
+            argCount+10, argCount+11, argCount+12, argCount+13, argCount+14,
+            argCount+15, argCount+16, argCount+17, argCount+18)
+
+        placeholders = append(placeholders, row)
+
+        values = append(values,
+            batch.InterviewSessionID,
+            batch.CandidateSessionID,
+            p.PID,
+            p.PPID,
+            p.Name,
+            p.Path,
+            p.Cmd,
+            p.Memory,
+            p.CPUUsage,
+            p.IsUserApp,
+            p.IsGuiApp,
+            p.Username,
+            p.ProcessType,
+            p.Category,
+            p.Confidence,
+            p.IsUnknown,
+            p.IsSuspicious,
+            p.IsElectron,
+            p.AlertLevel,
+        )
+        argCount += 19
+    }
+
+    finalQuery := queryPrefix + strings.Join(placeholders, ",")
+
+    _, err := h.DB.Exec(finalQuery, values...)
+    if err != nil {
+        log.Printf("Bulk log insert failed: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store process logs"})
+        return
+    }
+
+
+    c.JSON(http.StatusCreated, gin.H{
+        "status":  "success",
+        "message": "Logs processed",
+        "count":   len(batch.Processes),
+    })
+}
+func (h *Handlers) CreateInterviewSession(c *gin.Context) {
+    var session models.InterviewSession
+
+    if err := c.ShouldBindJSON(&session); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
+        return
+    }
+
+
+
+	if session.Status == "" {
+        session.Status = "in_progress"
+    }
+
+    query := `
+
+        INSERT INTO interview_sessions (
+            session_id, candidate_id, candidate_session_id,
+            interviewer_email,
+			 position, interview_type,
+            scheduled_duration, metadata, status, started_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+        RETURNING id, created_at`
+
+    err := h.DB.QueryRow(query,
+        session.SessionID,
+        session.CandidateID,
+        session.CandidateSessionID,
+        session.InterviewerEmail,
+        session.Position,
+        session.InterviewType,
+        session.ScheduledDuration,
+        session.Metadata,
+        session.Status,
+    ).Scan(&session.ID, &session.CreatedAt)
+
+    if err != nil {
+        log.Printf("Error inserting interview session: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create interview session"})
+        return
+    }
+
+    c.JSON(http.StatusCreated, session)
 }
 
 func (h *Handlers) CreateProcessReport(c *gin.Context) {
