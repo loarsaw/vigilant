@@ -1,0 +1,107 @@
+{
+  "name": "vigilant-code",
+  "productName": "Vigilant Code",
+  "version": "1.0.0-beta",
+  "description": "Vigilant code assessment platform for candidates",
+  "main": ".vite/build/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "build": "electron-rebuild",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --ext .ts,.tsx . --fix",
+    "install": "node-gyp rebuild",
+    "rebuild": "electron-rebuild",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.0",
+    "@commitlint/config-conventional": "^20.4.0",
+    "@electron-forge/cli": "^7.5.0",
+    "@electron-forge/maker-deb": "^7.5.0",
+    "@electron-forge/maker-rpm": "^7.5.0",
+    "@electron-forge/maker-squirrel": "^7.11.1",
+    "@electron-forge/maker-zip": "^7.5.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.5.0",
+    "@electron-forge/plugin-fuses": "^7.5.0",
+    "@electron-forge/plugin-vite": "^7.5.0",
+    "@electron-forge/publisher-github": "^7.11.1",
+    "@electron/fuses": "^1.8.0",
+    "@types/electron-squirrel-startup": "^1.0.2",
+    "@types/react-dom": "^18.3.1",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "autoprefixer": "^10.4.20",
+    "electron": "33.0.2",
+    "eslint": "^8.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.25.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "node-gyp": "^12.2.0",
+    "postcss": "^8.4.47",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^3.4.14",
+    "ts-node": "^10.0.0",
+    "typescript": "~4.5.4",
+    "vite": "^5.0.12"
+  },
+  "keywords": [],
+  "author": {
+    "name": "loarsaw",
+    "email": "amanahmed1385@gmail.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@codesandbox/sandpack-react": "^2.20.0",
+    "@codesandbox/sandpack-themes": "^2.0.21",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@tanstack/react-query": "^5.90.21",
+    "axios": "^1.13.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "electron-rebuild": "^3.2.9",
+    "electron-squirrel-startup": "^1.0.1",
+    "lucide-react": "^0.563.0",
+    "node-addon-api": "^8.5.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "apps/**/*.{ts,tsx}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "apps/**/*.{js,jsx}": [
+    "eslint --fix",
+    "prettier --write"
+  ],
+  "apps/**/*.{json,css,md}": [
+    "prettier --write"
+  ],
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  }
+}
