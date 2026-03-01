@@ -11,19 +11,14 @@ import (
 
 func AdminAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if cfg.AdminAuthToken == "" {
+		if cfg.AdminAuthToken == "" && cfg.AdminEmail == "" {
 			c.Next()
 			return
 		}
 
-		token := c.GetHeader("X-Admin-Token")
-		if token == "" {
-			token = c.Query("X-Admin-Token")
-		}
-
-		if token != cfg.AdminAuthToken {
+		if !isAuthenticated(c, cfg) {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "unauthorized: invalid admin token",
+				"error": "unauthorized: invalid credentials",
 			})
 			c.Abort()
 			return
@@ -45,6 +40,28 @@ func AdminAuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
+func isAuthenticated(c *gin.Context, cfg *config.Config) bool {
+	if cfg.AdminAuthToken != "" {
+		token := c.GetHeader("X-Admin-Token")
+		if token == "" {
+			token = c.Query("X-Admin-Token")
+		}
+		if token == cfg.AdminAuthToken {
+			return true
+		}
+	}
+
+	if cfg.AdminEmail != "" && cfg.AdminPassword != "" {
+		email := c.GetHeader("X-Admin-Email")
+		password := c.GetHeader("X-Admin-Password")
+		if email == cfg.AdminEmail && password == cfg.AdminPassword {
+			return true
+		}
+	}
+
+	return false
+}
+
 func getClientIP(c *gin.Context) string {
 	return c.ClientIP()
 }
@@ -52,7 +69,7 @@ func getClientIP(c *gin.Context) string {
 func isIPAllowed(clientIP string, allowedIPs []string) bool {
 	client := net.ParseIP(clientIP)
 	if client == nil {
-		return true 
+		return true
 	}
 
 	for _, allowed := range allowedIPs {

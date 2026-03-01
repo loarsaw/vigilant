@@ -8,34 +8,35 @@ import (
 )
 
 type Config struct {
-	ServerPort            string
-	ServerHost            string
-	PostgresHost          string
-	PostgresPort          string
-	PostgresDB            string
-	PostgresUser          string
-	PostgresPassword      string
-	AuthToken             string
+	ServerPort           string
+	ServerHost           string
+	PostgresHost         string
+	PostgresPort         string
+	PostgresDB           string
+	PostgresUser         string
+	PostgresPassword     string
+	AuthToken            string
 
 	// Admin settings
-	AdminAuthToken        string
-	AdminIPAddress        string
-	AdminSessionTimeout   string
+	AdminAuthToken      string
+	AdminEmail          string 
+	AdminPassword       string 
+	AdminIPAddress      string
+	AdminSessionTimeout string
 
 	// Security
-	JWTSecret             string
-	BcryptCost            string
+	JWTSecret  string
+	BcryptCost string
 
+	// Domain Name
+	DomainName string
 
-    // Domain Name
-    DomainName            string
-
-    DataRetentionHours    string
-	RateLimitPerMinute    string
-	ClientUpdateInterval  string
-	HighMemoryThreshold   string
-	EnableWebsockets      string
-	AllowOrigin           string
+	DataRetentionHours   string
+	RateLimitPerMinute   string
+	ClientUpdateInterval string
+	HighMemoryThreshold  string
+	EnableWebsockets     string
+	AllowOrigin          string
 }
 
 func Load() (*Config, error) {
@@ -104,6 +105,10 @@ func Load() (*Config, error) {
 			config.AuthToken = value
 		case "ADMIN_AUTH_TOKEN":
 			config.AdminAuthToken = value
+		case "ADMIN_EMAIL": // NEW
+			config.AdminEmail = value
+		case "ADMIN_PASSWORD": // NEW
+			config.AdminPassword = value
 		case "ADMIN_IP_ADDRESS":
 			config.AdminIPAddress = value
 		case "ADMIN_SESSION_TIMEOUT":
@@ -148,7 +153,7 @@ func (c *Config) GetDSN() string {
 // GetAdminIPs returns a slice of allowed admin IP addresses
 func (c *Config) GetAdminIPs() []string {
 	if c.AdminIPAddress == "" {
-		return []string{} // Empty = allow all (not recommended)
+		return []string{}
 	}
 
 	ips := strings.Split(c.AdminIPAddress, ",")

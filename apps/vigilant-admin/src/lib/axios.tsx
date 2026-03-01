@@ -4,9 +4,9 @@ async function getIsDev() {
   const { isDev } = await window.api.isDev();
   return isDev;
 }
+
 function getBaseUrl(): string {
   const isDev = getIsDev();
-
   return isDev ? 'http://localhost:3333/api/v1/admin' : '';
 }
 
@@ -27,35 +27,57 @@ export const setBaseURL = (workspaceName: string) => {
   }
 };
 
-export const setAdminToken = (token: string) => {
-  apiClient.defaults.headers.common['X-Admin-Token'] = token;
+export type AuthMethod = 'token' | 'credentials';
+export const saveTokenAuth = (token: string) => {
+  localStorage.setItem('authMethod', 'token');
+  localStorage.setItem('adminToken', token);
+  localStorage.removeItem('adminEmail');
+  localStorage.removeItem('adminPassword');
 };
 
-// switch to sessionStorage
+export const saveCredentialsAuth = (email: string, password: string) => {
+  localStorage.setItem('authMethod', 'credentials');
+  localStorage.setItem('adminEmail', email);
+  localStorage.setItem('adminPassword', password);
+  localStorage.removeItem('adminToken');
+};
+
+export const clearAuth = () => {
+  localStorage.removeItem('authMethod');
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('adminEmail');
+  localStorage.removeItem('adminPassword');
+};
+
 apiClient.interceptors.request.use(
   config => {
-    const adminToken = localStorage.getItem('adminToken');
-    if (adminToken) {
-      config.headers['X-Admin-Token'] = adminToken;
+    const authMethod = localStorage.getItem('authMethod') as AuthMethod | null;
+
+    if (authMethod === 'credentials') {
+      const email = localStorage.getItem('adminEmail');
+      const password = localStorage.getItem('adminPassword');
+      if (email) config.headers['X-Admin-Email'] = email;
+      if (password) config.headers['X-Admin-Password'] = password;
+    } else {
+      const token = localStorage.getItem('adminToken');
+      if (token) config.headers['X-Admin-Token'] = token;
     }
+
     return config;
   },
-  error => {
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 
 apiClient.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
+      clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
-
 
 
 export function createSSEConnection(
@@ -64,12 +86,22 @@ export function createSSEConnection(
   onError?: () => void
 ): () => void {
   const baseURL = apiClient.defaults.baseURL ?? '';
-  const token = localStorage.getItem('adminToken') ?? '';
-  const url = `${baseURL}${path}?token=${encodeURIComponent(token)}`;
-  
+  const authMethod = localStorage.getItem('authMethod') as AuthMethod | null;
+
+  let authQuery: string;
+  if (authMethod === 'credentials') {
+    const email = encodeURIComponent(localStorage.getItem('adminEmail') ?? '');
+    const password = encodeURIComponent(localStorage.getItem('adminPassword') ?? '');
+    authQuery = `email=${email}&password=${password}`;
+  } else {
+    const token = encodeURIComponent(localStorage.getItem('adminToken') ?? '');
+    authQuery = `token=${token}`;
+  }
+
+  const url = `${baseURL}${path}?${authQuery}`;
   const es = new EventSource(url);
 
-  es.onmessage = (event) => {
+  es.onmessage = event => {
     try {
       const data = JSON.parse(event.data);
       onMessage(data.type, data.payload);
@@ -89,11 +121,5 @@ export async function pushToCandidate(
   type: string,
   payload: unknown
 ): Promise<void> {
-  await apiClient.post(`/candidates/${candidateId}/push`, {
-    type,
-    payload,
-  });
+  await apiClient.post(`/candidates/${candidateId}/push`, { type, payload });
 }
-
-
-
