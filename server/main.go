@@ -13,6 +13,7 @@ import (
 	"vigilant/middleware"
 )
 
+
 func main() {
 
 	cfg, err := config.Load()
@@ -31,10 +32,9 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	h := &handlers.Handlers{DB: database}
-	adminH := &handlers.AdminHandlers{DB: database}
+    h := &handlers.Handlers{DB: database, Cfg: cfg}
+	adminH := &handlers.AdminHandlers{DB: database, Cfg: cfg}
 	authH := &handlers.AuthHandlers{DB: database, Cfg: cfg}
-
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
@@ -52,6 +52,8 @@ func main() {
 	admin := r.Group("/api/v1/admin")
 	admin.Use(middleware.AdminAuthMiddleware(cfg))
 	{
+        admin.POST("/candidates/:id/push", adminH.PushToCandidate)
+		admin.GET("/events", adminH.SSEEvents)
         admin.POST("/access" , adminH.VerifyToken)
         admin.POST("/csv-upload" , adminH.ParseUserList)
         admin.POST("/candidates", adminH.CreateCandidate)
@@ -69,16 +71,19 @@ func main() {
 	api.Use(middleware.AuthMiddleware(cfg))
 	{
 
-        api.GET("/ws/presence", websocket.Manager.HandleConnection)
 
 		api.POST("/process", h.CreateProcessReport)
 		api.GET("/interview-session/:candidate_id" , h.GetActiveInterview)
 		api.POST("/create-interview" , h.CreateInterviewSession)
-		api.POST("/process-logs" , h.CreateProcessLogs)
+
 		api.GET("/process/:session_id", h.GetProcessReports)
 		api.GET("/sessions", h.ListSessions)
 		api.POST("/sessions/:session_id/end", h.EndSession)
 	}
+    
+    r.GET("/api/v1/events", h.SSEEvents)
+	websocket.Manager.Cfg = cfg
+	r.GET("/api/v1/ws/presence", websocket.Manager.HandleConnection)
 
 	addr := cfg.ServerHost + ":" + cfg.ServerPort
 	log.Printf("Server listening on %s", addr)

@@ -1,6 +1,6 @@
 import { CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
+import {useNavigate} from "react-router-dom"
 interface SuccessProps {
   workspace: string
   username: string
@@ -8,6 +8,7 @@ interface SuccessProps {
 }
 
 export default function Success({ workspace, username, onProceed }: SuccessProps) {
+  const router = useNavigate()
   return (
     <div className="w-full animate-fade-in">
       <div className="text-center space-y-8">
@@ -34,7 +35,9 @@ export default function Success({ workspace, username, onProceed }: SuccessProps
         </div>
 
         <Button
-          onClick={onProceed}
+          onClick={()=>{
+            router("/wait")
+          }}
           className="w-full py-3 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95"
         >
           Wait for Admin Setup Assignment

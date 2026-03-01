@@ -1,8 +1,8 @@
 {
   "name": "vigilant-code",
-  "productName": "vigilant-code",
-  "version": "1.0.2-beta",
-  "description": "Code Executor",
+  "productName": "Vigilant Code",
+  "version": "1.0.0-beta",
+  "description": "Vigilant code assessment platform for candidates",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

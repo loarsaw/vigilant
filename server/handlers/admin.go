@@ -8,11 +8,14 @@ import (
     "encoding/csv"
     "path/filepath"
     "strings"
-    "time"
+	"vigilant/config"
+	"time"
     "github.com/xuri/excelize/v2"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"vigilant/models"
+	"vigilant/websocket"
+
 )
 
 
@@ -25,7 +28,10 @@ type UserData struct {
 
 type AdminHandlers struct {
 	DB *sql.DB
+    Cfg *config.Config
+	
 }
+
 
 func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
@@ -348,7 +354,12 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	candidates := []models.Candidate{}
+	type CandidateWithPresence struct {
+		models.Candidate
+		IsOnline bool `json:"is_online"`
+	}
+
+	candidates := []CandidateWithPresence{}
 
 	for rows.Next() {
 		var cand models.Candidate
@@ -365,7 +376,11 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
 		}
-		candidates = append(candidates, cand)
+
+		candidates = append(candidates, CandidateWithPresence{
+			Candidate: cand,
+			IsOnline:  websocket.Manager.IsActive(fmt.Sprintf("%d", cand.ID)),
+		})
 	}
 
 	c.JSON(http.StatusOK, candidates)
@@ -402,9 +417,11 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, cand)
+	c.JSON(http.StatusOK, gin.H{
+		"candidate": cand,
+		"is_online": websocket.Manager.IsActive(fmt.Sprintf("%d", cand.ID)),
+	})
 }
-
 
 
 func (h *AdminHandlers) DeleteCandidate(c *gin.Context) {
@@ -467,3 +484,6 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 
 	c.JSON(http.StatusOK, stats)
 }
+
+
+

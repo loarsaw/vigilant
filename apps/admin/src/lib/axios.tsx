@@ -55,3 +55,45 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+
+
+export function createSSEConnection(
+  path: string,
+  onMessage: (type: string, payload: unknown) => void,
+  onError?: () => void
+): () => void {
+  const baseURL = apiClient.defaults.baseURL ?? '';
+  const token = localStorage.getItem('adminToken') ?? '';
+  const url = `${baseURL}${path}?token=${encodeURIComponent(token)}`;
+  
+  const es = new EventSource(url);
+
+  es.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      onMessage(data.type, data.payload);
+    } catch {}
+  };
+
+  es.onerror = () => {
+    onError?.();
+    es.close();
+  };
+
+  return () => es.close();
+}
+
+export async function pushToCandidate(
+  candidateId: string | number,
+  type: string,
+  payload: unknown
+): Promise<void> {
+  await apiClient.post(`/candidates/${candidateId}/push`, {
+    type,
+    payload,
+  });
+}
+
+
+

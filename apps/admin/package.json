@@ -1,8 +1,8 @@
 {
-  "name": "desktop-bd",
-  "productName": "desktop-bd",
-  "version": "1.0.0",
-  "description": "My Electron application description",
+  "name": "vigilant",
+  "productName": "Vigilant",
+  "version": "1.0.0-beta",
+  "description": "Vigilant candidate monitoring client",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

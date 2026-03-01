@@ -5,16 +5,16 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+    "vigilant/config"	
 	"time"
-	"fmt"
-	"strings"
 	"github.com/gin-gonic/gin"
 	"vigilant/models"
+
 )
 
-
 type Handlers struct {
-	DB *sql.DB
+    DB  *sql.DB
+    Cfg *config.Config
 }
 
 
@@ -97,79 +97,7 @@ func (h *Handlers) GetActiveInterview(c *gin.Context) {
     c.JSON(http.StatusOK, session)
 }
 
-func (h *Handlers) CreateProcessLogs(c *gin.Context) {
-    var batch models.ProcessLogBatch
 
-    if err := c.ShouldBindJSON(&batch); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid log data format"})
-        return
-    }
-
-    if len(batch.Processes) == 0 {
-        c.JSON(http.StatusOK, gin.H{"message": "No processes to log"})
-        return
-    }
-
-    queryPrefix := `INSERT INTO process_logs (
-        interview_session_id, candidate_session_id, pid, ppid, name,
-        path, cmd, memory, cpu_usage, is_user_app, is_gui_app,
-        username, process_type, category, confidence, is_unknown,
-        is_suspicious, is_electron, alert_level
-    ) VALUES `
-
-    values := []interface{}{}
-    placeholders := []string{}
-    argCount := 1
-
-    for _, p := range batch.Processes {
-        row := fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-            argCount, argCount+1, argCount+2, argCount+3, argCount+4,
-            argCount+5, argCount+6, argCount+7, argCount+8, argCount+9,
-            argCount+10, argCount+11, argCount+12, argCount+13, argCount+14,
-            argCount+15, argCount+16, argCount+17, argCount+18)
-
-        placeholders = append(placeholders, row)
-
-        values = append(values,
-            batch.InterviewSessionID,
-            batch.CandidateSessionID,
-            p.PID,
-            p.PPID,
-            p.Name,
-            p.Path,
-            p.Cmd,
-            p.Memory,
-            p.CPUUsage,
-            p.IsUserApp,
-            p.IsGuiApp,
-            p.Username,
-            p.ProcessType,
-            p.Category,
-            p.Confidence,
-            p.IsUnknown,
-            p.IsSuspicious,
-            p.IsElectron,
-            p.AlertLevel,
-        )
-        argCount += 19
-    }
-
-    finalQuery := queryPrefix + strings.Join(placeholders, ",")
-
-    _, err := h.DB.Exec(finalQuery, values...)
-    if err != nil {
-        log.Printf("Bulk log insert failed: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store process logs"})
-        return
-    }
-
-
-    c.JSON(http.StatusCreated, gin.H{
-        "status":  "success",
-        "message": "Logs processed",
-        "count":   len(batch.Processes),
-    })
-}
 func (h *Handlers) CreateInterviewSession(c *gin.Context) {
     var session models.InterviewSession
 
@@ -215,6 +143,7 @@ func (h *Handlers) CreateInterviewSession(c *gin.Context) {
     c.JSON(http.StatusCreated, session)
 }
 
+
 func (h *Handlers) CreateProcessReport(c *gin.Context) {
 	var report models.ProcessReport
 
@@ -228,9 +157,12 @@ func (h *Handlers) CreateProcessReport(c *gin.Context) {
 		return
 	}
 
-	if err := h.ensureSession(report.SessionID, report.CandidateEmail, report.CandidateName); err != nil {
-		log.Printf("Error ensuring session: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
+	var sessionExists bool
+	err := h.DB.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM interview_sessions WHERE session_id = $1)
+	`, report.SessionID).Scan(&sessionExists)
+	if err != nil || !sessionExists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "interview session not found"})
 		return
 	}
 
@@ -258,12 +190,12 @@ func (h *Handlers) CreateProcessReport(c *gin.Context) {
 	query := `
 		INSERT INTO process_reports (session_id, processes, alert_count, high_memory_alerts, unknown_electron_alerts)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, timestamp
+		RETURNING id, reported_at
 	`
 
 	var id int64
-	var timestamp time.Time
-	err = h.DB.QueryRow(query, report.SessionID, processesJSON, alertCount, highMemAlerts, electronAlerts).Scan(&id, &timestamp)
+	var reportedAt time.Time
+	err = h.DB.QueryRow(query, report.SessionID, processesJSON, alertCount, highMemAlerts, electronAlerts).Scan(&id, &reportedAt)
 	if err != nil {
 		log.Printf("Error inserting process report: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save process report"})
@@ -273,19 +205,18 @@ func (h *Handlers) CreateProcessReport(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"id":         id,
 		"session_id": report.SessionID,
-		"timestamp":  timestamp,
+		"timestamp":  reportedAt,
 		"alerts":     alertCount,
 	})
 }
-
 func (h *Handlers) GetProcessReports(c *gin.Context) {
 	sessionID := c.Param("session_id")
 
 	query := `
-		SELECT id, session_id, timestamp, processes, alert_count, high_memory_alerts, unknown_electron_alerts
+		SELECT id, session_id, reported_at, processes, alert_count, high_memory_alerts, unknown_electron_alerts
 		FROM process_reports
 		WHERE session_id = $1
-		ORDER BY timestamp DESC
+		ORDER BY reported_at DESC
 	`
 
 	rows, err := h.DB.Query(query, sessionID)
@@ -301,11 +232,11 @@ func (h *Handlers) GetProcessReports(c *gin.Context) {
 	for rows.Next() {
 		var id int64
 		var sessID string
-		var timestamp time.Time
+		var reportedAt time.Time
 		var processesJSON []byte
 		var alertCount, highMemAlerts, electronAlerts int
 
-		if err := rows.Scan(&id, &sessID, &timestamp, &processesJSON, &alertCount, &highMemAlerts, &electronAlerts); err != nil {
+		if err := rows.Scan(&id, &sessID, &reportedAt, &processesJSON, &alertCount, &highMemAlerts, &electronAlerts); err != nil {
 			log.Printf("Error scanning row: %v", err)
 			continue
 		}
@@ -319,7 +250,7 @@ func (h *Handlers) GetProcessReports(c *gin.Context) {
 		reports = append(reports, gin.H{
 			"id":                      id,
 			"session_id":              sessID,
-			"timestamp":               timestamp,
+			"timestamp":               reportedAt,
 			"processes":               processes,
 			"alert_count":             alertCount,
 			"high_memory_alerts":      highMemAlerts,
@@ -329,7 +260,6 @@ func (h *Handlers) GetProcessReports(c *gin.Context) {
 
 	c.JSON(http.StatusOK, reports)
 }
-
 func (h *Handlers) ListSessions(c *gin.Context) {
 	query := `
 		SELECT s.id, s.session_id, s.candidate_email, s.candidate_name, s.started_at, s.ended_at,
@@ -384,28 +314,40 @@ func (h *Handlers) ListSessions(c *gin.Context) {
 }
 
 func (h *Handlers) EndSession(c *gin.Context) {
-	sessionID := c.Param("session_id")
+    sessionID := c.Param("session_id")
 
-	query := `UPDATE sessions SET ended_at = NOW() WHERE session_id = $1`
-	_, err := h.DB.Exec(query, sessionID)
-	if err != nil {
-		log.Printf("Error ending session: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to end session"})
-		return
-	}
+    var req struct {
+        Notes  string `json:"notes"`
+        Status string `json:"status"`
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"status":     "success",
-		"session_id": sessionID,
-	})
+    if err := c.ShouldBindJSON(&req); err != nil || req.Status == "" {
+        req.Status = "completed"
+    }
+
+    query := `
+        UPDATE interview_sessions
+        SET ended_at = NOW(),
+            status = $1,
+            notes = $2
+        WHERE session_id = $3 AND ended_at IS NULL
+    `
+
+    result, err := h.DB.Exec(query, req.Status, req.Notes, sessionID)
+    if err != nil {
+        log.Printf("Error ending session: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to end session"})
+        return
+    }
+
+    rows, _ := result.RowsAffected()
+    if rows == 0 {
+        c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already ended"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"status": "session_ended", "session_id": sessionID})
 }
 
-func (h *Handlers) ensureSession(sessionID, email, name string) error {
-	query := `
-		INSERT INTO sessions (session_id, candidate_email, candidate_name)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (session_id) DO NOTHING
-	`
-	_, err := h.DB.Exec(query, sessionID, email, name)
-	return err
-}
+
+

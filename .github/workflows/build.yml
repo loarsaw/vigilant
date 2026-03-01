@@ -1,16 +1,18 @@
-name: Build & Publish For Windows and Linux
+name: Build & Publish All Apps
 
 on:
   push:
     branches:
       - master
+
 jobs:
   publish:
-    name: Build & Publish for ${{ matrix.os }}
+    name: Build ${{ matrix.app }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest , ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
+        app: [admin, vigilant, vigilant-code]
 
     steps:
       - name: Checkout repository
@@ -23,11 +25,14 @@ jobs:
         with:
           node-version: "22"
           cache: 'npm'
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
 
       - name: Install dependencies
+        working-directory: apps/${{ matrix.app }}
         run: npm install
 
       - name: Rebuild
+        working-directory: apps/${{ matrix.app }}
         run: npm run rebuild
 
       - name: Install Linux Build Dependencies
@@ -37,7 +42,7 @@ jobs:
           sudo apt-get install -y libdpkg-perl fakeroot rpm
 
       - name: Publish to GitHub Releases
+        working-directory: apps/${{ matrix.app }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npm run publish
+        run: npm run publish

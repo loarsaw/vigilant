@@ -225,7 +225,25 @@ func RunMigrations(db *sql.DB) error {
 			AFTER INSERT ON process_logs
 			FOR EACH ROW
 			EXECUTE FUNCTION update_alert_summary()`,
-	}
+	
+			// ========================================
+		// MIGRATION 9: Process reports table
+		// ========================================
+			`CREATE TABLE IF NOT EXISTS process_reports (
+				id BIGSERIAL PRIMARY KEY,
+				session_id VARCHAR(255) NOT NULL REFERENCES interview_sessions(session_id) ON DELETE CASCADE,
+				processes JSONB,
+				alert_count INTEGER DEFAULT 0,
+				high_memory_alerts INTEGER DEFAULT 0,
+				unknown_electron_alerts INTEGER DEFAULT 0,
+				reported_at TIMESTAMP DEFAULT NOW(),
+				created_at TIMESTAMP DEFAULT NOW()
+			)`,
+			`CREATE INDEX IF NOT EXISTS idx_process_reports_session ON process_reports(session_id)`,
+			`CREATE INDEX IF NOT EXISTS idx_process_reports_reported ON process_reports(reported_at DESC)`,
+		}
+
+
 
 	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {

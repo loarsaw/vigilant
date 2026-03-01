@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, setBaseURL } from '@/lib/axios';
+import { apiClient, setBaseURL, presenceSocket , setAuthToken } from '@/lib/axios';
+import { useEffect } from 'react';
 
 
 interface LoginCredentials {
@@ -8,25 +9,39 @@ interface LoginCredentials {
 }
 
 interface AuthUser {
-  id: string;
-  username: string;
-  workspace: string;
+  candidate_id: number;
+  email: string;
+  full_name: string;
+  session_id: number;
 }
 
+
 interface LoginResponse {
-  user: AuthUser;
+  candidate_id: number;
+  email: string;
+  expires_at: string;
+  full_name: string;
+  logged_in_at: string;
+  session_id: number;
+  token: string;
 }
+
 
 interface SetupStatus {
   assigned: boolean;
   setupPath?: string;
 }
 
-
 const authApi = {
-  login: async (workspace: string, credentials: LoginCredentials): Promise<LoginResponse> => {
+  login: async (
+    workspace: string,
+    credentials: LoginCredentials
+  ): Promise<LoginResponse> => {
     await setBaseURL(workspace);
-    const { data } = await apiClient.post<LoginResponse>('/auth/login', credentials);
+    const { data } = await apiClient.post<LoginResponse>('/auth/login', {
+      email: credentials.username,
+      password: credentials.password,
+    });
     return data;
   },
 
@@ -39,14 +54,16 @@ const authApi = {
     return data;
   },
 
-  checkSetup: async (workspace: string, username: string): Promise<SetupStatus> => {
+  checkSetup: async (
+    workspace: string,
+    username: string
+  ): Promise<SetupStatus> => {
     const { data } = await apiClient.get<SetupStatus>('/auth/setup-status', {
       params: { workspace, username },
     });
     return data;
   },
 };
-
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -62,7 +79,26 @@ export function useAuth() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const {
+useEffect(() => {
+  if (!user) return;
+
+  const token = apiClient.defaults.headers.common['Authorization']?.toString().replace('Bearer ', '');
+  if (!token) return;
+
+  presenceSocket.connect({
+    token, 
+    onStatusChange: status => {
+      console.log('[Presence]', status);
+    },
+  });
+
+  return () => {
+    presenceSocket.disconnect();
+  };
+}, [user?.candidate_id]);
+
+
+ const {
     mutateAsync: login,
     isPending: isLoggingIn,
     error: loginError,
@@ -75,14 +111,27 @@ export function useAuth() {
       workspace: string;
       credentials: LoginCredentials;
     }) => authApi.login(workspace, credentials),
-    onSuccess: (data) => {
-      queryClient.setQueryData(['auth', 'me'], data.user);
-    },
+    onSuccess: data => {          
+      setAuthToken(data.token);
+      queryClient.setQueryData(['auth', 'me'], {
+        candidate_id: data.candidate_id,
+        email: data.email,
+        full_name: data.full_name,
+        session_id: data.session_id,
+      });
+      presenceSocket.connect({
+        token: data.token,
+        onStatusChange: status => {
+          console.log('[Presence]', status);
+        },
+      });
+    }, 
   });
 
   const { mutateAsync: logout, isPending: isLoggingOut } = useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
+      presenceSocket.disconnect();
       queryClient.removeQueries({ queryKey: ['auth'] });
       queryClient.clear();
     },
@@ -93,15 +142,22 @@ export function useAuth() {
       queryKey: ['auth', 'setup', workspace, username],
       queryFn: () => authApi.checkSetup(workspace, username),
       enabled,
-      refetchInterval: (query) => (query.state.data?.assigned ? false : 3000),
+      refetchInterval: query => (query.state.data?.assigned ? false : 3000),
       retry: false,
     });
 
+const setSessionMeta = (workspace: string, setupPath: string) => {
+  queryClient.setQueryData(['auth', 'session-meta'], { workspace, setupPath });
+};
+
+const sessionMeta = queryClient.getQueryData<{ workspace: string; setupPath: string }>(['auth', 'session-meta']);
   return {
     user: user ?? null,
     isAuthenticated: !!user,
     isLoadingUser,
     isAuthError,
+    setSessionMeta,
+    sessionMeta,
 
     login,
     isLoggingIn,

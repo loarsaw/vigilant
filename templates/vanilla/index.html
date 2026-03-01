@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      body { font-family: sans-serif; max-width: 480px; margin: 40px auto; padding: 24px; }
+      button { background: #F7DF1E; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-weight: 700; font-size: 15px; }
+      input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; }
+      li { display: flex; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-radius: 8px; margin-bottom: 6px; list-style: none; }
+      .rm { background: none; border: none; cursor: pointer; color: #ef4444; font-size: 16px; }
+      #controls { display: flex; gap: 12px; align-items: center; }
+      #count { font-size: 24px; font-weight: 700; }
+      #todo-row { display: flex; gap: 8px; margin-bottom: 12px; }
+      ul { padding: 0; }
+    </style>
+  </head>
+  <body>
+    <h2>🟨 Vanilla JS Sandbox</h2>
+
+    <h3>Counter</h3>
+    <div id="controls">
+      <button id="dec">−</button>
+      <span id="count">0</span>
+      <button id="inc">+</button>
+    </div>
+
+    <h3>Todo List</h3>
+    <div id="todo-row">
+      <input id="inp" placeholder="Add a task..." />
+      <button id="add">Add</button>
+    </div>
+    <ul id="list">
+      <li>Buy groceries <button class="rm">✕</button></li>
+    </ul>
+
+    <script src="index.js"></script>
+  </body>
+</html>
