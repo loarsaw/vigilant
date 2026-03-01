@@ -119,10 +119,14 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 	args = append(args, candidateID)
 
 	query := fmt.Sprintf(
-		"UPDATE candidates SET %s WHERE id = $%d",
-		strings.Join(updates, ", "),
-		argID,
-	)
+    "UPDATE candidates SET %s WHERE id = $%d::uuid",
+    strings.Join(updates, ", "),
+    argID,
+)
+
+	log.Printf("Query: %s", query)
+    log.Printf("Args: %v", args)
+	log.Printf("current_stage_qualified value: %v, pointer: %v", req.CurrentStageQualified, *req.CurrentStageQualified)
 
 	result, err := h.DB.Exec(query, args...)
 	if err != nil {
@@ -145,149 +149,157 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 
 
 func (h *AdminHandlers) BulkCreateCandidates(c *gin.Context) {
-    var req []struct {
-        Email    string `json:"email"`
-        Password string `json:"password"`
-        FullName string `json:"full_name"`
-    }
+	var req []struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+		FullName string `json:"full_name"`
+	}
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-        return
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
 
-    if len(req) == 0 {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "no candidates provided"})
-        return
-    }
+	if len(req) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no candidates provided"})
+		return
+	}
 
-    const maxBatchSize = 500
-    if len(req) > maxBatchSize {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error": fmt.Sprintf("batch size exceeds maximum of %d", maxBatchSize),
-        })
-        return
-    }
+	const maxBatchSize = 500
+	if len(req) > maxBatchSize {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("batch size exceeds maximum of %d", maxBatchSize),
+		})
+		return
+	}
 
+	type preparedCandidate struct {
+		ID           string
+		Email        string
+		PasswordHash string
+		FullName     string
+	}
 
-    type preparedCandidate struct {
-        ID           string 
-        Email        string
-        PasswordHash string
-        FullName     string
-    }
+	var validationErrors []gin.H
+	prepared := make([]preparedCandidate, 0, len(req))
 
-    var validationErrors []gin.H
-    prepared := make([]preparedCandidate, 0, len(req))
+	for i, candidate := range req {
+		candidate.Email = strings.ToLower(strings.TrimSpace(candidate.Email))
 
-    for i, candidate := range req {
-        candidate.Email = strings.ToLower(strings.TrimSpace(candidate.Email))
+		rowErrors := gin.H{}
+		hasError := false
 
-        rowErrors := gin.H{}
-        hasError := false
+		if candidate.Email == "" {
+			rowErrors["email"] = "email is required"
+			hasError = true
+		}
+		if len(candidate.Password) < 8 {
+			rowErrors["password"] = "password must be at least 8 characters"
+			hasError = true
+		}
+		if len(candidate.Password) > 72 {
+			rowErrors["password"] = "password must be 72 characters or fewer"
+			hasError = true
+		}
 
-        if candidate.Email == "" {
-            rowErrors["email"] = "email is required"
-            hasError = true
-        }
-        if len(candidate.Password) < 8 {
-            rowErrors["password"] = "password must be at least 8 characters"
-            hasError = true
-        }
-        if len(candidate.Password) > 72 {
-            rowErrors["password"] = "password must be 72 characters or fewer"
-            hasError = true
-        }
+		if hasError {
+			rowErrors["index"] = i
+			rowErrors["email"] = candidate.Email
+			validationErrors = append(validationErrors, rowErrors)
+			continue
+		}
 
-        if hasError {
-            rowErrors["index"] = i
-            rowErrors["email"] = candidate.Email
-            validationErrors = append(validationErrors, rowErrors)
-            continue
-        }
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("Error hashing password for %s: %v", candidate.Email, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process passwords"})
+			return
+		}
 
-        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
-        if err != nil {
-            log.Printf("Error hashing password for %s: %v", candidate.Email, err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process passwords"})
-            return
-        }
+		prepared = append(prepared, preparedCandidate{
+			ID:           uuid.New().String(),
+			Email:        candidate.Email,
+			PasswordHash: string(hashedPassword),
+			FullName:     candidate.FullName,
+		})
+	}
 
-        prepared = append(prepared, preparedCandidate{
-            ID:           uuid.New().String(),
-            Email:        candidate.Email,
-            PasswordHash: string(hashedPassword),
-            FullName:     candidate.FullName,
-        })
-    }
+	if len(validationErrors) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "validation failed for one or more candidates",
+			"errors": validationErrors,
+		})
+		return
+	}
 
-    if len(validationErrors) > 0 {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error":  "validation failed for one or more candidates",
-            "errors": validationErrors,
-        })
-        return
-    }
-    ctx := c.Request.Context()
+	ctx := c.Request.Context()
 
-    tx, err := h.DB.BeginTx(ctx, nil)
-    if err != nil {
-        log.Printf("Error starting transaction: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-        return
-    }
-    defer func() {
-        if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-            log.Printf("Error rolling back transaction: %v", err)
-        }
-    }()
+	tx, err := h.DB.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("Error starting transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("Error rolling back transaction: %v", err)
+		}
+	}()
 
-    stmt, err := tx.PrepareContext(ctx, `
-        INSERT INTO candidates (id, email, password_hash, full_name, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, NOW(), NOW())
-    `)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare statement"})
-        return
-    }
-    defer stmt.Close()
+	// ON CONFLICT — if email exists, update password and updated_at only
+	// All other fields (name, stage, active status) are preserved
+	stmt, err := tx.PrepareContext(ctx, `
+		INSERT INTO candidates (id, email, password_hash, full_name, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, NOW(), NOW())
+		ON CONFLICT (email) DO UPDATE SET
+			password_hash = EXCLUDED.password_hash,
+			updated_at = NOW()
+		RETURNING (xmax = 0) AS was_inserted
+	`)
+	if err != nil {
+		log.Printf("Error preparing statement: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare statement"})
+		return
+	}
+	defer stmt.Close()
 
-    var conflicts []string
+	inserted := 0
+	updated := 0
 
-    for _, candidate := range prepared {
-        _, err = stmt.ExecContext(ctx, candidate.ID, candidate.Email, candidate.PasswordHash, candidate.FullName)
-        if err != nil {
-            var pqErr *pq.Error
-            if errors.As(err, &pqErr) && pqErr.Code == "23505" {
-                conflicts = append(conflicts, candidate.Email)
-                continue
-            }
-            log.Printf("Error inserting candidate %s: %v", candidate.Email, err)
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to insert candidates"})
-            return
-        }
-    }
+	for _, candidate := range prepared {
+		var wasInserted bool
+		err = stmt.QueryRowContext(ctx,
+			candidate.ID,
+			candidate.Email,
+			candidate.PasswordHash,
+			candidate.FullName,
+		).Scan(&wasInserted)
 
-    if len(conflicts) > 0 {
-        c.JSON(http.StatusConflict, gin.H{
-            "error":     "one or more candidates already exist",
-            "conflicts": conflicts,
-        })
-        return
-    }
+		if err != nil {
+			log.Printf("Error upserting candidate %s: %v", candidate.Email, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process candidates"})
+			return
+		}
 
-    if err := tx.Commit(); err != nil {
-        log.Printf("Error committing transaction: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit transaction"})
-        return
-    }
+		if wasInserted {
+			inserted++
+		} else {
+			updated++
+		}
+	}
 
-    c.JSON(http.StatusCreated, gin.H{
-        "message": "successfully imported candidates",
-        "count":   len(prepared),
-    })
+	if err := tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit transaction"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "import completed",
+		"inserted": inserted,
+		"updated":  updated,
+	})
 }
-
 func processRows(records [][]string) []UserData {
 	var users []UserData
 	for i, row := range records {
@@ -459,7 +471,10 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	args = append(args, limit, offset)
 
 	dataQuery := fmt.Sprintf(`
-		SELECT id, email, full_name, created_at, updated_at, is_active, last_login
+		SELECT
+			id, email, full_name, created_at, updated_at, is_active,
+			interview_current_stage, interview_next_stage,
+			current_stage_qualified, interview_completed, last_login
 		FROM candidates
 		%s
 		ORDER BY created_at DESC
@@ -482,17 +497,38 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	candidates := []CandidateWithPresence{}
 	for rows.Next() {
 		var cand models.Candidate
+		var interviewCurrentStage, interviewNextStage sql.NullString
+
 		if err := rows.Scan(
-			&cand.ID, &cand.Email, &cand.FullName,
-			&cand.CreatedAt, &cand.UpdatedAt, &cand.IsActive, &cand.LastLogin,
+			&cand.ID,
+			&cand.Email,
+			&cand.FullName,
+			&cand.CreatedAt,
+			&cand.UpdatedAt,
+			&cand.IsActive,
+			&interviewCurrentStage,
+			&interviewNextStage,
+			&cand.CurrentStageQualified,
+			&cand.InterviewCompleted,
+			&cand.LastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
 		}
+
+		cand.InterviewCurrentStage = interviewCurrentStage.String
+		cand.InterviewNextStage = interviewNextStage.String
+
 		candidates = append(candidates, CandidateWithPresence{
 			Candidate: cand,
-			IsOnline:  websocket.Manager.IsActive(fmt.Sprintf("%d", cand.ID)),
+			IsOnline:  websocket.Manager.IsActive(cand.ID),
 		})
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("Error iterating candidates: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidates"})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -503,17 +539,21 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 		"total_pages": int(math.Ceil(float64(total) / float64(limit))),
 	})
 }
-
 func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 
 	query := `
-		SELECT id, email, full_name, created_at, updated_at, is_active, last_login
+		SELECT 
+			id, email, full_name, created_at, updated_at, is_active,
+			interview_current_stage, interview_next_stage,
+			current_stage_qualified, interview_completed, last_login
 		FROM candidates
-		WHERE id = $1
+		WHERE id = $1::uuid
 	`
 
 	var cand models.Candidate
+	var interviewCurrentStage, interviewNextStage sql.NullString
+
 	err := h.DB.QueryRow(query, candidateID).Scan(
 		&cand.ID,
 		&cand.Email,
@@ -521,6 +561,10 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		&cand.CreatedAt,
 		&cand.UpdatedAt,
 		&cand.IsActive,
+		&interviewCurrentStage,
+		&interviewNextStage,
+		&cand.CurrentStageQualified,
+		&cand.InterviewCompleted,
 		&cand.LastLogin,
 	)
 
@@ -528,20 +572,20 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
 		return
 	}
-
 	if err != nil {
 		log.Printf("Error querying candidate: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidate"})
 		return
 	}
 
+	cand.InterviewCurrentStage = interviewCurrentStage.String
+	cand.InterviewNextStage = interviewNextStage.String
+
 	c.JSON(http.StatusOK, gin.H{
 		"candidate": cand,
-		"is_online": websocket.Manager.IsActive(fmt.Sprintf("%d", cand.ID)),
+		"is_online": websocket.Manager.IsActive(cand.ID),
 	})
 }
-
-
 func (h *AdminHandlers) DeleteCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 

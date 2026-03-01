@@ -56,6 +56,12 @@ interface ActiveUsersResponse {
   count: number;
 }
 
+async function bulkCreateCandidates(candidates: { full_name: string; email: string; password: string }[]): Promise<{ message: string; count: number }> {
+  const response = await apiClient.post('/bulk-candidates', candidates);
+  return response.data;
+}
+
+
 async function fetchCandidates(params: CandidateQueryParams): Promise<PaginatedResponse> {
   const response = await apiClient.get<PaginatedResponse>('/candidates', { params });
   return response.data;
@@ -67,7 +73,7 @@ async function fetchCandidate(id: string): Promise<CandidateResponse> {
 }
 
 async function updateCandidate({ id, payload }: UpdateCandidateVariables): Promise<void> {
-  await apiClient.patch(`/candidates/${id}`, payload);
+  await apiClient.put(`/candidates/${id}`, payload);
 }
 
 async function fetchActiveUsers(): Promise<ActiveUsersResponse> {
@@ -120,6 +126,15 @@ const useCandidate = (id: string | undefined) => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+
+const bulkCreateMutation = useMutation({
+  mutationFn: bulkCreateCandidates,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['candidates'] });
+  },
+});
+
 
 
 const createMutation = useMutation<Candidate, Error, Parameters<typeof createCandidate>[0]>({
@@ -179,5 +194,9 @@ return {
     updateCandidate: updateMutation.mutate,
     isUpdating: updateMutation.isPending,
     updateError: updateMutation.error?.message ?? null,
+
+     bulkCreateCandidates: bulkCreateMutation.mutate,
+  isBulkCreating: bulkCreateMutation.isPending,
+  bulkCreateError: bulkCreateMutation.error?.message ?? null,
   };
 }

@@ -18,7 +18,7 @@ root.render(
       <Routes>
         <Route path="/" Component={Login} />
         <Route path="/dashboard" Component={Dashboard} />
-        <Route path="/candidates" Component={CandidateReviewPage}/>
+        <Route path="/candidate-list" Component={CandidateReviewPage}/>
        <Route path="/candidates/:candidateId" Component={CandidatePage} />
       </Routes>
     </HashRouter>
