@@ -5,12 +5,14 @@ import (
 	"log"
 	"net/http"
 	"time"
-
+    "strings"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/golang-jwt/jwt/v5"
 	"vigilant/config"
 	"vigilant/models"
+	"github.com/google/uuid"
+
 )
 
 type AuthHandlers struct {
@@ -18,108 +20,121 @@ type AuthHandlers struct {
 	Cfg *config.Config
 }
 
+
 func (h *AuthHandlers) Login(c *gin.Context) {
-	var req models.CandidateLogin
+    var req models.CandidateLogin
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-		return
-	}
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+        return
+    }
 
-	if req.Email == "" || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
-		return
-	}
+	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
-	query := `
-		SELECT id, email, password_hash, full_name, is_active
-		FROM candidates
-		WHERE email = $1
-	`
+    if req.Email == "" || req.Password == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
+        return
+    }
 
-	var candidate models.Candidate
-	err := h.DB.QueryRow(query, req.Email).Scan(
-		&candidate.ID,
-		&candidate.Email,
-		&candidate.PasswordHash,
-		&candidate.FullName,
-		&candidate.IsActive,
-	)
+    ctx := c.Request.Context()
 
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
-		return
-	}
+    query := `
+        SELECT id, email, password_hash, full_name, is_active
+        FROM candidates
+        WHERE email = $1
+    `
 
-	if err != nil {
-		log.Printf("Error querying candidate: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "authentication failed"})
-		return
-	}
+    var candidate models.Candidate
+    err := h.DB.QueryRowContext(ctx, query, req.Email).Scan(
+        &candidate.ID,
+        &candidate.Email,
+        &candidate.PasswordHash,
+        &candidate.FullName,
+        &candidate.IsActive,
+    )
 
-	if !candidate.IsActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "account is disabled"})
-		return
-	}
+    if err == sql.ErrNoRows {
+        bcrypt.CompareHashAndPassword([]byte("$2a$10$dummy.hash.to.waste.time"), []byte(req.Password))
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+        return
+    }
 
-	err = bcrypt.CompareHashAndPassword([]byte(candidate.PasswordHash), []byte(req.Password))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
-		return
-	}
+    if err != nil {
+        log.Printf("Error querying candidate: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "authentication failed"})
+        return
+    }
 
-	clientIP := c.ClientIP()
-	userAgent := c.GetHeader("User-Agent")
-	systemType := c.GetHeader("X-System-Type")
+    if !candidate.IsActive {
+        c.JSON(http.StatusForbidden, gin.H{"error": "account is disabled"})
+        return
+    }
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"candidate_id": candidate.ID,
-		"email":        candidate.Email,
-		"exp":          time.Now().Add(24 * time.Hour).Unix(),
-	})
+    if err = bcrypt.CompareHashAndPassword([]byte(candidate.PasswordHash), []byte(req.Password)); err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
+        return
+    }
 
-	tokenString, err := token.SignedString([]byte(h.Cfg.JWTSecret))
-	if err != nil {
-		log.Printf("Error generating token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate session token"})
-		return
-	}
+    clientIP := c.ClientIP()
+    userAgent := c.GetHeader("User-Agent")
+    systemType := c.GetHeader("X-System-Type")
 
-	sessionQuery := `
-		INSERT INTO candidate_sessions (
-			candidate_id, session_token, ip_address, user_agent, system_type, is_active
-		)
-		VALUES ($1, $2, $3, $4, $5, true)
-		RETURNING id, logged_in_at
-	`
+    expiresAt := time.Now().Add(24 * time.Hour)
 
-	var sessionID int64
-	var loggedInAt time.Time
-	err = h.DB.QueryRow(sessionQuery, candidate.ID, tokenString, clientIP, userAgent, systemType).Scan(
-		&sessionID,
-		&loggedInAt,
-	)
+    tokenID := uuid.New().String()
 
-	if err != nil {
-		log.Printf("Error creating session: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
-		return
-	}
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+        "jti":          tokenID,
+        "candidate_id": candidate.ID,
+        "email":        candidate.Email,
+        "exp":          expiresAt.Unix(),
+        "iat":          time.Now().Unix(),
+    })
 
-	h.DB.Exec("UPDATE candidates SET last_login = NOW() WHERE id = $1", candidate.ID)
-	h.logAudit(candidate.ID, "login", "candidate_session", &sessionID, clientIP, userAgent)
+    tokenString, err := token.SignedString([]byte(h.Cfg.JWTSecret))
+    if err != nil {
+        log.Printf("Error generating token: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate session token"})
+        return
+    }
 
-	c.JSON(http.StatusOK, gin.H{
-		"token":        tokenString,
-		"candidate_id": candidate.ID,
-		"email":        candidate.Email,
-		"full_name":    candidate.FullName,
-		"session_id":   sessionID,
-		"logged_in_at": loggedInAt,
-		"expires_at":   time.Now().Add(24 * time.Hour),
-	})
+    sessionQuery := `
+        INSERT INTO candidate_sessions (
+            candidate_id, session_token, ip_address, user_agent, system_type, is_active
+        )
+        VALUES ($1, $2, $3::inet, $4, $5, true)
+        RETURNING id, logged_in_at
+    `
+
+    var sessionID int64
+    var loggedInAt time.Time
+    err = h.DB.QueryRowContext(ctx, sessionQuery,
+        candidate.ID, tokenString, clientIP, userAgent, systemType,
+    ).Scan(&sessionID, &loggedInAt)
+
+    if err != nil {
+        log.Printf("Error creating session: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
+        return
+    }
+
+    if _, err := h.DB.ExecContext(ctx, "UPDATE candidates SET last_login = NOW() WHERE id = $1", candidate.ID); err != nil {
+		log.Printf("Warning: failed to update last_login for candidate %s: %v", candidate.ID, err)
+
+    }
+
+    h.logAudit(candidate.ID, "login", "candidate_session", &sessionID, clientIP, userAgent)
+
+    c.JSON(http.StatusOK, gin.H{
+        "token":        tokenString,
+        "candidate_id": candidate.ID,
+        "email":        candidate.Email,
+        "full_name":    candidate.FullName,
+        "session_id":   sessionID,
+        "logged_in_at": loggedInAt,
+        "expires_at":   expiresAt,
+    })
 }
-
 func (h *AuthHandlers) Logout(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {
@@ -146,7 +161,9 @@ func (h *AuthHandlers) Logout(c *gin.Context) {
 		return
 	}
 
-	candidateID := int64(claims["candidate_id"].(float64))
+	// candidateID := int64(claims["candidate_id"].(float64))
+	candidateID := claims["candidate_id"].(string)
+
 
 	query := `
 		UPDATE candidate_sessions
@@ -207,7 +224,7 @@ func (h *AuthHandlers) GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, candidate)
 }
 
-func (h *AuthHandlers) logAudit(candidateID int64, action, entityType string, entityID *int64, ip, userAgent string) {
+func (h *AuthHandlers) logAudit(candidateID string, action, entityType string, entityID *int64, ip, userAgent string) {
 	query := `
 		INSERT INTO audit_log (candidate_id, action, entity_type, entity_id, ip_address, user_agent)
 		VALUES ($1, $2, $3, $4, $5, $6)

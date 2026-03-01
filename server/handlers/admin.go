@@ -17,9 +17,11 @@ import (
 	"strconv"
 	"math"
 	"vigilant/websocket"
+    "errors"
+	"github.com/google/uuid"
+    "github.com/lib/pq"
 
 )
-
 
 type UserData struct {
 	Name  string `json:"name"`
@@ -140,6 +142,8 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 		"id":     candidateID,
 	})
 }
+
+
 func (h *AdminHandlers) BulkCreateCandidates(c *gin.Context) {
     var req []struct {
         Email    string `json:"email"`
@@ -157,61 +161,132 @@ func (h *AdminHandlers) BulkCreateCandidates(c *gin.Context) {
         return
     }
 
-    tx, err := h.DB.Begin()
+    const maxBatchSize = 500
+    if len(req) > maxBatchSize {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error": fmt.Sprintf("batch size exceeds maximum of %d", maxBatchSize),
+        })
+        return
+    }
+
+
+    type preparedCandidate struct {
+        ID           string 
+        Email        string
+        PasswordHash string
+        FullName     string
+    }
+
+    var validationErrors []gin.H
+    prepared := make([]preparedCandidate, 0, len(req))
+
+    for i, candidate := range req {
+        candidate.Email = strings.ToLower(strings.TrimSpace(candidate.Email))
+
+        rowErrors := gin.H{}
+        hasError := false
+
+        if candidate.Email == "" {
+            rowErrors["email"] = "email is required"
+            hasError = true
+        }
+        if len(candidate.Password) < 8 {
+            rowErrors["password"] = "password must be at least 8 characters"
+            hasError = true
+        }
+        if len(candidate.Password) > 72 {
+            rowErrors["password"] = "password must be 72 characters or fewer"
+            hasError = true
+        }
+
+        if hasError {
+            rowErrors["index"] = i
+            rowErrors["email"] = candidate.Email
+            validationErrors = append(validationErrors, rowErrors)
+            continue
+        }
+
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
+        if err != nil {
+            log.Printf("Error hashing password for %s: %v", candidate.Email, err)
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process passwords"})
+            return
+        }
+
+        prepared = append(prepared, preparedCandidate{
+            ID:           uuid.New().String(),
+            Email:        candidate.Email,
+            PasswordHash: string(hashedPassword),
+            FullName:     candidate.FullName,
+        })
+    }
+
+    if len(validationErrors) > 0 {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error":  "validation failed for one or more candidates",
+            "errors": validationErrors,
+        })
+        return
+    }
+    ctx := c.Request.Context()
+
+    tx, err := h.DB.BeginTx(ctx, nil)
     if err != nil {
         log.Printf("Error starting transaction: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
         return
     }
+    defer func() {
+        if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+            log.Printf("Error rolling back transaction: %v", err)
+        }
+    }()
 
-    stmt, err := tx.Prepare(`
-        INSERT INTO candidates (email, password_hash, full_name, created_at, updated_at)
-        VALUES ($1, $2, $3, NOW(), NOW())
+    stmt, err := tx.PrepareContext(ctx, `
+        INSERT INTO candidates (id, email, password_hash, full_name, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, NOW(), NOW())
     `)
     if err != nil {
-        tx.Rollback()
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare statement"})
         return
     }
     defer stmt.Close()
 
-    for _, candidate := range req {
-        if candidate.Email == "" || len(candidate.Password) < 8 {
-            tx.Rollback()
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid data for candidate: " + candidate.Email})
-            return
-        }
+    var conflicts []string
 
-        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
+    for _, candidate := range prepared {
+        _, err = stmt.ExecContext(ctx, candidate.ID, candidate.Email, candidate.PasswordHash, candidate.FullName)
         if err != nil {
-            tx.Rollback()
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "hashing failed"})
-            return
-        }
-
-        _, err = stmt.Exec(candidate.Email, string(hashedPassword), candidate.FullName)
-        if err != nil {
-            tx.Rollback()
-            if strings.Contains(err.Error(), "duplicate key") {
-                c.JSON(http.StatusConflict, gin.H{"error": "conflict: candidate " + candidate.Email + " already exists"})
-                return
+            var pqErr *pq.Error
+            if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+                conflicts = append(conflicts, candidate.Email)
+                continue
             }
+            log.Printf("Error inserting candidate %s: %v", candidate.Email, err)
             c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to insert candidates"})
             return
         }
     }
 
+    if len(conflicts) > 0 {
+        c.JSON(http.StatusConflict, gin.H{
+            "error":     "one or more candidates already exist",
+            "conflicts": conflicts,
+        })
+        return
+    }
+
     if err := tx.Commit(); err != nil {
+        log.Printf("Error committing transaction: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit transaction"})
         return
     }
 
     c.JSON(http.StatusCreated, gin.H{
-        "message": "Successfully imported candidates",
-        "count":   len(req),
+        "message": "successfully imported candidates",
+        "count":   len(prepared),
     })
 }
-
 
 func processRows(records [][]string) []UserData {
 	var users []UserData
@@ -285,61 +360,69 @@ fileHeader, err := c.FormFile("file")
 }
 
 func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		FullName string `json:"full_name"`
-	}
+    var req struct {
+        Email    string `json:"email" binding:"required,email"`
+        Password string `json:"password" binding:"required,min=8"`
+        FullName string `json:"full_name"`
+    }
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-		return
-	}
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
 
-	if req.Email == "" || req.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email and password are required"})
-		return
-	}
+    req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
-	if len(req.Password) < 8 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
-		return
-	}
+    if len(req.Password) > 72 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "password must be 72 characters or fewer"})
+        return
+    }
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Printf("Error hashing password: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
-		return
-	}
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+    if err != nil {
+        log.Printf("Error hashing password: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
+        return
+    }
 
-	query := `
-		INSERT INTO candidates (email, password_hash, full_name, created_at, updated_at)
-		VALUES ($1, $2, $3, NOW(), NOW())
-		RETURNING id, email, full_name, created_at, is_active
-	`
+    ctx := c.Request.Context()
 
-	var candidate models.Candidate
-	err = h.DB.QueryRow(query, req.Email, string(hashedPassword), req.FullName).Scan(
-		&candidate.ID,
-		&candidate.Email,
-		&candidate.FullName,
-		&candidate.CreatedAt,
-		&candidate.IsActive,
-	)
+    query := `
+        INSERT INTO candidates (email, password_hash, full_name, created_at, updated_at)
+        VALUES ($1, $2, $3, NOW(), NOW())
+        RETURNING id, email, full_name, created_at, is_active
+    `
 
-	if err != nil {
-		if strings.Contains(err.Error(), "duplicate key") {
-			c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
-			return
-		}
-		log.Printf("Error creating candidate: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create candidate"})
-		return
-	}
+    var candidate models.Candidate
+    err = h.DB.QueryRowContext(ctx, query, req.Email, string(hashedPassword), req.FullName).Scan(
+        &candidate.ID,
+        &candidate.Email,
+        &candidate.FullName,
+        &candidate.CreatedAt,
+        &candidate.IsActive,
+    )
 
-	c.JSON(http.StatusCreated, candidate)
+    if err != nil {
+        var pqErr *pq.Error
+        if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+            c.JSON(http.StatusConflict, gin.H{"error": "email already exists"})
+            return
+        }
+        log.Printf("Error creating candidate: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create candidate"})
+        return
+    }
+
+    c.JSON(http.StatusCreated, gin.H{
+        "id":         candidate.ID,
+        "email":      candidate.Email,
+        "full_name":  candidate.FullName,
+        "created_at": candidate.CreatedAt,
+        "is_active":  candidate.IsActive,
+    })
 }
+
+
 func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")

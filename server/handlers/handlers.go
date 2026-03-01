@@ -9,6 +9,9 @@ import (
 	"time"
 	"github.com/gin-gonic/gin"
 	"vigilant/models"
+	"github.com/google/uuid"
+    "github.com/lib/pq"
+    "errors"
 
 )
 
@@ -73,6 +76,8 @@ func (h *Handlers) GetActiveInterview(c *gin.Context) {
     candidateID := c.Param("candidate_id")
 
     var session models.InterviewSession
+    var position sql.NullString 
+
     query := `
         SELECT id, session_id, status, position
         FROM interview_sessions
@@ -83,7 +88,7 @@ func (h *Handlers) GetActiveInterview(c *gin.Context) {
         &session.ID,
         &session.SessionID,
         &session.Status,
-        &session.Position,
+        &position,
     )
 
     if err == sql.ErrNoRows {
@@ -94,55 +99,79 @@ func (h *Handlers) GetActiveInterview(c *gin.Context) {
         return
     }
 
-    c.JSON(http.StatusOK, session)
+    c.JSON(http.StatusOK, gin.H{
+        "id":         session.ID,
+        "session_id": session.SessionID,
+        "status":     session.Status,
+        "position":   position.String, // empty string if NULL
+    })
 }
 
-
 func (h *Handlers) CreateInterviewSession(c *gin.Context) {
-    var session models.InterviewSession
+    var req struct {
+        CandidateSessionID int `json:"candidate_session_id"`
+    }
 
-    if err := c.ShouldBindJSON(&session); err != nil {
+    if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
         return
     }
 
-
-
-	if session.Status == "" {
-        session.Status = "in_progress"
+    if req.CandidateSessionID == 0 {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "candidate_session_id is required"})
+        return
     }
 
-    query := `
+    // Look up the candidate_id from the candidate_session
+    // Don't make the client send it — you already have it server-side
+    var candidateID string
+    err := h.DB.QueryRowContext(c.Request.Context(), `
+        SELECT candidate_id FROM candidate_sessions WHERE id = $1 AND is_active = true
+    `, req.CandidateSessionID).Scan(&candidateID)
 
+    if err == sql.ErrNoRows {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid or expired candidate session"})
+        return
+    }
+    if err != nil {
+        log.Printf("Error looking up candidate session: %v", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+        return
+    }
+
+    // Server generates the session_id — client never sends this
+    sessionID := uuid.New().String()
+
+    var id int
+    var createdAt time.Time
+
+    err = h.DB.QueryRowContext(c.Request.Context(), `
         INSERT INTO interview_sessions (
-            session_id, candidate_id, candidate_session_id,
-            interviewer_email,
-			 position, interview_type,
-            scheduled_duration, metadata, status, started_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-        RETURNING id, created_at`
-
-    err := h.DB.QueryRow(query,
-        session.SessionID,
-        session.CandidateID,
-        session.CandidateSessionID,
-        session.InterviewerEmail,
-        session.Position,
-        session.InterviewType,
-        session.ScheduledDuration,
-        session.Metadata,
-        session.Status,
-    ).Scan(&session.ID, &session.CreatedAt)
+            session_id, candidate_id, candidate_session_id, status, started_at
+        ) VALUES ($1, $2, $3, 'in_progress', NOW())
+        RETURNING id, created_at
+    `, sessionID, candidateID, req.CandidateSessionID).Scan(&id, &createdAt)
 
     if err != nil {
-        log.Printf("Error inserting interview session: %v", err)
+        var pqErr *pq.Error
+        if errors.As(err, &pqErr) && pqErr.Code == "23503" {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "candidate session not found"})
+            return
+        }
+        log.Printf("Error creating interview session: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create interview session"})
         return
     }
 
-    c.JSON(http.StatusCreated, session)
+    c.JSON(http.StatusCreated, gin.H{
+        "id":                   id,
+        "session_id":           sessionID,  // agent stores this and uses it for all process reports
+        "candidate_id":         candidateID,
+        "candidate_session_id": req.CandidateSessionID,
+        "status":               "in_progress",
+        "created_at":           createdAt,
+    })
 }
-
 
 func (h *Handlers) CreateProcessReport(c *gin.Context) {
 	var report models.ProcessReport
