@@ -62,12 +62,12 @@ type CandidateSession struct {
 }
 
 type CreateInterviewSessionRequest struct {
-	CandidateSessionID int64 `json:"candidate_session_id" validate:"required"`
+	CandidateSessionID string `json:"candidate_session_id" validate:"required"`
 }
 
 
 type InterviewSession struct {
-	ID                 int64      `json:"id"`
+	ID                 string      `json:"id"`
 	SessionID          string     `json:"session_id"`          
 	CandidateID        int64      `json:"candidate_id"`        
 	CandidateSessionID int64      `json:"candidate_session_id"`

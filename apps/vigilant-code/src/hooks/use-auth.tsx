@@ -67,8 +67,11 @@ const authApi = {
 
 export function useAuth() {
   const queryClient = useQueryClient();
-
-  const {
+  const hasToken = !!apiClient.defaults.headers.common['Authorization'];
+  const hasBaseURL = !!apiClient.defaults.baseURL;
+  const canFetchMe = hasToken && hasBaseURL;
+  
+const {
     data: user,
     isLoading: isLoadingUser,
     isError: isAuthError,
@@ -77,6 +80,8 @@ export function useAuth() {
     queryFn: authApi.me,
     retry: false,
     staleTime: 1000 * 60 * 5,
+    enabled: canFetchMe,
+       
   });
 
 useEffect(() => {

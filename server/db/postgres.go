@@ -64,7 +64,7 @@ func RunMigrations(db *sql.DB) error {
 		// candidate_id is now UUID to match candidates.id
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS candidate_sessions (
-			id SERIAL PRIMARY KEY,
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
 			session_token TEXT UNIQUE NOT NULL,
 			logged_in_at TIMESTAMP DEFAULT NOW(),
@@ -93,7 +93,8 @@ func RunMigrations(db *sql.DB) error {
 			id SERIAL PRIMARY KEY,
 			session_id VARCHAR(255) UNIQUE NOT NULL,
 			candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE SET NULL,
-			candidate_session_id INTEGER NOT NULL REFERENCES candidate_sessions(id) ON DELETE SET NULL,
+            candidate_session_id UUID NOT NULL REFERENCES candidate_sessions(id) ON DELETE SET NULL,  
+			
 			interviewer_email VARCHAR(255),
 			position VARCHAR(255),
 			interview_type VARCHAR(50),
@@ -117,7 +118,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS process_logs (
 			id BIGSERIAL PRIMARY KEY,
 			interview_session_id INTEGER NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
-			candidate_session_id INTEGER REFERENCES candidate_sessions(id) ON DELETE SET NULL,
+			candidate_session_id UUID REFERENCES candidate_sessions(id) ON DELETE SET NULL,
 			logged_at TIMESTAMP DEFAULT NOW(),
 			pid INTEGER NOT NULL,
 			ppid INTEGER,
