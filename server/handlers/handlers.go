@@ -109,7 +109,7 @@ func (h *Handlers) GetActiveInterview(c *gin.Context) {
 
 func (h *Handlers) CreateInterviewSession(c *gin.Context) {
     var req struct {
-        CandidateSessionID int `json:"candidate_session_id"`
+        CandidateSessionID string `json:"candidate_session_id"`
     }
 
     if err := c.ShouldBindJSON(&req); err != nil {
@@ -117,13 +117,11 @@ func (h *Handlers) CreateInterviewSession(c *gin.Context) {
         return
     }
 
-    if req.CandidateSessionID == 0 {
+    if req.CandidateSessionID == "" {  // was == 0
         c.JSON(http.StatusBadRequest, gin.H{"error": "candidate_session_id is required"})
         return
     }
 
-    // Look up the candidate_id from the candidate_session
-    // Don't make the client send it — you already have it server-side
     var candidateID string
     err := h.DB.QueryRowContext(c.Request.Context(), `
         SELECT candidate_id FROM candidate_sessions WHERE id = $1 AND is_active = true
@@ -139,7 +137,6 @@ func (h *Handlers) CreateInterviewSession(c *gin.Context) {
         return
     }
 
-    // Server generates the session_id — client never sends this
     sessionID := uuid.New().String()
 
     var id int
@@ -165,7 +162,7 @@ func (h *Handlers) CreateInterviewSession(c *gin.Context) {
 
     c.JSON(http.StatusCreated, gin.H{
         "id":                   id,
-        "session_id":           sessionID,  // agent stores this and uses it for all process reports
+        "session_id":           sessionID,
         "candidate_id":         candidateID,
         "candidate_session_id": req.CandidateSessionID,
         "status":               "in_progress",

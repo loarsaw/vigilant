@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -36,7 +35,11 @@ func (h *Handlers) SSEEvents(c *gin.Context) {
 		return
 	}
 
-	candidateID := fmt.Sprintf("%v", int64(claims["candidate_id"].(float64)))
+	candidateID, ok := claims["candidate_id"].(string)
+	if !ok || candidateID == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 	if candidateID == "" {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return

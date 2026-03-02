@@ -106,7 +106,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
         RETURNING id, logged_in_at
     `
 
-    var sessionID int64
+    var sessionID string
     var loggedInAt time.Time
     err = h.DB.QueryRowContext(ctx, sessionQuery,
         candidate.ID, tokenString, clientIP, userAgent, systemType,
@@ -224,10 +224,10 @@ func (h *AuthHandlers) GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, candidate)
 }
 
-func (h *AuthHandlers) logAudit(candidateID string, action, entityType string, entityID *int64, ip, userAgent string) {
-	query := `
-		INSERT INTO audit_log (candidate_id, action, entity_type, entity_id, ip_address, user_agent)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`
-	h.DB.Exec(query, candidateID, action, entityType, entityID, ip, userAgent)
+func (h *AuthHandlers) logAudit(candidateID string, action, entityType string, entityID *string, ip, userAgent string) {
+    query := `
+        INSERT INTO audit_log (candidate_id, action, entity_type, entity_id, ip_address, user_agent)
+        VALUES ($1, $2, $3, $4, $5, $6)
+    `
+    h.DB.Exec(query, candidateID, action, entityType, entityID, ip, userAgent)
 }

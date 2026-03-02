@@ -8,6 +8,15 @@ if (started) {
   app.quit();
 }
 
+let nativeAddon: any;
+try {
+  nativeAddon = require(
+    path.join(__dirname, '../../build/Release/process_monitor.node')
+  );
+} catch (error) {
+  console.error('❌ Failed to load native addon:', error);
+}
+
 ipcMain.handle('dev:isDev', async _event => {
   return { isDev: !app.isPackaged };
 });
@@ -39,6 +48,26 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow);
+
+ipcMain.handle('get-all-processes', async () => {
+  try {
+    if (!nativeAddon) {
+      throw new Error('Native addon not loaded');
+    }
+    const processes = nativeAddon.getProcesses();
+    // const values = findApps(processes);
+    // console.log(values, "values");
+    return { success: true, data: processes };
+  } catch (error: any) {
+    console.error('Error getting processes:', error);
+    return { success: false, error: error.message };
+  }
+});
+ipcMain.handle('shutdown-app', () => {
+  console.log('Shutting down application...');
+  app.quit();
+});
+
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
