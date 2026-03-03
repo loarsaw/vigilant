@@ -7,6 +7,14 @@ x-logging:
     options:
       max-size: 100M
 
+x-runner-common:
+  &runner-common
+  restart: always
+  logging:
+    driver: json-file
+    options:
+      max-size: 100M
+
 services:
   server:
     build: ./server
@@ -17,7 +25,16 @@ services:
       - ./vigilant.conf:/etc/vigilant/vigilant.conf:ro
     env_file: vigilant.conf
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      runner-c:
+        condition: service_started
+      runner-cpp:
+        condition: service_started
+      runner-js:
+        condition: service_started
+      runner-java:
+        condition: service_started
     <<: *default-logging
     restart: always
 
@@ -34,6 +51,34 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  runner-c:
+    build:
+      context: ./server/runners
+      dockerfile: c/Dockerfile
+    container_name: vigilant-runner-c
+    <<: *runner-common
+
+  runner-cpp:
+    build:
+      context: ./server/runners
+      dockerfile: cpp/Dockerfile
+    container_name: vigilant-runner-cpp
+    <<: *runner-common
+
+  runner-js:
+    build:
+      context: ./server/runners
+      dockerfile: js/Dockerfile
+    container_name: vigilant-runner-js
+    <<: *runner-common
+
+  runner-java:
+    build:
+      context: ./server/runners
+      dockerfile: java/Dockerfile
+    container_name: vigilant-runner-java
+    <<: *runner-common
 
 volumes:
   postgres_data:

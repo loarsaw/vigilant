@@ -93,8 +93,8 @@ func RunMigrations(db *sql.DB) error {
 			id SERIAL PRIMARY KEY,
 			session_id VARCHAR(255) UNIQUE NOT NULL,
 			candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE SET NULL,
-            candidate_session_id UUID NOT NULL REFERENCES candidate_sessions(id) ON DELETE SET NULL,  
-			
+            candidate_session_id UUID NOT NULL REFERENCES candidate_sessions(id) ON DELETE SET NULL,
+
 			interviewer_email VARCHAR(255),
 			position VARCHAR(255),
 			interview_type VARCHAR(50),
@@ -253,7 +253,25 @@ func RunMigrations(db *sql.DB) error {
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_process_reports_session ON process_reports(session_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_process_reports_reported ON process_reports(reported_at DESC)`,
-	}
+
+		`CREATE TABLE IF NOT EXISTS judge_submissions (
+            id         BIGSERIAL PRIMARY KEY,
+            language   TEXT      NOT NULL,
+            code       TEXT      NOT NULL,
+            stdout     TEXT      NOT NULL DEFAULT '',
+            stderr     TEXT      NOT NULL DEFAULT '',
+            exit_code  INT       NOT NULL DEFAULT 0,
+            time_ms    BIGINT    NOT NULL DEFAULT 0,
+            memory_kb  BIGINT    NOT NULL DEFAULT 0,
+            status     TEXT      NOT NULL DEFAULT 'pending',
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )`,
+		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_lang    ON judge_submissions(language)`,
+        `CREATE INDEX IF NOT EXISTS idx_judge_submissions_status  ON judge_submissions(status)`,
+        `CREATE INDEX IF NOT EXISTS idx_judge_submissions_created ON judge_submissions(created_at DESC)`,
+    }
+
+
 
 	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {
