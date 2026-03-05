@@ -9,6 +9,7 @@ import (
     "path/filepath"
     "strings"
 	"vigilant/config"
+	"encoding/base64"
 	"time"
     "github.com/xuri/excelize/v2"
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,13 @@ type AdminHandlers struct {
 	DB *sql.DB
     Cfg *config.Config
 	
+}
+
+
+func (h *AdminHandlers) ListLanguages(c *gin.Context) {
+    c.JSON(http.StatusOK, gin.H{
+        "languages": []string{"c", "cpp", "js", "python", "java"},
+    })
 }
 
 

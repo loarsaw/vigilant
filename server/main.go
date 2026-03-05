@@ -65,6 +65,13 @@ func main() {
 		admin.PUT("/candidates/:id", adminH.UpdateCandidate)
 		admin.DELETE("/candidates/:id", adminH.DeleteCandidate)
 		admin.GET("/dashboard", adminH.GetDashboardStats)
+
+
+	}
+
+	judgeApi := admin.Group("/judge")
+	{
+		judgeApi.GET("/languages", adminH.ListLanguages)
 	}
 
 	api := r.Group("/api/v1")
@@ -88,7 +95,8 @@ func main() {
 		judge.GET("/submissions",        h.ListSubmissions)
 		judge.GET("/submissions/:id",    h.GetSubmission)
 	}
-    
+
+
     r.GET("/api/v1/events", h.SSEEvents)
 	websocket.Manager.Cfg = cfg
 	r.GET("/api/v1/ws/presence", websocket.Manager.HandleConnection)
