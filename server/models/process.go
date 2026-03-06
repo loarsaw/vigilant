@@ -25,7 +25,13 @@ type Candidate struct {
 	FullName              string     `json:"full_name,omitempty"`
 	CreatedAt             time.Time  `json:"created_at"`
 	UpdatedAt             time.Time  `json:"updated_at"`
+	ResumeUrl             string     `json:"resume_url"`
+	PhoneNumber           string     `json:"phone_number"`
+	Skills                string     `json:"skills"`
 	IsActive              bool       `json:"is_active"`
+	ExperienceYears       uint8      `json:"experience_years"`
+	OnboadingComplete     bool 		 `json:"onboarding_complete"`
+	GithubUrl             string     `json:"github_url"`	 	
 	InterviewCurrentStage string     `json:"interview_current_stage"`
 	InterviewNextStage    string     `json:"interview_next_stage"`
 	CurrentStageQualified bool       `json:"current_stage_qualified"`

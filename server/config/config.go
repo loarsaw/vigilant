@@ -37,6 +37,9 @@ type Config struct {
 	HighMemoryThreshold  string
 	EnableWebsockets     string
 	AllowOrigin          string
+
+	// Encryption
+	EncryptionKey string
 }
 
 func Load() (*Config, error) {
@@ -129,6 +132,8 @@ func Load() (*Config, error) {
 			config.EnableWebsockets = value
 		case "ALLOW_ORIGIN":
 			config.AllowOrigin = value
+		case "ENCRYPTION_KEY":
+    		config.EncryptionKey = value			
 		}
 	}
 

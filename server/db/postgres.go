@@ -50,6 +50,12 @@ func RunMigrations(db *sql.DB) error {
 			created_at TIMESTAMP DEFAULT NOW(),
 			updated_at TIMESTAMP DEFAULT NOW(),
 			is_active BOOLEAN DEFAULT TRUE,
+			resume_url VARCHAR(512),
+			github_url VARCHAR(512),
+			skills VARCHAR(512),
+			phone_number VARCHAR(512),
+			experience_years SMALLINT CHECK (experience_years >= 0 AND experience_years <= 50),
+			onboarding_complete BOOLEAN DEFAULT FALSE,
 			interview_current_stage VARCHAR(255),
 			interview_next_stage VARCHAR(255),
 			current_stage_qualified BOOLEAN DEFAULT FALSE,
@@ -273,6 +279,23 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_lang    ON judge_submissions(language)`,
         `CREATE INDEX IF NOT EXISTS idx_judge_submissions_status  ON judge_submissions(status)`,
         `CREATE INDEX IF NOT EXISTS idx_judge_submissions_created ON judge_submissions(created_at DESC)`,
+
+
+		// ========================================
+		// MIGRATION 11: AWS SES credentials table
+		// Credentials are encrypted with AES-GCM before storage.
+		// Only one row ever exists (single global config).
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS email_config (
+			id                    SERIAL PRIMARY KEY,
+			aws_region            TEXT NOT NULL,
+			aws_access_key_id     TEXT NOT NULL,
+			aws_secret_access_key TEXT NOT NULL,
+			ses_from_email        TEXT NOT NULL,
+			ses_login_url         TEXT NOT NULL,
+			created_at            TIMESTAMP DEFAULT NOW(),
+			updated_at            TIMESTAMP DEFAULT NOW()
+		)`,
     }
 
 
