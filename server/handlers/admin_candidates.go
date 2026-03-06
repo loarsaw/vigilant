@@ -114,6 +114,8 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 
 	rows, err := h.DB.Query(fmt.Sprintf(`
 		SELECT id, email, full_name, created_at, updated_at, is_active,
+		       resume_url, github_url, skills, phone_number, experience_years,
+		       onboarding_complete,
 		       interview_current_stage, interview_next_stage,
 		       current_stage_qualified, interview_completed, last_login
 		FROM candidates %s
@@ -139,7 +141,10 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 
 		if err := rows.Scan(
 			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
-			&cand.IsActive, &interviewCurrentStage, &interviewNextStage,
+			&cand.IsActive,
+			&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
+			&cand.OnboadingComplete,
+			&interviewCurrentStage, &interviewNextStage,
 			&cand.CurrentStageQualified, &cand.InterviewCompleted, &cand.LastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
@@ -178,12 +183,17 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 
 	err := h.DB.QueryRow(`
 		SELECT id, email, full_name, created_at, updated_at, is_active,
+		       resume_url, github_url, skills, phone_number, experience_years,
+		       onboarding_complete,
 		       interview_current_stage, interview_next_stage,
 		       current_stage_qualified, interview_completed, last_login
 		FROM candidates WHERE id = $1::uuid
 	`, candidateID).Scan(
 		&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
-		&cand.IsActive, &interviewCurrentStage, &interviewNextStage,
+		&cand.IsActive,
+		&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
+		&cand.OnboadingComplete,
+		&interviewCurrentStage, &interviewNextStage,
 		&cand.CurrentStageQualified, &cand.InterviewCompleted, &cand.LastLogin,
 	)
 	if err == sql.ErrNoRows {
