@@ -73,7 +73,8 @@ func RunMigrations(db *sql.DB) error {
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email);
-	CREATE INDEX IF NOT EXISTS idx_candidates_created ON candidates(created_at DESC);`
+	CREATE INDEX IF NOT EXISTS idx_candidates_created ON candidates(created_at DESC);
+	`,
 		// ========================================
 		// MIGRATION 2: Candidate sessions table
 		// candidate_id is now UUID to match candidates.id
@@ -124,8 +125,8 @@ func RunMigrations(db *sql.DB) error {
 		metadata JSONB,
 		notes TEXT,
 		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);`
-     	`CREATE INDEX IF NOT EXISTS idx_interview_sessions_id ON interview_sessions(session_id)`,
+	);`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_id ON interview_sessions(session_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_candidate ON interview_sessions(candidate_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_candidate_session ON interview_sessions(candidate_session_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_started ON interview_sessions(started_at DESC)`,
