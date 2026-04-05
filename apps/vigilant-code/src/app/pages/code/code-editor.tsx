@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import { useJudge } from "@/hooks/use-judge";
+import { useParams } from "react-router-dom";
 
 const MONACO_LANG_MAP: Record<string, string> = {
   c:    "c",
@@ -21,16 +22,22 @@ export default function CodeEditor() {
     executeError,
     reset,
   } = useJudge();
-
+const {language} = useParams<{language:string}>()
   const [selectedLang, setSelectedLang] = useState(languages[0] ?? null);
   const [code, setCode] = useState("");
+
 
   useEffect(() => {
     if (languages.length > 0 && !selectedLang) {
       setSelectedLang(languages[0]);
       setCode(atob(languages[0].example));
     }
-  }, [languages]);
+    if(language && languages.length > 0 && !selectedLang){
+      // console.log(languages.find((lang)=>lang.name==language) , "value")
+      setSelectedLang(languages.find((lang)=>lang.name==language))
+      setCode(atob(languages.find((lang)=>lang.name==language).example))
+    }
+  }, [languages , language]);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lang = languages.find((l) => l.id === e.target.value);

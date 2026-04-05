@@ -5,14 +5,13 @@ import { Loader2, Clock } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-interface WaitingSetupProps {
-  workspace: string
-  username: string
-}
+
 
 interface SessionConfig {
   framework: string
   level: string
+  language:string
+  type:"dsa" | "framework"
 }
 
 export default function WaitingSetup() {
@@ -43,8 +42,14 @@ const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
       handler: (payload) => {
         setSessionConfig(payload)
         console.log(payload , "pay")
+        if(payload.type=="dsa"){
         setReceived(true)
-        router(`/code/${payload.framework.toLowerCase()}`)
+        router(`/editor/${payload.language}`)  
+        }else{
+        setReceived(true)
+        router(`/code/${payload.framework.toLowerCase()}`)   
+        }
+     
       },
     })
 

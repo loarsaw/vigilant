@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"vigilant/models"
 	"github.com/google/uuid"
+	"strings"
+	"fmt"
     "github.com/lib/pq"
     "errors"
 
@@ -142,12 +144,12 @@ func (h *Handlers) CreateInterviewSession(c *gin.Context) {
     var id int
     var createdAt time.Time
 
-    err = h.DB.QueryRowContext(c.Request.Context(), `
-        INSERT INTO interview_sessions (
-            session_id, candidate_id, candidate_session_id, status, started_at
-        ) VALUES ($1, $2, $3, 'in_progress', NOW())
-        RETURNING id, created_at
-    `, sessionID, candidateID, req.CandidateSessionID).Scan(&id, &createdAt)
+	err = h.DB.QueryRowContext(c.Request.Context(), `
+		INSERT INTO interview_sessions (
+			session_id, candidate_id, candidate_session_id, status, started_at
+		) VALUES ($1, $2, $3, 'in_progress', CURRENT_TIMESTAMP)
+		RETURNING id, created_at
+	`, sessionID, candidateID, req.CandidateSessionID).Scan(&id, &createdAt)
 
     if err != nil {
         var pqErr *pq.Error
@@ -377,3 +379,74 @@ func (h *Handlers) EndSession(c *gin.Context) {
 
 
 
+func (h *Handlers) CompleteOnboarding(c *gin.Context) {
+	rawID, exists := c.Get("candidate_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	candidateID := fmt.Sprintf("%v", rawID)
+
+	var req struct {
+		PhoneNumber     string   `json:"phone_number"`
+		GithubID        string   `json:"github_id"`
+		ResumeLink      string   `json:"resume_link"`
+		Skills          []string `json:"skills"`
+		ExperienceYears int      `json:"experience_years"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	if req.PhoneNumber == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "phone_number is required"})
+		return
+	}
+	if req.GithubID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "github_id is required"})
+		return
+	}
+	if req.ResumeLink == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "resume_link is required"})
+		return
+	}
+	if len(req.Skills) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one skill is required"})
+		return
+	}
+	if req.ExperienceYears < 0 || req.ExperienceYears > 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "experience_years must be between 0 and 50"})
+		return
+	}
+
+	skillsStr := strings.Join(req.Skills, ",")
+
+	result, err := h.DB.ExecContext(c.Request.Context(), `
+		UPDATE candidates SET
+			phone_number        = $1,
+			github_url          = $2,
+			resume_url          = $3,
+			skills              = $4,
+			experience_years    = $5,
+			onboarding_complete = TRUE,
+			updated_at          = NOW()
+		WHERE id = $6::uuid
+	`, req.PhoneNumber, req.GithubID, req.ResumeLink, skillsStr, req.ExperienceYears, candidateID)
+
+	if err != nil {
+		log.Printf("CompleteOnboarding: failed to update candidate %s: %v", candidateID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to complete onboarding"})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		log.Printf("CompleteOnboarding: no rows updated for candidate_id=%q", candidateID)
+		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "onboarding complete"})
+}

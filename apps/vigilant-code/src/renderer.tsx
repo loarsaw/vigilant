@@ -26,7 +26,7 @@ root.render(
           <Route Component={ProtectedLayout}>
             <Route path="/wait" Component={WaitingSetup} />
             <Route path="/code/:id" Component={Sandbox} />
-            <Route path="/editor" Component={CodeEditor}/>
+            <Route path="/editor/:language" Component={CodeEditor}/>
           </Route>
         </Route>
       </Routes>

@@ -39,7 +39,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
     ctx := c.Request.Context()
 
     query := `
-        SELECT id, email, password_hash, full_name, is_active
+        SELECT id, email, password_hash, full_name, is_active, onboarding_complete
         FROM candidates
         WHERE email = $1
     `
@@ -51,6 +51,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
         &candidate.PasswordHash,
         &candidate.FullName,
         &candidate.IsActive,
+        &candidate.OnboadingComplete,
     )
 
     if err == sql.ErrNoRows {
@@ -131,6 +132,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
         "email":        candidate.Email,
         "full_name":    candidate.FullName,
         "session_id":   sessionID,
+        "onboarding_complete": candidate.OnboadingComplete,
         "logged_in_at": loggedInAt,
         "expires_at":   expiresAt,
     })
