@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Zap, Brain, Clock, Terminal, Loader2, User, Send } from 'lucide-react';
+import { ArrowLeft, Zap, Brain, Clock, Terminal, Loader2, User, Send, Code2, Layers } from 'lucide-react';
 import {
   TestStatus,
   CandidateLevel,
@@ -24,37 +24,68 @@ import {
 import { useParams, useNavigate } from 'react-router-dom';
 import { useCandidates } from '@/hooks/use-candidates';
 import { pushToCandidate } from '@/lib/axios';
+import { useJudge } from '@/hooks/use-judge';
 
 type RouteParams = {
   candidateId: string;
 };
 
+type SessionType = 'dsa' | 'framework' | '';
+
+type DSALanguage = 'C' | 'C++' | 'Python' | 'Java';
+
 export function CandidatePage() {
   const { candidateId } = useParams<RouteParams>();
   const navigate = useNavigate();
   const { useCandidate, updateCandidate, isUpdating } = useCandidates();
-
-  const { data  , isLoading: isTargetLoading } = useCandidate(candidateId);
-
+  const {languages} = useJudge() 
+  const { data, isLoading: isTargetLoading } = useCandidate(candidateId);
 
   const candidate = data?.candidate;
-  const isOnline = data?.is_online;  
+  const isOnline = data?.is_online;
+
+  const [sessionType, setSessionType] = useState<SessionType>('');
 
   const [level, setLevel] = useState<CandidateLevel | ''>('');
   const [framework, setFramework] = useState<Framework | ''>('');
+
+  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | ''>('');
+
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatched, setDispatched] = useState(false);
 
-  const canDispatch = level !== '' && framework !== '';
+  const canDispatch =
+    sessionType === 'framework'
+      ? level !== '' && framework !== ''
+      : sessionType === 'dsa'
+      ? dsaLanguage !== ''
+      : false;
+
+  const handleSessionTypeChange = (value: SessionType) => {
+    setSessionType(value);
+    setDispatched(false);
+    // Reset sub-selections
+    setLevel('');
+    setFramework('');
+    setDsaLanguage('');
+  };
 
   const handleDispatch = async () => {
     if (!canDispatch || !candidateId) return;
     setIsDispatching(true);
     try {
-      await pushToCandidate(candidateId, 'session_config', {
-        framework,
-        level,
-      });
+      if (sessionType === 'framework') {
+        await pushToCandidate(candidateId, 'session_config', {
+          type: 'framework',
+          framework,
+          level,
+        });
+      } else if (sessionType === 'dsa') {
+        await pushToCandidate(candidateId, 'session_config', {
+          type: 'dsa',
+          language: dsaLanguage,
+        });
+      }
       setDispatched(true);
     } catch (err) {
       console.error('Failed to dispatch:', err);
@@ -199,55 +230,126 @@ export function CandidatePage() {
                 Session Configuration
               </CardTitle>
               <CardDescription>
-                Select framework and difficulty level, then dispatch to candidate
+                Choose a session type, configure options, then dispatch to candidate
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Target Framework
-                  </p>
-                  <Select
-                    value={framework}
-                    onValueChange={v => {
-                      setFramework(v as Framework);
-                      setDispatched(false);
-                    }}
-                  >
-                    <SelectTrigger className="bg-secondary/50">
-                      <SelectValue placeholder="Select framework..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="React">React</SelectItem>
-                      <SelectItem value="Nextjs">Next.js</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <CardContent className="space-y-5">
 
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Difficulty Level
-                  </p>
-                  <Select
-                    value={level}
-                    onValueChange={v => {
-                      setLevel(v as CandidateLevel);
-                      setDispatched(false);
-                    }}
+              {/* Session Type Toggle */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  Session Type
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleSessionTypeChange('dsa')}
+                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                      sessionType === 'dsa'
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground'
+                    }`}
                   >
-                    <SelectTrigger className="bg-secondary/50">
-                      <SelectValue placeholder="Select level..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Intern">Intern</SelectItem>
-                      <SelectItem value="Junior">Junior</SelectItem>
-                      <SelectItem value="Senior">Senior</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Code2 className="w-5 h-5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold">DSA</p>
+                      <p className="text-xs opacity-70">Data Structures & Algorithms</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSessionTypeChange('framework')}
+                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
+                      sessionType === 'framework'
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground'
+                    }`}
+                  >
+                    <Layers className="w-5 h-5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold">Framework</p>
+                      <p className="text-xs opacity-70">React / Next.js assessment</p>
+                    </div>
+                  </button>
                 </div>
               </div>
 
+              {/* DSA Options */}
+              {sessionType === 'dsa' && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">
+                    Programming Language
+                  </p>
+                  <Select
+                    value={dsaLanguage}
+                    onValueChange={v => {
+                      setDsaLanguage(v as DSALanguage);
+                      setDispatched(false);
+                    }}
+                  >
+                    <SelectTrigger className="bg-secondary/50">
+                      <SelectValue placeholder="Select language..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="C">C</SelectItem>
+                      <SelectItem value="C++">C++</SelectItem>
+                      <SelectItem value="Python">Python</SelectItem>
+                      <SelectItem value="Java">Java</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Framework Options */}
+              {sessionType === 'framework' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">
+                      Target Framework
+                    </p>
+                    <Select
+                      value={framework}
+                      onValueChange={v => {
+                        setFramework(v as Framework);
+                        setDispatched(false);
+                      }}
+                    >
+                      <SelectTrigger className="bg-secondary/50">
+                        <SelectValue placeholder="Select framework..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="React">React</SelectItem>
+                        <SelectItem value="Nextjs">Next.js</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">
+                      Difficulty Level
+                    </p>
+                    <Select
+                      value={level}
+                      onValueChange={v => {
+                        setLevel(v as CandidateLevel);
+                        setDispatched(false);
+                      }}
+                    >
+                      <SelectTrigger className="bg-secondary/50">
+                        <SelectValue placeholder="Select level..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Intern">Intern</SelectItem>
+                        <SelectItem value="Junior">Junior</SelectItem>
+                        <SelectItem value="Senior">Senior</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {/* Dispatch Row */}
               <div className="flex items-center gap-3 pt-2">
                 <Button
                   onClick={handleDispatch}
@@ -262,15 +364,25 @@ export function CandidatePage() {
                   {isDispatching ? 'Dispatching...' : 'Dispatch to Candidate'}
                 </Button>
 
-                {!canDispatch && (
+                {!canDispatch && sessionType !== '' && (
                   <p className="text-xs text-muted-foreground">
-                    Select both framework and level to dispatch
+                    {sessionType === 'dsa'
+                      ? 'Select a language to dispatch'
+                      : 'Select both framework and level to dispatch'}
+                  </p>
+                )}
+
+                {!sessionType && (
+                  <p className="text-xs text-muted-foreground">
+                    Select a session type to begin
                   </p>
                 )}
 
                 {dispatched && canDispatch && (
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    ✓ Dispatched — {framework} / {level}
+                    {sessionType === 'dsa'
+                      ? `✓ Dispatched — DSA / ${dsaLanguage}`
+                      : `✓ Dispatched — ${framework} / ${level}`}
                   </Badge>
                 )}
               </div>
@@ -290,13 +402,30 @@ export function CandidatePage() {
             <CardContent className="space-y-3">
               <div className="p-3 bg-secondary/50 border border-border/30 rounded-lg space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Framework</span>
-                  <span className="font-medium">{framework || '—'}</span>
+                  <span className="text-muted-foreground">Type</span>
+                  <span className="font-medium capitalize">{sessionType || '—'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Level</span>
-                  <span className="font-medium">{level || '—'}</span>
-                </div>
+
+                {sessionType === 'framework' && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Framework</span>
+                      <span className="font-medium">{framework || '—'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Level</span>
+                      <span className="font-medium">{level || '—'}</span>
+                    </div>
+                  </>
+                )}
+
+                {sessionType === 'dsa' && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Language</span>
+                    <span className="font-medium">{dsaLanguage || '—'}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
                   <span className="font-medium">
