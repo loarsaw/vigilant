@@ -11,14 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
 )
 
-// Mailer holds the SES client and sender address.
 type Mailer struct {
 	client    *sesv2.Client
 	fromEmail string
 }
 
-// NewMailerFromConfig loads SES credentials from the DB and returns a ready Mailer.
-// This is the only constructor you should use — credentials come from the DB, not env vars.
 func NewMailerFromConfig(ctx context.Context, cfg *SESConfig) (*Mailer, error) {
 	awsCfg, err := awsconfig.LoadDefaultConfig(ctx,
 		awsconfig.WithRegion(cfg.AWSRegion),
@@ -36,14 +33,12 @@ func NewMailerFromConfig(ctx context.Context, cfg *SESConfig) (*Mailer, error) {
 	}, nil
 }
 
-// EmailInput holds the data needed to send a single email.
 type EmailInput struct {
 	ToEmail string
 	Subject string
 	Body    string
 }
 
-// Send sends a single plain-text email via SES.
 func (m *Mailer) Send(ctx context.Context, input EmailInput) error {
 	_, err := m.client.SendEmail(ctx, &sesv2.SendEmailInput{
 		FromEmailAddress: aws.String(m.fromEmail),
@@ -72,15 +67,12 @@ func (m *Mailer) Send(ctx context.Context, input EmailInput) error {
 	return nil
 }
 
-// SendResult holds the result of a single send attempt in a bulk operation.
 type SendResult struct {
 	Email   string
 	Success bool
 	Error   string
 }
 
-// SendBulk sends emails to multiple recipients and returns per-email results.
-// It never stops on failure — all emails are attempted.
 func (m *Mailer) SendBulk(ctx context.Context, inputs []EmailInput) []SendResult {
 	results := make([]SendResult, 0, len(inputs))
 	for _, input := range inputs {
@@ -94,7 +86,6 @@ func (m *Mailer) SendBulk(ctx context.Context, inputs []EmailInput) []SendResult
 	return results
 }
 
-// BuildCredentialsEmail builds a plain-text credentials email for a single candidate.
 func BuildCredentialsEmail(fullName, toEmail, password, loginURL string) EmailInput {
 	body := fmt.Sprintf(
 		"Hi %s,\n\nYour account has been created. Here are your login credentials:\n\nEmail: %s\nPassword: %s\n\nLogin here: %s\n\nPlease change your password after your first login.\n\nRegards,\nThe Team",
@@ -107,8 +98,6 @@ func BuildCredentialsEmail(fullName, toEmail, password, loginURL string) EmailIn
 	}
 }
 
-// BuildBulkCredentialsEmails builds credentials emails for a slice of candidates.
-// Each entry is: {FullName, Email, Password}.
 type CandidateEmailData struct {
 	FullName string
 	Email    string

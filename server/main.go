@@ -1,14 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 	"vigilant/config"
 	"vigilant/db"
+	"vigilant/email"
 	"vigilant/handlers"
 	"vigilant/middleware"
+
 	"vigilant/websocket"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +34,10 @@ func main() {
 	if err := db.RunMigrations(database); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
+
+	emailWorker := email.NewWorker(database, cfg.EncryptionKey, 5*time.Second)
+	go emailWorker.Start(context.Background())
+	defer emailWorker.Stop()
 
 	h := &handlers.Handlers{DB: database, Cfg: cfg}
 	adminH := &handlers.AdminHandlers{DB: database, Cfg: cfg}
@@ -66,6 +74,23 @@ func main() {
 		admin.PUT("/candidates/:id", adminH.UpdateCandidate)
 		admin.DELETE("/candidates/:id", adminH.DeleteCandidate)
 		admin.GET("/dashboard", adminH.GetDashboardStats)
+		admin.POST("/google-creds", adminH.CreateGoogleCredential)
+		admin.POST("/interviews/send-invite", adminH.SendInterviewInvite)
+		admin.POST("/candidates/send-credentials", adminH.SendCandidateCredentialsEmail)
+		admin.POST("/emails/send", adminH.SendCustomEmail)
+
+		// Positions
+		admin.POST("/positions", adminH.CreatePosition)
+		admin.GET("/positions", adminH.ListPositions)
+		admin.GET("/positions/:id", adminH.GetPositionByID)
+		admin.PUT("/positions/:id", adminH.UpdatePosition)
+		admin.PATCH("/positions/:id/toggle-active", adminH.UpdatePositionActiveStatus)
+		admin.DELETE("/positions/:id", adminH.DeletePosition)
+		admin.POST("/create-interview", adminH.CreateInterviewSession)
+		admin.GET("/candidates/:id/applications", adminH.GetCandidateApplications)
+
+		// Google Credentials
+		admin.POST("/credentials/google", adminH.CreateGoogleCredential)
 	}
 
 	judgeApi := admin.Group("/judge")
@@ -79,10 +104,12 @@ func main() {
 		api.POST("/process", h.CreateProcessReport)
 		api.POST("/onboarding", h.CompleteOnboarding)
 		api.GET("/interview-session/:candidate_id", h.GetActiveInterview)
-		api.POST("/create-interview", h.CreateInterviewSession)
 		api.GET("/process/:session_id", h.GetProcessReports)
 		api.GET("/sessions", h.ListSessions)
+		api.GET("/get-open-positions", h.GetPositionDetails)
 		api.POST("/sessions/:session_id/end", h.EndSession)
+		api.GET("/positions", h.ListPositions)
+		api.POST("/positions/:position_id/apply", h.ApplyForPosition)
 	}
 
 	judge := api.Group("/judge")

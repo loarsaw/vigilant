@@ -13,6 +13,8 @@ import (
 	"vigilant/models"
 	"vigilant/websocket"
 
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -70,6 +72,43 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 		return
 	}
 
+	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
+	if err != nil {
+		log.Printf("CreateCandidate: failed to decode encryption key: %v", err)
+
+	} else {
+		sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
+		if err != nil {
+			log.Printf("CreateCandidate: failed to load SES config: %v", err)
+		} else {
+			body, err := email.Render(email.TemplateCandidateCredentials, email.CandidateCredentialsData{
+				CandidateName: req.FullName,
+				Email:         req.Email,
+				Password:      req.Password,
+				LoginURL:      sesCfg.SESLoginURL,
+			})
+			if err != nil {
+				log.Printf("CreateCandidate: failed to render email: %v", err)
+			} else {
+				_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
+					ToEmail:     req.Email,
+					ToName:      req.FullName,
+					FromEmail:   sesCfg.SESFromEmail,
+					Subject:     "Your Vigilant Account Credentials",
+					BodyHTML:    body,
+					Template:    email.TemplateCandidateCredentials,
+					EntityType:  "candidate",
+					EntityID:    candidate.ID,
+					TriggeredBy: "create_candidate",
+					Priority:    email.PriorityHigh,
+				})
+				if err != nil {
+					log.Printf("CreateCandidate: failed to enqueue email: %v", err)
+				}
+			}
+		}
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"id":         candidate.ID,
 		"email":      candidate.Email,
@@ -79,6 +118,140 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 	})
 }
 
+func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
+	var req struct {
+		CandidateID       string    `json:"candidate_id" binding:"required"`
+		ApplicationID     string    `json:"application_id"`
+		InterviewerEmail  string    `json:"interviewer_email" binding:"required,email"`
+		Position          string    `json:"position" binding:"required"`
+		InterviewType     string    `json:"interview_type" binding:"required"`
+		ScheduledAt       time.Time `json:"scheduled_at" binding:"required"`
+		ScheduledDuration int       `json:"scheduled_duration" binding:"required,min=15"`
+		InterviewURL      string    `json:"interview_url" binding:"required"`
+		TimeZone          string    `json:"timezone"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format", "details": err.Error()})
+		return
+	}
+
+	if req.TimeZone == "" {
+		req.TimeZone = "Asia/Kolkata"
+	}
+
+	var candidateEmail, candidateName string
+	err := h.DB.QueryRowContext(c.Request.Context(), `
+		SELECT email, full_name
+		FROM candidates
+		WHERE id = $1 AND is_active = true
+	`, req.CandidateID).Scan(&candidateEmail, &candidateName)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "candidate not found or inactive"})
+		return
+	}
+	if err != nil {
+		log.Printf("Error looking up candidate: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	// If application_id provided, verify it x
+	if req.ApplicationID != "" {
+		var appExists bool
+		err = h.DB.QueryRowContext(c.Request.Context(), `
+			SELECT EXISTS(
+				SELECT 1 FROM job_applications
+				WHERE id = $1 AND candidate_id = $2
+			)
+		`, req.ApplicationID, req.CandidateID).Scan(&appExists)
+		if err != nil {
+			log.Printf("Error verifying application: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		if !appExists {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "application not found or does not belong to candidate"})
+			return
+		}
+	}
+
+	// =====================================================================
+	// TODO: Google Calendar integration
+	// =====================================================================
+
+	sessionID := uuid.New().String()
+
+	metadata := fmt.Sprintf(`{
+		"candidate_email": "%s",
+		"candidate_name": "%s",
+		"timezone": "%s"
+	}`, candidateEmail, candidateName, req.TimeZone)
+
+	var applicationID interface{}
+	if req.ApplicationID != "" {
+		applicationID = req.ApplicationID
+	}
+
+	var id int64
+	var createdAt time.Time
+
+	err = h.DB.QueryRowContext(c.Request.Context(), `
+		INSERT INTO interview_sessions (
+			session_id, candidate_id, candidate_session_id,
+			application_id, interviewer_email, position,
+			interview_type, interview_platform, interview_url,
+			scheduled_at, started_at, scheduled_duration,
+			status, metadata
+		) VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, NULL, $10, $11, $12)
+		RETURNING id, created_at
+	`,
+		sessionID,
+		req.CandidateID,
+		applicationID,
+		req.InterviewerEmail,
+		req.Position,
+		req.InterviewType,
+		0,
+		req.InterviewURL,
+		req.ScheduledAt,
+		req.ScheduledDuration,
+		"scheduled",
+		metadata,
+	).Scan(&id, &createdAt)
+
+	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23503" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "candidate not found"})
+			return
+		}
+		log.Printf("Error creating interview session: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create interview session"})
+		return
+	}
+
+	log.Printf("Interview session created. ID: %d, candidate: %s", id, candidateEmail)
+
+	c.JSON(http.StatusCreated, gin.H{
+		"id":                 id,
+		"session_id":         sessionID,
+		"candidate_id":       req.CandidateID,
+		"application_id":     req.ApplicationID,
+		"interviewer_email":  req.InterviewerEmail,
+		"candidate_email":    candidateEmail,
+		"candidate_name":     candidateName,
+		"position":           req.Position,
+		"interview_type":     req.InterviewType,
+		"interview_platform": 0,
+		"interview_url":      req.InterviewURL,
+		"scheduled_at":       req.ScheduledAt,
+		"scheduled_duration": req.ScheduledDuration,
+		"status":             "scheduled",
+		"created_at":         createdAt,
+		"message":            "Interview session created successfully.",
+	})
+}
 func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -137,22 +310,47 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	candidates := []CandidateWithPresence{}
 	for rows.Next() {
 		var cand models.Candidate
+		var resumeUrl, githubUrl, skills, phoneNumber sql.NullString
 		var interviewCurrentStage, interviewNextStage sql.NullString
+		var lastLogin sql.NullTime
+		var experienceYears sql.NullInt16
 
 		if err := rows.Scan(
 			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
 			&cand.IsActive,
-			&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
+			&resumeUrl, &githubUrl, &skills, &phoneNumber, &experienceYears,
 			&cand.OnboadingComplete,
 			&interviewCurrentStage, &interviewNextStage,
-			&cand.CurrentStageQualified, &cand.InterviewCompleted, &cand.LastLogin,
+			&cand.CurrentStageQualified, &cand.InterviewCompleted, &lastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
 		}
 
-		cand.InterviewCurrentStage = interviewCurrentStage.String
-		cand.InterviewNextStage = interviewNextStage.String
+		if resumeUrl.Valid {
+			cand.ResumeUrl = resumeUrl.String
+		}
+		if githubUrl.Valid {
+			cand.GithubUrl = githubUrl.String
+		}
+		if skills.Valid {
+			cand.Skills = skills.String
+		}
+		if phoneNumber.Valid {
+			cand.PhoneNumber = phoneNumber.String
+		}
+		if interviewCurrentStage.Valid {
+			cand.InterviewCurrentStage = interviewCurrentStage.String
+		}
+		if interviewNextStage.Valid {
+			cand.InterviewNextStage = interviewNextStage.String
+		}
+		if lastLogin.Valid {
+			cand.LastLogin = &lastLogin.Time
+		}
+		if experienceYears.Valid {
+			cand.ExperienceYears = uint8(experienceYears.Int16)
+		}
 
 		candidates = append(candidates, CandidateWithPresence{
 			Candidate: cand,
@@ -226,6 +424,7 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 		InterviewNextStage    *string `json:"interview_next_stage"`
 		CurrentStageQualified *bool   `json:"current_stage_qualified"`
 		InterviewCompleted    *bool   `json:"interview_completed"`
+		ResumeUrl             *string `json:"resume_url"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -279,6 +478,11 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 	if req.InterviewCompleted != nil {
 		updates = append(updates, fmt.Sprintf("interview_completed = $%d", argID))
 		args = append(args, *req.InterviewCompleted)
+		argID++
+	}
+	if req.ResumeUrl != nil {
+		updates = append(updates, fmt.Sprintf("resume_url = $%d", argID))
+		args = append(args, *req.ResumeUrl)
 		argID++
 	}
 

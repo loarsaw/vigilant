@@ -5,36 +5,37 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lib/pq"
 	"vigilant/config"
+
+	_ "github.com/lib/pq"
 )
 
 var DB *sql.DB
 
 func InitDB(cfg *config.Config) (*sql.DB, error) {
-    dsn := cfg.GetDSN()
+	dsn := cfg.GetDSN()
 
-    db, err := sql.Open("postgres", dsn)
-    if err != nil {
-        return nil, fmt.Errorf("failed to open database: %w", err)
-    }
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
 
-    if err := db.Ping(); err != nil {
-        return nil, fmt.Errorf("failed to ping database: %w", err)
-    }
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
 
-    _, err = db.Exec("SET TIME ZONE 'UTC'")
-    if err != nil {
-        return nil, fmt.Errorf("failed to set time zone to UTC: %w", err)
-    }
+	_, err = db.Exec("SET TIME ZONE 'UTC'")
+	if err != nil {
+		return nil, fmt.Errorf("failed to set time zone to UTC: %w", err)
+	}
 
-    db.SetMaxOpenConns(25)
-    db.SetMaxIdleConns(25)
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(25)
 
-    log.Println("✅ Database connection established and set to UTC")
+	log.Println("✅ Database connection established and set to UTC")
 
-    DB = db
-    return db, nil
+	DB = db
+	return db, nil
 }
 
 func RunMigrations(db *sql.DB) error {
@@ -101,37 +102,112 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_sessions_ip ON candidate_sessions(ip_address)`,
 
 		// ========================================
+		// MIGRATION 12: Hiring Positions table
+		// Stores all job postings with UUID and UTC timestamps
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS hiring_positions (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			position_title VARCHAR(255) NOT NULL,
+			department VARCHAR(255) NOT NULL,
+			location VARCHAR(255) NOT NULL,
+			employment_type VARCHAR(50) NOT NULL,
+			experience_required VARCHAR(100) NOT NULL,
+			salary_range_min INTEGER,
+			salary_range_max INTEGER,
+			salary_range_text VARCHAR(100),
+			number_of_openings INTEGER NOT NULL DEFAULT 1,
+			job_description TEXT NOT NULL,
+			requirements TEXT NOT NULL,
+			status VARCHAR(50) DEFAULT 'active',
+			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+			created_by VARCHAR(255),
+			updated_by VARCHAR(255),
+			is_active BOOLEAN DEFAULT TRUE
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_status ON hiring_positions(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_department ON hiring_positions(department)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_location ON hiring_positions(location)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_created_at ON hiring_positions(created_at DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_is_active ON hiring_positions(is_active)`,
+
+		// ========================================
+		// MIGRATION 13: Trigger for hiring_positions updated_at
+		// ========================================
+		`CREATE OR REPLACE FUNCTION update_hiring_positions_updated_at()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			NEW.updated_at = CURRENT_TIMESTAMP;
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql`,
+		`DROP TRIGGER IF EXISTS hiring_positions_updated_at_trigger ON hiring_positions`,
+		`CREATE TRIGGER hiring_positions_updated_at_trigger
+			BEFORE UPDATE ON hiring_positions
+			FOR EACH ROW
+			EXECUTE FUNCTION update_hiring_positions_updated_at()`,
+
+		`
+CREATE TABLE IF NOT EXISTS job_applications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+    position_id UUID NOT NULL REFERENCES hiring_positions(id) ON DELETE CASCADE,
+    
+    status VARCHAR(50) DEFAULT 'applied', 
+    -- applied → screening → interviewing → offered → hired / rejected / withdrawn
+    
+    applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    
+    cover_letter TEXT,
+    notes TEXT,
+    
+    UNIQUE(candidate_id, position_id) -- prevent duplicate applications
+);
+
+CREATE INDEX IF NOT EXISTS idx_job_applications_candidate ON job_applications(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_job_applications_position ON job_applications(position_id);
+CREATE INDEX IF NOT EXISTS idx_job_applications_status ON job_applications(status);
+`,
+		`CREATE INDEX IF NOT EXISTS idx_job_applications_candidate ON job_applications(candidate_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_job_applications_position ON job_applications(position_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_job_applications_status ON job_applications(status);`,
+
+		// ========================================
 		// MIGRATION 3: Interview sessions table
 		// candidate_id is UUID to match candidates.id
 		// session_id is UUID string, server-generated
 		// ========================================
-		`
-		CREATE TABLE IF NOT EXISTS interview_sessions (
-		id SERIAL PRIMARY KEY,
-		session_id VARCHAR(255) UNIQUE NOT NULL,
-		candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE SET NULL,
-		candidate_session_id UUID NOT NULL REFERENCES candidate_sessions(id) ON DELETE SET NULL,
+		`CREATE TABLE IF NOT EXISTS interview_sessions (
+			id SERIAL PRIMARY KEY,
+			session_id VARCHAR(255) UNIQUE NOT NULL,
+			candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+			candidate_session_id UUID REFERENCES candidate_sessions(id) ON DELETE SET NULL,
+			application_id UUID REFERENCES job_applications(id) ON DELETE SET NULL,
 
-		interviewer_email VARCHAR(255),
-		position VARCHAR(255),
-		interview_type VARCHAR(50),
-		
-		scheduled_at TIMESTAMP WITH TIME ZONE, 
-		started_at TIMESTAMP WITH TIME ZONE,
-		ended_at TIMESTAMP WITH TIME ZONE,
-		
-		scheduled_duration INTEGER,
-		status VARCHAR(50) DEFAULT 'scheduled',
-		metadata JSONB,
-		notes TEXT,
-		created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-	);`,
+			interviewer_email VARCHAR(255),
+			position VARCHAR(255),
+			interview_type VARCHAR(50),
+			interview_platform SMALLINT DEFAULT 0 CHECK (interview_platform IN (0)), -- 0: Google Meet
+			interview_url TEXT,
+			
+			scheduled_at TIMESTAMP WITH TIME ZONE, 
+			started_at TIMESTAMP WITH TIME ZONE,
+			ended_at TIMESTAMP WITH TIME ZONE,
+			
+			scheduled_duration INTEGER,
+			status VARCHAR(50) DEFAULT 'scheduled',
+			metadata JSONB,
+			notes TEXT,
+			created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+		)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_id ON interview_sessions(session_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_candidate ON interview_sessions(candidate_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_candidate_session ON interview_sessions(candidate_session_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_application ON interview_sessions(application_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_started ON interview_sessions(started_at DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_status ON interview_sessions(status)`,
-
+		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_platform ON interview_sessions(interview_platform)`,
 		// ========================================
 		// MIGRATION 4: Process logs table
 		// ========================================
@@ -291,9 +367,8 @@ func RunMigrations(db *sql.DB) error {
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )`,
 		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_lang    ON judge_submissions(language)`,
-        `CREATE INDEX IF NOT EXISTS idx_judge_submissions_status  ON judge_submissions(status)`,
-        `CREATE INDEX IF NOT EXISTS idx_judge_submissions_created ON judge_submissions(created_at DESC)`,
-
+		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_status  ON judge_submissions(status)`,
+		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_created ON judge_submissions(created_at DESC)`,
 
 		// ========================================
 		// MIGRATION 11: AWS SES credentials table
@@ -310,9 +385,179 @@ func RunMigrations(db *sql.DB) error {
 			created_at            TIMESTAMP DEFAULT NOW(),
 			updated_at            TIMESTAMP DEFAULT NOW()
 		)`,
-    }
 
+		// ========================================
+		// MIGRATION 14: Hiring Candidates table
+		// For tracking applicants with interview tracking
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS hiring_candidates (
+			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+			email VARCHAR(255) UNIQUE NOT NULL,
+			password_hash VARCHAR(255) NOT NULL,
+			full_name VARCHAR(255),
+			position_id UUID NOT NULL REFERENCES hiring_positions(id) ON DELETE CASCADE,
+			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+			is_active BOOLEAN DEFAULT TRUE,
+			resume_url VARCHAR(512),
+			github_url VARCHAR(512),
+			skills VARCHAR(512),
+			phone_number VARCHAR(512),
+			experience_years SMALLINT CHECK (experience_years >= 0 AND experience_years <= 50),
+			onboarding_complete BOOLEAN DEFAULT FALSE,
+			interview_current_stage VARCHAR(255),
+			interview_next_stage VARCHAR(255),
+			current_stage_qualified BOOLEAN DEFAULT FALSE,
+			interview_completed BOOLEAN DEFAULT FALSE,
+			last_login TIMESTAMPTZ
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_candidates_email ON hiring_candidates(email)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_candidates_position_id ON hiring_candidates(position_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_candidates_is_active ON hiring_candidates(is_active)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_candidates_interview_current_stage ON hiring_candidates(interview_current_stage)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_candidates_interview_completed ON hiring_candidates(interview_completed)`,
+		`CREATE INDEX IF NOT EXISTS idx_hiring_candidates_created_at ON hiring_candidates(created_at DESC)`,
 
+		// ========================================
+		// MIGRATION 15: Trigger for hiring_candidates updated_at
+		// ========================================
+		`CREATE OR REPLACE FUNCTION update_hiring_candidates_updated_at()
+		RETURNS TRIGGER AS $$
+		BEGIN
+			NEW.updated_at = CURRENT_TIMESTAMP;
+			RETURN NEW;
+		END;
+		$$ LANGUAGE plpgsql`,
+		`DROP TRIGGER IF EXISTS hiring_candidates_updated_at_trigger ON hiring_candidates`,
+		`CREATE TRIGGER hiring_candidates_updated_at_trigger
+			BEFORE UPDATE ON hiring_candidates
+			FOR EACH ROW
+			EXECUTE FUNCTION update_hiring_candidates_updated_at()`,
+
+		// ========================================
+		// MIGRATION 16: Google Credentails
+		// ========================================
+
+		`CREATE TABLE IF NOT EXISTS google_credentials (
+    id SERIAL PRIMARY KEY,
+    credential_name VARCHAR(255) NOT NULL UNIQUE,
+    organization_id UUID,
+    user_id UUID,
+    service_account_email VARCHAR(255) NOT NULL,
+    project_id VARCHAR(255) NOT NULL,
+    private_key_id VARCHAR(255) NOT NULL,
+    private_key TEXT NOT NULL,
+    client_email VARCHAR(255) NOT NULL,
+    client_id VARCHAR(255) NOT NULL,
+    access_token TEXT,
+    refresh_token TEXT,
+    token_expiry TIMESTAMP WITH TIME ZONE,
+    scopes TEXT[],
+    credentials_json JSONB,
+    credential_type VARCHAR(50) DEFAULT 'service_account',
+    is_active BOOLEAN DEFAULT true,
+    is_default BOOLEAN DEFAULT false,
+    delegated_admin_email VARCHAR(255),
+    subject_email VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    last_used_at TIMESTAMP WITH TIME ZONE
+)`,
+
+		// Partial unique index — only one default allowed per org (replaces the broken CONSTRAINT ... WHERE)
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_google_credentials_one_default_per_org
+    ON google_credentials (organization_id, is_default)
+    WHERE is_default = true`,
+
+		`CREATE INDEX IF NOT EXISTS idx_google_credentials_active ON google_credentials(is_active)`,
+		`CREATE INDEX IF NOT EXISTS idx_google_credentials_default ON google_credentials(is_default) WHERE is_default = true`,
+		`CREATE INDEX IF NOT EXISTS idx_google_credentials_org ON google_credentials(organization_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_google_credentials_type ON google_credentials(credential_type)`,
+
+		`CREATE OR REPLACE FUNCTION update_google_credentials_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql`,
+
+		`DROP TRIGGER IF EXISTS trigger_update_google_credentials_timestamp ON google_credentials`,
+
+		`CREATE TRIGGER trigger_update_google_credentials_timestamp
+BEFORE UPDATE ON google_credentials
+FOR EACH ROW
+EXECUTE FUNCTION update_google_credentials_updated_at()`,
+
+		// MIGRATION 17: Email jobs queue
+		`CREATE TABLE IF NOT EXISTS email_jobs (
+    id          BIGSERIAL PRIMARY KEY,
+    
+    -- Routing
+    to_email    TEXT NOT NULL,
+    to_name     TEXT,
+    from_email  TEXT NOT NULL,
+    reply_to    TEXT,
+    
+    -- Content
+    subject     TEXT NOT NULL,
+    body_html   TEXT NOT NULL,
+    body_text   TEXT,
+    template    VARCHAR(100),        -- e.g. "interview_invite", "welcome"
+    template_data JSONB,             -- data passed to template
+    
+    -- Context (for traceability)
+    entity_type VARCHAR(50),         -- e.g. "interview_session", "candidate"
+    entity_id   TEXT,                -- the ID of the related entity
+    triggered_by TEXT,               -- e.g. "create_interview", "bulk_invite"
+    
+    -- Queue management
+    status      VARCHAR(20) DEFAULT 'pending', -- pending, sending, sent, failed, cancelled
+    priority    SMALLINT DEFAULT 0,            -- 0=normal, 1=high
+    attempts    SMALLINT DEFAULT 0,
+    max_attempts SMALLINT DEFAULT 3,
+    scheduled_at TIMESTAMPTZ DEFAULT NOW(),    -- send no earlier than this
+    
+    -- Result
+    sent_at     TIMESTAMPTZ,
+    failed_at   TIMESTAMPTZ,
+    error       TEXT,
+    provider_message_id TEXT,        -- SES message ID for traceability
+    
+    -- Audit
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_email_jobs_status ON email_jobs(status, scheduled_at) WHERE status = 'pending'`,
+		`CREATE INDEX IF NOT EXISTS idx_email_jobs_entity ON email_jobs(entity_type, entity_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_email_jobs_created ON email_jobs(created_at DESC)`,
+
+		// MIGRATION 18: Email send log (immutable record of every attempt)
+		`CREATE TABLE IF NOT EXISTS email_logs (
+    id          BIGSERIAL PRIMARY KEY,
+    job_id      BIGINT REFERENCES email_jobs(id) ON DELETE SET NULL,
+    
+    -- What was sent (snapshot at send time)
+    to_email    TEXT NOT NULL,
+    from_email  TEXT NOT NULL,
+    subject     TEXT NOT NULL,
+    body_html   TEXT NOT NULL,       -- full content logged for traceability
+    
+    -- Result
+    status      VARCHAR(20) NOT NULL, -- sent, failed
+    provider_message_id TEXT,
+    error       TEXT,
+    attempt     SMALLINT NOT NULL,
+    
+    -- Timing
+    sent_at     TIMESTAMPTZ DEFAULT NOW()
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_email_logs_job ON email_logs(job_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_email_logs_to ON email_logs(to_email)`,
+		`CREATE INDEX IF NOT EXISTS idx_email_logs_sent ON email_logs(sent_at DESC)`,
+	}
 
 	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {

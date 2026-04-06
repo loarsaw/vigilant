@@ -3,25 +3,24 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"math"
+
+	"fmt"
 	"log"
 	"net/http"
-    "vigilant/config"	
-	"time"
-	"github.com/gin-gonic/gin"
-	"vigilant/models"
-	"github.com/google/uuid"
+	"strconv"
 	"strings"
-	"fmt"
-    "github.com/lib/pq"
-    "errors"
+	"time"
+	"vigilant/config"
+	"vigilant/models"
 
+	"github.com/gin-gonic/gin"
 )
 
 type Handlers struct {
-    DB  *sql.DB
-    Cfg *config.Config
+	DB  *sql.DB
+	Cfg *config.Config
 }
-
 
 func (h *Handlers) HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
@@ -40,136 +39,72 @@ func (h *AdminHandlers) VerifyToken(c *gin.Context) {
 }
 
 func (h *AdminHandlers) EndInterviewSession(c *gin.Context) {
-    id := c.Param("id")
+	id := c.Param("id")
 
-    var req struct {
-        Notes  string `json:"notes"`
-        Status string `json:"status"`
-    }
+	var req struct {
+		Notes  string `json:"notes"`
+		Status string `json:"status"`
+	}
 
-    if err := c.ShouldBindJSON(&req); err != nil {
-        req.Status = "completed"
-    }
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req.Status = "completed"
+	}
 
-    query := `
+	query := `
         UPDATE interview_sessions
         SET ended_at = NOW(),
             status = $1,
             notes = $2
         WHERE id = $3 AND ended_at IS NULL`
 
-    result, err := h.DB.Exec(query, req.Status, req.Notes, id)
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close session"})
-        return
-    }
+	result, err := h.DB.Exec(query, req.Status, req.Notes, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close session"})
+		return
+	}
 
-    rows, _ := result.RowsAffected()
-    if rows == 0 {
-        c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already closed"})
-        return
-    }
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already closed"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"status": "interview_ended", "id": id})
+	c.JSON(http.StatusOK, gin.H{"status": "interview_ended", "id": id})
 }
-
 
 func (h *Handlers) GetActiveInterview(c *gin.Context) {
-    candidateID := c.Param("candidate_id")
+	candidateID := c.Param("candidate_id")
 
-    var session models.InterviewSession
-    var position sql.NullString 
+	var session models.InterviewSession
+	var position sql.NullString
 
-    query := `
+	query := `
         SELECT id, session_id, status, position
         FROM interview_sessions
-        WHERE candidate_id = $1 AND status = 'in_progress'
+        WHERE candidate_id = $1 AND status IN ('scheduled', 'in_progress')
         ORDER BY started_at DESC LIMIT 1`
 
-    err := h.DB.QueryRow(query, candidateID).Scan(
-        &session.ID,
-        &session.SessionID,
-        &session.Status,
-        &position,
-    )
+	err := h.DB.QueryRow(query, candidateID).Scan(
+		&session.ID,
+		&session.SessionID,
+		&session.Status,
+		&position,
+	)
 
-    if err == sql.ErrNoRows {
-        c.JSON(http.StatusNotFound, gin.H{"error": "no active interview found"})
-        return
-    } else if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
-        return
-    }
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "no active interview found"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{
-        "id":         session.ID,
-        "session_id": session.SessionID,
-        "status":     session.Status,
-        "position":   position.String, // empty string if NULL
-    })
-}
-
-func (h *Handlers) CreateInterviewSession(c *gin.Context) {
-    var req struct {
-        CandidateSessionID string `json:"candidate_session_id"`
-    }
-
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format"})
-        return
-    }
-
-    if req.CandidateSessionID == "" {  // was == 0
-        c.JSON(http.StatusBadRequest, gin.H{"error": "candidate_session_id is required"})
-        return
-    }
-
-    var candidateID string
-    err := h.DB.QueryRowContext(c.Request.Context(), `
-        SELECT candidate_id FROM candidate_sessions WHERE id = $1 AND is_active = true
-    `, req.CandidateSessionID).Scan(&candidateID)
-
-    if err == sql.ErrNoRows {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "invalid or expired candidate session"})
-        return
-    }
-    if err != nil {
-        log.Printf("Error looking up candidate session: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-        return
-    }
-
-    sessionID := uuid.New().String()
-
-    var id int
-    var createdAt time.Time
-
-	err = h.DB.QueryRowContext(c.Request.Context(), `
-		INSERT INTO interview_sessions (
-			session_id, candidate_id, candidate_session_id, status, started_at
-		) VALUES ($1, $2, $3, 'in_progress', CURRENT_TIMESTAMP)
-		RETURNING id, created_at
-	`, sessionID, candidateID, req.CandidateSessionID).Scan(&id, &createdAt)
-
-    if err != nil {
-        var pqErr *pq.Error
-        if errors.As(err, &pqErr) && pqErr.Code == "23503" {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "candidate session not found"})
-            return
-        }
-        log.Printf("Error creating interview session: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create interview session"})
-        return
-    }
-
-    c.JSON(http.StatusCreated, gin.H{
-        "id":                   id,
-        "session_id":           sessionID,
-        "candidate_id":         candidateID,
-        "candidate_session_id": req.CandidateSessionID,
-        "status":               "in_progress",
-        "created_at":           createdAt,
-    })
+	c.JSON(http.StatusOK, gin.H{
+		"id":         session.ID,
+		"session_id": session.SessionID,
+		"status":     session.Status,
+		"position":   position.String,
+	})
 }
 
 func (h *Handlers) CreateProcessReport(c *gin.Context) {
@@ -342,18 +277,18 @@ func (h *Handlers) ListSessions(c *gin.Context) {
 }
 
 func (h *Handlers) EndSession(c *gin.Context) {
-    sessionID := c.Param("session_id")
+	sessionID := c.Param("session_id")
 
-    var req struct {
-        Notes  string `json:"notes"`
-        Status string `json:"status"`
-    }
+	var req struct {
+		Notes  string `json:"notes"`
+		Status string `json:"status"`
+	}
 
-    if err := c.ShouldBindJSON(&req); err != nil || req.Status == "" {
-        req.Status = "completed"
-    }
+	if err := c.ShouldBindJSON(&req); err != nil || req.Status == "" {
+		req.Status = "completed"
+	}
 
-    query := `
+	query := `
         UPDATE interview_sessions
         SET ended_at = NOW(),
             status = $1,
@@ -361,23 +296,21 @@ func (h *Handlers) EndSession(c *gin.Context) {
         WHERE session_id = $3 AND ended_at IS NULL
     `
 
-    result, err := h.DB.Exec(query, req.Status, req.Notes, sessionID)
-    if err != nil {
-        log.Printf("Error ending session: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to end session"})
-        return
-    }
+	result, err := h.DB.Exec(query, req.Status, req.Notes, sessionID)
+	if err != nil {
+		log.Printf("Error ending session: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to end session"})
+		return
+	}
 
-    rows, _ := result.RowsAffected()
-    if rows == 0 {
-        c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already ended"})
-        return
-    }
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already ended"})
+		return
+	}
 
-    c.JSON(http.StatusOK, gin.H{"status": "session_ended", "session_id": sessionID})
+	c.JSON(http.StatusOK, gin.H{"status": "session_ended", "session_id": sessionID})
 }
-
-
 
 func (h *Handlers) CompleteOnboarding(c *gin.Context) {
 	rawID, exists := c.Get("candidate_id")
@@ -449,4 +382,428 @@ func (h *Handlers) CompleteOnboarding(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "onboarding complete"})
+}
+
+func (h *Handlers) GetOpenPositions(c *gin.Context) {
+	query := `
+		SELECT id, position_title
+		FROM hiring_positions
+		WHERE is_active = true AND status = 'active'
+		ORDER BY created_at DESC
+	`
+
+	rows, err := h.DB.Query(query)
+	if err != nil {
+		log.Printf("Error querying open positions: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve positions"})
+		return
+	}
+	defer rows.Close()
+
+	type OpenPosition struct {
+		ID            string `json:"id"`
+		PositionTitle string `json:"position_title"`
+	}
+
+	positions := []OpenPosition{}
+	for rows.Next() {
+		var pos OpenPosition
+
+		if err := rows.Scan(&pos.ID, &pos.PositionTitle); err != nil {
+			log.Printf("Error scanning position: %v", err)
+			continue
+		}
+
+		positions = append(positions, pos)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("Error iterating positions: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve positions"})
+		return
+	}
+
+	if len(positions) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data":  []OpenPosition{},
+			"total": 0,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  positions,
+		"total": len(positions),
+	})
+}
+
+func (h *Handlers) GetPositionDetails(c *gin.Context) {
+	positionID := c.Param("id")
+
+	var pos struct {
+		ID                 string
+		PositionTitle      string
+		Department         string
+		Location           string
+		EmploymentType     string
+		ExperienceRequired string
+		SalaryRangeMin     sql.NullInt64
+		SalaryRangeMax     sql.NullInt64
+		SalaryRangeText    sql.NullString
+		NumberOfOpenings   int
+		JobDescription     string
+		Requirements       string
+	}
+
+	query := `
+		SELECT id, position_title, department, location, employment_type,
+		       experience_required, salary_range_min, salary_range_max,
+		       salary_range_text, number_of_openings, job_description, requirements
+		FROM hiring_positions
+		WHERE id = $1 AND is_active = true AND status = 'active'
+	`
+
+	err := h.DB.QueryRow(query, positionID).Scan(
+		&pos.ID, &pos.PositionTitle, &pos.Department, &pos.Location,
+		&pos.EmploymentType, &pos.ExperienceRequired,
+		&pos.SalaryRangeMin, &pos.SalaryRangeMax, &pos.SalaryRangeText,
+		&pos.NumberOfOpenings, &pos.JobDescription, &pos.Requirements,
+	)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "position not found"})
+		return
+	}
+	if err != nil {
+		log.Printf("Error fetching position details: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve position"})
+		return
+	}
+
+	response := gin.H{
+		"id":                  pos.ID,
+		"position_title":      pos.PositionTitle,
+		"department":          pos.Department,
+		"location":            pos.Location,
+		"employment_type":     pos.EmploymentType,
+		"experience_required": pos.ExperienceRequired,
+		"number_of_openings":  pos.NumberOfOpenings,
+		"job_description":     pos.JobDescription,
+		"requirements":        pos.Requirements,
+	}
+
+	if pos.SalaryRangeMin.Valid {
+		response["salary_range_min"] = pos.SalaryRangeMin.Int64
+	}
+	if pos.SalaryRangeMax.Valid {
+		response["salary_range_max"] = pos.SalaryRangeMax.Int64
+	}
+	if pos.SalaryRangeText.Valid {
+		response["salary_range_text"] = pos.SalaryRangeText.String
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": response})
+}
+func (h *Handlers) ListPositions(c *gin.Context) {
+	pageStr := c.DefaultQuery("page", "1")
+	limitStr := c.DefaultQuery("limit", "10")
+	search := strings.TrimSpace(c.Query("search"))
+	status := strings.TrimSpace(c.Query("status"))
+	department := strings.TrimSpace(c.Query("department"))
+	location := strings.TrimSpace(c.Query("location"))
+	isActive := c.DefaultQuery("is_active", "")
+
+	candidateIDVal, exists := c.Get("candidate_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	candidateID, ok := candidateIDVal.(string)
+	if !ok || candidateID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid candidate id"})
+		return
+	}
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 || limit > 100 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	args := []interface{}{}
+	whereConditions := []string{}
+
+	if search != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("(hp.position_title ILIKE $%d OR hp.job_description ILIKE $%d)", len(args)+1, len(args)+1))
+		args = append(args, "%"+search+"%")
+	}
+	if status != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("hp.status = $%d", len(args)+1))
+		args = append(args, status)
+	}
+	if department != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("hp.department ILIKE $%d", len(args)+1))
+		args = append(args, "%"+department+"%")
+	}
+	if location != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("hp.location ILIKE $%d", len(args)+1))
+		args = append(args, "%"+location+"%")
+	}
+	if isActive != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("hp.is_active = $%d", len(args)+1))
+		args = append(args, isActive == "true")
+	}
+
+	where := ""
+	if len(whereConditions) > 0 {
+		where = "WHERE " + strings.Join(whereConditions, " AND ")
+	}
+
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM hiring_positions hp %s", where)
+	if err := h.DB.QueryRow(countQuery, args...).Scan(&total); err != nil {
+		log.Printf("Error counting positions: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count positions"})
+		return
+	}
+
+	candidateIDPlaceholder := fmt.Sprintf("$%d", len(args)+1)
+	limitPlaceholder := fmt.Sprintf("$%d", len(args)+2)
+	offsetPlaceholder := fmt.Sprintf("$%d", len(args)+3)
+	args = append(args, candidateID, limit, offset)
+
+	query := fmt.Sprintf(`
+		SELECT
+			hp.id, hp.position_title, hp.department, hp.location,
+			hp.employment_type, hp.experience_required,
+			hp.salary_range_min, hp.salary_range_max, hp.salary_range_text,
+			hp.number_of_openings, hp.job_description, hp.requirements,
+			hp.status, hp.created_at, hp.updated_at,
+			hp.created_by, hp.updated_by, hp.is_active,
+
+			-- application info
+			ja.id           AS application_id,
+			ja.status       AS application_status,
+			ja.applied_at   AS applied_at,
+
+			-- interview session info (only if exists)
+			is2.scheduled_at   AS interview_scheduled_at,
+			is2.interview_url  AS interview_url,
+			is2.status         AS interview_status
+
+		FROM hiring_positions hp
+		LEFT JOIN job_applications ja
+			ON ja.position_id = hp.id AND ja.candidate_id = %s
+		LEFT JOIN LATERAL (
+			SELECT scheduled_at, interview_url, status
+			FROM interview_sessions
+			WHERE application_id = ja.id
+			ORDER BY created_at DESC
+			LIMIT 1
+		) is2 ON ja.id IS NOT NULL
+		%s
+		ORDER BY hp.created_at DESC
+		LIMIT %s OFFSET %s
+	`, candidateIDPlaceholder, where, limitPlaceholder, offsetPlaceholder)
+
+	rows, err := h.DB.Query(query, args...)
+	if err != nil {
+		log.Printf("Error querying positions: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve positions"})
+		return
+	}
+	defer rows.Close()
+
+	type InterviewInfo struct {
+		ScheduledAt  time.Time `json:"scheduled_at"`
+		InterviewURL string    `json:"interview_url"`
+		Status       string    `json:"status"`
+	}
+
+	type PositionWithApplication struct {
+		models.HiringPosition
+		ApplicationID     *string        `json:"application_id,omitempty"`
+		ApplicationStatus *string        `json:"application_status,omitempty"`
+		AppliedAt         *time.Time     `json:"applied_at,omitempty"`
+		Interview         *InterviewInfo `json:"interview,omitempty"`
+	}
+
+	positions := []PositionWithApplication{}
+
+	for rows.Next() {
+		var pos models.HiringPosition
+		var createdBy, updatedBy, salaryRangeText sql.NullString
+
+		var applicationID, applicationStatus sql.NullString
+		var appliedAt sql.NullTime
+
+		var interviewScheduledAt sql.NullTime
+		var interviewURL, interviewStatus sql.NullString
+
+		if err := rows.Scan(
+			&pos.ID, &pos.PositionTitle, &pos.Department, &pos.Location,
+			&pos.EmploymentType, &pos.ExperienceRequired,
+			&pos.SalaryRangeMin, &pos.SalaryRangeMax, &salaryRangeText,
+			&pos.NumberOfOpenings, &pos.JobDescription, &pos.Requirements,
+			&pos.Status, &pos.CreatedAt, &pos.UpdatedAt,
+			&createdBy, &updatedBy, &pos.IsActive,
+			&applicationID, &applicationStatus, &appliedAt,
+			&interviewScheduledAt, &interviewURL, &interviewStatus,
+		); err != nil {
+			log.Printf("Error scanning position: %v", err)
+			continue
+		}
+
+		if createdBy.Valid {
+			pos.CreatedBy = createdBy.String
+		}
+		if updatedBy.Valid {
+			pos.UpdatedBy = updatedBy.String
+		}
+		if salaryRangeText.Valid {
+			pos.SalaryRangeText = salaryRangeText.String
+		}
+
+		entry := PositionWithApplication{HiringPosition: pos}
+
+		if applicationID.Valid {
+			entry.ApplicationID = &applicationID.String
+			entry.ApplicationStatus = &applicationStatus.String
+			if appliedAt.Valid {
+				entry.AppliedAt = &appliedAt.Time
+			}
+		}
+
+		if interviewScheduledAt.Valid {
+			entry.Interview = &InterviewInfo{
+				ScheduledAt:  interviewScheduledAt.Time,
+				InterviewURL: interviewURL.String,
+				Status:       interviewStatus.String,
+			}
+		}
+
+		positions = append(positions, entry)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("Error iterating positions: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve positions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":        positions,
+		"total":       total,
+		"page":        page,
+		"limit":       limit,
+		"total_pages": int(math.Ceil(float64(total) / float64(limit))),
+	})
+}
+func (h *Handlers) ApplyForPosition(c *gin.Context) {
+
+	candidateIDVal, exists := c.Get("candidate_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	candidateID, ok := candidateIDVal.(string)
+	if !ok || candidateID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+		return
+	}
+
+	positionID := c.Param("position_id")
+	if positionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "position_id is required"})
+		return
+	}
+
+	var req models.CreateJobApplicationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req = models.CreateJobApplicationRequest{}
+	}
+
+	var positionExists bool
+	err := h.DB.QueryRow(`
+        SELECT EXISTS(
+            SELECT 1 FROM hiring_positions 
+            WHERE id = $1 AND is_active = TRUE AND status = 'active'
+        )
+    `, positionID).Scan(&positionExists)
+	if err != nil {
+		log.Printf("Error verifying position: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify position"})
+		return
+	}
+	if !positionExists {
+		c.JSON(http.StatusNotFound, gin.H{"error": "position not found or no longer active"})
+		return
+	}
+
+	var app models.JobApplication
+	var coverLetter sql.NullString
+	err = h.DB.QueryRow(`
+        INSERT INTO job_applications (candidate_id, position_id, cover_letter)
+        VALUES ($1, $2, $3)
+        RETURNING id, candidate_id, position_id, status, applied_at, updated_at, cover_letter
+    `, candidateID, positionID, req.CoverLetter).Scan(
+		&app.ID, &app.CandidateID, &app.PositionID,
+		&app.Status, &app.AppliedAt, &app.UpdatedAt, &coverLetter,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
+			c.JSON(http.StatusConflict, gin.H{"error": "you have already applied for this position"})
+			return
+		}
+		log.Printf("Error creating application: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+		return
+	}
+
+	if coverLetter.Valid {
+		app.CoverLetter = coverLetter.String
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"data": app})
+}
+
+func (h *Handlers) JoinInterviewSession(c *gin.Context) {
+	sessionID := c.Param("session_id")
+
+	candidateSessionIDVal, exists := c.Get("candidate_session_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	candidateSessionID, ok := candidateSessionIDVal.(string)
+	if !ok || candidateSessionID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
+		return
+	}
+
+	result, err := h.DB.Exec(`
+        UPDATE interview_sessions
+        SET candidate_session_id = $1,
+            started_at = NOW(),
+            status = 'in_progress'
+        WHERE session_id = $2
+          AND status = 'scheduled'
+    `, candidateSessionID, sessionID)
+	if err != nil {
+		log.Printf("JoinInterviewSession: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to join session"})
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already started"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "joined session", "session_id": sessionID})
 }
