@@ -1,0 +1,3124 @@
+{
+	"info": {
+		"_postman_id": "175485a2-1025-4929-9242-c518e8f55593",
+		"name": "Vigilant",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34833266"
+	},
+	"item": [
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "HIring Position",
+					"item": [
+						{
+							"name": "Fetch Positions",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/positions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"positions"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Fetch Positions",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/positions",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"positions"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 03:20:47 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "656"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": [\n        {\n            \"id\": \"04f1a822-4d66-4f8b-9db4-c07077388d9a\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"experience_required\": \"5+ years\",\n            \"salary_range_min\": 80000,\n            \"salary_range_max\": 120000,\n            \"salary_range_text\": \"$80k - $120k USD\",\n            \"number_of_openings\": 2,\n            \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n            \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\",\n            \"status\": \"active\",\n            \"created_at\": \"2026-04-05T04:44:14.004353Z\",\n            \"updated_at\": \"2026-04-05T04:44:14.004353Z\",\n            \"created_by\": \"system\",\n            \"is_active\": true\n        }\n    ],\n    \"limit\": 10,\n    \"page\": 1,\n    \"total\": 1,\n    \"total_pages\": 1\n}"
+								}
+							]
+						},
+						{
+							"name": "Create Position",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"position_title\": \"Senior Go Developer\",\n    \"department\": \"Engineering\",\n    \"location\": \"Remote\",\n    \"employment_type\": \"Full-time\",\n    \"experience_required\": \"5+ years\",\n    \"salary_range_min\": 80000,\n    \"salary_range_max\": 120000,\n    \"salary_range_text\": \"$80k - $120k USD\",\n    \"number_of_openings\": 2,\n    \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n    \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/positions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"positions"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Create Position",
+									"originalRequest": {
+										"method": "POST",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"position_title\": \"Senior Go Developer\",\n    \"department\": \"Engineering\",\n    \"location\": \"Remote\",\n    \"employment_type\": \"Full-time\",\n    \"experience_required\": \"5+ years\",\n    \"salary_range_min\": 80000,\n    \"salary_range_max\": 120000,\n    \"salary_range_text\": \"$80k - $120k USD\",\n    \"number_of_openings\": 2,\n    \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n    \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/positions",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"positions"
+											]
+										}
+									},
+									"status": "Created",
+									"code": 201,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 03:21:39 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "636"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"2a03b111-2624-4094-8dc1-c3da6af4909e\",\n        \"position_title\": \"Senior Go Developer\",\n        \"department\": \"Engineering\",\n        \"location\": \"Remote\",\n        \"employment_type\": \"Full-time\",\n        \"experience_required\": \"5+ years\",\n        \"salary_range_min\": 80000,\n        \"salary_range_max\": 120000,\n        \"salary_range_text\": \"$80k - $120k USD\",\n        \"number_of_openings\": 2,\n        \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n        \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\",\n        \"status\": \"active\",\n        \"created_at\": \"0001-01-01T00:00:00Z\",\n        \"updated_at\": \"0001-01-01T00:00:00Z\",\n        \"created_by\": \"system\",\n        \"is_active\": true\n    },\n    \"message\": \"position created successfully\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Position",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"positions",
+										"04f1a822-4d66-4f8b-9db4-c07077388d9a"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Get Position",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"positions",
+												"04f1a822-4d66-4f8b-9db4-c07077388d9a"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 04:44:08 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "608"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"04f1a822-4d66-4f8b-9db4-c07077388d9a\",\n        \"position_title\": \"Senior Go Developer\",\n        \"department\": \"Engineering\",\n        \"location\": \"Remote\",\n        \"employment_type\": \"Full-time\",\n        \"experience_required\": \"5+ years\",\n        \"salary_range_min\": 80000,\n        \"salary_range_max\": 120000,\n        \"salary_range_text\": \"$80k - $120k USD\",\n        \"number_of_openings\": 2,\n        \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n        \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\",\n        \"status\": \"active\",\n        \"created_at\": \"2026-04-05T04:44:14.004353Z\",\n        \"updated_at\": \"2026-04-05T04:44:14.004353Z\",\n        \"created_by\": \"system\",\n        \"is_active\": true\n    }\n}"
+								}
+							]
+						},
+						{
+							"name": "Update Position",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"position_title\": \"Senior React Developer\",\n    \"department\": \"Engineering\",\n    \"location\": \"Remote\",\n    \"employment_type\": \"Full-time\",\n    \"experience_required\": \"4+ years\",\n    \"salary_range_min\": 80000,\n    \"salary_range_max\": 120000,\n    \"salary_range_text\": \"$80k - $120k USD\",\n    \"number_of_openings\": 2,\n    \"job_description\": \"We are looking for a React to build high-performance Frontend.\",\n    \"requirements\": \"Proficiency in React.\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"positions",
+										"04f1a822-4d66-4f8b-9db4-c07077388d9a"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Update Position",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"position_title\": \"Senior React Developer\",\n    \"department\": \"Engineering\",\n    \"location\": \"Remote\",\n    \"employment_type\": \"Full-time\",\n    \"experience_required\": \"4+ years\",\n    \"salary_range_min\": 80000,\n    \"salary_range_max\": 120000,\n    \"salary_range_text\": \"$80k - $120k USD\",\n    \"number_of_openings\": 2,\n    \"job_description\": \"We are looking for a React to build high-performance Frontend.\",\n    \"requirements\": \"Proficiency in React.\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"positions",
+												"04f1a822-4d66-4f8b-9db4-c07077388d9a"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 04:46:06 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "96"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"position updated successfully\",\n    \"position_id\": \"04f1a822-4d66-4f8b-9db4-c07077388d9a\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Toggle Inactive",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "PATCH",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a/toggle-active",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"positions",
+										"04f1a822-4d66-4f8b-9db4-c07077388d9a",
+										"toggle-active"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Toggle Inactive",
+									"originalRequest": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a/toggle-active",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"positions",
+												"04f1a822-4d66-4f8b-9db4-c07077388d9a",
+												"toggle-active"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 04:47:36 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "102"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"position status updated to inactive\",\n    \"position_id\": \"04f1a822-4d66-4f8b-9db4-c07077388d9a\"\n}"
+								}
+							]
+						},
+						{
+							"name": "Delete Position",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"positions",
+										"04f1a822-4d66-4f8b-9db4-c07077388d9a"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Delete Position",
+									"originalRequest": {
+										"method": "DELETE",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/positions/04f1a822-4d66-4f8b-9db4-c07077388d9a",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"positions",
+												"04f1a822-4d66-4f8b-9db4-c07077388d9a"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 04:51:15 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "96"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"position deleted successfully\",\n    \"position_id\": \"04f1a822-4d66-4f8b-9db4-c07077388d9a\"\n}"
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Create Candidate",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create Candidate",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:25:50 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "164"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n    \"email\": \"agfaje2846@parsitv.com\",\n    \"full_name\": \"Aman Ahmed\",\n    \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"is_active\": true\n}"
+						}
+					]
+				},
+				{
+					"name": "Google Calendar Creds",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n     \"credential_name\": \"default\",\n    \"is_default\": true,\n    \"scopes\": [\n        \"https://www.googleapis.com/auth/calendar\",\n        \"https://www.googleapis.com/auth/calendar.events\"\n    ],\n    \"credentials_json\":\"\"\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/google-creds",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"google-creds"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Interview Session",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"interviewer_email\": \"agfaje2846@parsitv.com\",\n    \"position\": \"Senior Software Engineer\",\n    \"interview_type\": \"Technical Round - System Design\",\n    \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n    \"scheduled_duration\": 60,\n    \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n    \"timezone\": \"UTC\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/create-interview",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"create-interview"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n \n  \n  \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n        \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n  \"interviewer_email\": \"agfaje2846@parsitv.com\",\n  \"position\": \"Senior Software Engineer\",\n  \"interview_type\": \"Technical Round - System Design\",\n  \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n  \"scheduled_duration\": 60,\n  \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n  \"timezone\": \"UTC\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/create-interview",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"create-interview"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:33:12 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "635"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n    \"candidate_email\": \"agfaje2846@parsitv.com\",\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"candidate_name\": \"Aman Ahmed\",\n    \"created_at\": \"2026-04-06T03:33:12.164374Z\",\n    \"id\": 2,\n    \"interview_platform\": 0,\n    \"interview_type\": \"Technical Round - System Design\",\n    \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n    \"interviewer_email\": \"agfaje2846@parsitv.com\",\n    \"message\": \"Interview session created successfully.\",\n    \"position\": \"Senior Software Engineer\",\n    \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n    \"scheduled_duration\": 60,\n    \"session_id\": \"4da40191-6df5-4e6e-870b-e2e2c78dc7f2\",\n    \"status\": \"scheduled\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Application for current Candidate",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates/e1d7c74a-88de-40bf-919d-639b4160f4d6/applications",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates",
+								"e1d7c74a-88de-40bf-919d-639b4160f4d6",
+								"applications"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create Interview Session Copy",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates/e1d7c74a-88de-40bf-919d-639b4160f4d6/applications",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates",
+										"e1d7c74a-88de-40bf-919d-639b4160f4d6",
+										"applications"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:34:41 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "645"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"data\": [\n        {\n            \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n            \"application_status\": \"applied\",\n            \"applied_at\": \"2026-04-06T03:29:46.574888Z\",\n            \"position_id\": \"2a03b111-2624-4094-8dc1-c3da6af4909e\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"candidate_name\": \"Aman Ahmed\",\n            \"candidate_email\": \"agfaje2846@parsitv.com\",\n            \"interview_session_id\": \"4da40191-6df5-4e6e-870b-e2e2c78dc7f2\",\n            \"interview_status\": \"scheduled\",\n            \"interview_scheduled_at\": \"2026-04-10T14:30:00Z\",\n            \"interview_url\": \"https://meet.google.com/abc-defg-hij\"\n        }\n    ],\n    \"total\": 1\n}"
+						}
+					]
+				},
+				{
+					"name": "Interview Invite",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"candidate_name\": \"John Doe\",\n    \"candidate_email\": \"agfaje2846@parsitv.com\",\n    \"interviewer_email\": \"gofaje2846@parsitv.com\",\n    \"position\": \"Backend Engineer\",\n    \"interview_type\": \"Technical\",\n    \"scheduled_at\": \"Monday, April 7, 2026 at 2:00 PM UTC\",\n    \"duration_minutes\": 60,\n    \"meet_link\": \"https://meet.google.com/abc-defg-hij\",\n    \"entity_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/interviews/send-invite",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"interviews",
+								"send-invite"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create Candidate Copy",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"candidate_name\": \"John Doe\",\n    \"candidate_email\": \"agfaje2846@parsitv.com\",\n    \"interviewer_email\": \"gofaje2846@parsitv.com\",\n    \"position\": \"Backend Engineer\",\n    \"interview_type\": \"Technical\",\n    \"scheduled_at\": \"Monday, April 7, 2026 at 2:00 PM UTC\",\n    \"duration_minutes\": 60,\n    \"meet_link\": \"https://meet.google.com/abc-defg-hij\",\n    \"entity_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/interviews/send-invite",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"interviews",
+										"send-invite"
+									]
+								}
+							},
+							"status": "Accepted",
+							"code": 202,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:34:53 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "106"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"interview invites queued\",\n    \"recipients\": [\n        \"agfaje2846@parsitv.com\",\n        \"gofaje2846@parsitv.com\"\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "CSV Upload",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "abc.csv"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/csv-upload",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"csv-upload"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "file",
+											"type": "file",
+											"src": "abc.csv"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/csv-upload",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"csv-upload"
+									],
+									"query": [
+										{
+											"key": "",
+											"value": null,
+											"disabled": true
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:35:13 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "235"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"count\": 3,\n    \"data\": [\n        {\n            \"name\": \"John Doe\",\n            \"email\": \"john@example.com\"\n        },\n        {\n            \"name\": \"Jane Smith\",\n            \"email\": \"jane.smith@work.com\"\n        },\n        {\n            \"name\": \"Alice Johnson\",\n            \"email\": \"alice.j@provider.net\"\n        }\n    ],\n    \"success\": true,\n    \"timestamp\": \"2026-04-06T03:35:13.225797431Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Admin Access",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/access",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"access"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Admin Access",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/access",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"access"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:09:56 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "64"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"authenticated\": true,\n    \"message\": \"Token is valid\",\n    \"success\": true\n}"
+						}
+					]
+				},
+				{
+					"name": "List of Candidates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "List of Candidates",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:09:21 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1277"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": [\n        {\n            \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n            \"email\": \"agfaje2846@parsitv.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n            \"updated_at\": \"2026-04-06T03:27:54.624226Z\",\n            \"resume_url\": \"https://www.abkc.om\",\n            \"phone_number\": \"2222222222\",\n            \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n            \"is_active\": true,\n            \"experience_years\": 1,\n            \"onboarding_complete\": true,\n            \"github_url\": \"amanahmed\",\n            \"interview_current_stage\": \"\",\n            \"interview_next_stage\": \"\",\n            \"current_stage_qualified\": false,\n            \"interview_completed\": false,\n            \"last_login\": \"2026-04-06T03:27:39.574437Z\",\n            \"is_online\": false\n        },\n        {\n            \"id\": \"3fd694bb-7ccc-4a17-bf50-ca8e3952064c\",\n            \"email\": \"gofaje2846@parsitv.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"created_at\": \"2026-04-05T04:42:18.510878Z\",\n            \"updated_at\": \"2026-04-05T04:44:03.181262Z\",\n            \"resume_url\": \"https://drive.google.com/file/d/13ASjWLFcA1lRLWWMgzWnK2OLnuoyPPVF/view?usp=drive_link\",\n            \"phone_number\": \"9187309236\",\n            \"skills\": \"Python,Docker,GraphQL,Angular,AWS,Next.js,Node.js\",\n            \"is_active\": true,\n            \"experience_years\": 1,\n            \"onboarding_complete\": true,\n            \"github_url\": \"loarsaw\",\n            \"interview_current_stage\": \"\",\n            \"interview_next_stage\": \"\",\n            \"current_stage_qualified\": false,\n            \"interview_completed\": false,\n            \"last_login\": \"2026-04-05T06:17:00.306975Z\",\n            \"is_online\": false\n        }\n    ],\n    \"limit\": 10,\n    \"page\": 1,\n    \"total\": 2,\n    \"total_pages\": 1\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Active User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Active Users",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/active-users",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"active-users"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:09:31 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "29"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"active_users\": [],\n    \"count\": 0\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Languages",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/judge/languages",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"judge",
+								"languages"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Languages",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/judge/languages",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"judge",
+										"languages"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:08:29 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "46"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"languages\": [\n        \"c\",\n        \"cpp\",\n        \"js\",\n        \"python\",\n        \"java\"\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Candidate",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Admin-Token",
+								"value": "admintokenvalue",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates/e1d7c74a-88de-40bf-919d-639b4160f4d6",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates",
+								"e1d7c74a-88de-40bf-919d-639b4160f4d6"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Candidate",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates/e1d7c74a-88de-40bf-919d-639b4160f4d6",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates",
+										"e1d7c74a-88de-40bf-919d-639b4160f4d6"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:09:05 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "588"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"candidate\": {\n        \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n        \"email\": \"agfaje2846@parsitv.com\",\n        \"full_name\": \"Aman Ahmed\",\n        \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n        \"updated_at\": \"2026-04-06T03:27:54.624226Z\",\n        \"resume_url\": \"https://www.abkc.om\",\n        \"phone_number\": \"2222222222\",\n        \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n        \"is_active\": true,\n        \"experience_years\": 1,\n        \"onboarding_complete\": true,\n        \"github_url\": \"amanahmed\",\n        \"interview_current_stage\": \"\",\n        \"interview_next_stage\": \"\",\n        \"current_stage_qualified\": false,\n        \"interview_completed\": false,\n        \"last_login\": \"2026-04-06T03:27:39.574437Z\"\n    },\n    \"is_online\": false\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Canidate",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n    \"full_name\":\"Aman Ahmed Ansari\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update Canidate",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \n    \"resume_url\":\"https://drive.google.com/file/d/1KQiUyEHblazW8GaX61mdQW27kYbrxFoR/view?usp=sharing\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates/e1d7c74a-88de-40bf-919d-639b4160f4d6",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates",
+										"e1d7c74a-88de-40bf-919d-639b4160f4d6"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:11:33 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "64"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"status\": \"updated\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Soft Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates",
+								"1"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Delete Candidate",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates/e1d7c74a-88de-40bf-919d-639b4160f4d6",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates",
+										"e1d7c74a-88de-40bf-919d-639b4160f4d6"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:11:43 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "64"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"status\": \"deleted\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Dashboard",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n    \"full_name\":\"Aman Ahmed Ansari\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/dashboard",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"dashboard"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Dashboard",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \n    \"full_name\":\"Aman Ahmed Ansari\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/dashboard",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"dashboard"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:12:12 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "106"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"active_interviews\": 0,\n    \"high_risk_sessions\": 0,\n    \"interviews_today\": 0,\n    \"recent_logins\": 6,\n    \"total_candidates\": 1\n}"
+						}
+					]
+				},
+				{
+					"name": "Active Users",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n    \"full_name\":\"Aman Ahmed Ansari\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/dashboard",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"dashboard"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Active Ussers",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \n    \"full_name\":\"Aman Ahmed Ansari\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/active-users",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"active-users"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:19:50 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "67"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"active_users\": [\n        \"3fd694bb-7ccc-4a17-bf50-ca8e3952064c\"\n    ],\n    \"count\": 1\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Candidate",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJiYTY5ZWJjOC1lN2M5LTRiNDktODhiNy03ODMwMDg5ZTYxZGYiLCJlbWFpbCI6ImFiY0BnbWFpbC5jb20iLCJleHAiOjE3NzI4OTkwNDYsImlhdCI6MTc3MjgxMjY0NiwianRpIjoiZTQ0MTY1NjEtNDA4OS00NWVmLWFiOWMtOTUwNWE0MGEwNjdlIn0.kddIVqp1mnHOGZnGdXnaTFk3DZylrxyMyXn7w0NhULw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Login",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n\"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:27:39 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "601"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"email\": \"agfaje2846@parsitv.com\",\n    \"expires_at\": \"2026-04-07T03:27:39.568847934Z\",\n    \"full_name\": \"Aman Ahmed\",\n    \"logged_in_at\": \"2026-04-06T03:27:39.569437Z\",\n    \"onboarding_complete\": false,\n    \"session_id\": \"b12e9479-66e5-4b3e-b67e-3c2e157942eb\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Onboarding",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"experience_years\": 1,\n    \"github_id\": \"amanahmed\",\n    \"phone_number\": \"2222222222\",\n    \"resume_link\": \"https://www.abkc.om\",\n    \"skills\": [\n        \"Python\",\n        \"TypeScript\",\n        \"JavaScript\",\n        \"PostgreSQL\",\n        \"Git\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/onboarding",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"onboarding"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Create Candidate Copy",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"experience_years\": 1,\n    \"github_id\": \"amanahmed\",\n    \"phone_number\": \"2222222222\",\n    \"resume_link\": \"https://www.abkc.om\",\n    \"skills\": [\n        \"Python\",\n        \"TypeScript\",\n        \"JavaScript\",\n        \"PostgreSQL\",\n        \"Git\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/onboarding",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"onboarding"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:27:54 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "33"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"onboarding complete\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Fetching Candidates",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/admin/candidates",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"admin",
+								"candidates"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Fetching Candidates",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/candidates",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"candidates"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:28:22 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "45"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": \"unauthorized: invalid credentials\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Apply Position",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/positions/2a03b111-2624-4094-8dc1-c3da6af4909e/apply",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"positions",
+								"2a03b111-2624-4094-8dc1-c3da6af4909e",
+								"apply"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Apply Position",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": []
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/positions/2a03b111-2624-4094-8dc1-c3da6af4909e/apply",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"positions",
+										"2a03b111-2624-4094-8dc1-c3da6af4909e",
+										"apply"
+									]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:29:23 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "50"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"error\": \"unauthorized: invalid or expired token\"\n}"
+						},
+						{
+							"name": "Apply Position",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": []
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/positions/2a03b111-2624-4094-8dc1-c3da6af4909e/apply",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"positions",
+										"2a03b111-2624-4094-8dc1-c3da6af4909e",
+										"apply"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:29:46 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "266"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": {\n        \"id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n        \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n        \"position_id\": \"2a03b111-2624-4094-8dc1-c3da6af4909e\",\n        \"status\": \"applied\",\n        \"applied_at\": \"2026-04-06T03:29:46.574888Z\",\n        \"updated_at\": \"2026-04-06T03:29:46.574888Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Code",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Vigilant-Token",
+								"value": "tokenvalue",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_id\": \"7\",\n    \"candidate_id\": 6,\n    \"candidate_session_id\": 7,\n    \"interviewer_email\": \"string@example.com\",\n    \"position\": \"Job Title String\",\n    \"interview_type\": \"technical/behavioral/etc\",\n    \"scheduled_duration\": 60,\n    \"metadata\": \"{\\\"key\\\": \\\"value\\\"}\",\n    \"status\": \"in_progress\",\n    \"notes\": \"Any initial notes\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:3333/api/v1/create-interview",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"create-interview"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Output",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "X-Vigilant-Token",
+										"value": "tokenvalue",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"language\":\"js\",\n    \"code_b64\":\"Y29uc29sZS5sb2coImhlbGxvIik=\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:3333/api/v1/judge/execute",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"judge",
+										"execute"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:31:13 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "232"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"149a66d7-0302-428a-b25c-f9316940953b\",\n    \"language\": \"js\",\n    \"code\": \"console.log(\\\"hello\\\")\",\n    \"stdout\": \"hello\\n\",\n    \"stderr\": \"\",\n    \"exit_code\": 0,\n    \"time_ms\": 224,\n    \"memory_kb\": 0,\n    \"status\": \"accepted\",\n    \"created_at\": \"2026-04-06T03:31:13.690818201Z\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Positions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/positions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"positions"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "New Request",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/positions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"positions"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 03:28:52 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "1256"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"data\": [\n        {\n            \"id\": \"2a03b111-2624-4094-8dc1-c3da6af4909e\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"experience_required\": \"5+ years\",\n            \"salary_range_min\": 80000,\n            \"salary_range_max\": 120000,\n            \"salary_range_text\": \"$80k - $120k USD\",\n            \"number_of_openings\": 2,\n            \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n            \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\",\n            \"status\": \"active\",\n            \"created_at\": \"2026-04-06T03:21:39.075459Z\",\n            \"updated_at\": \"2026-04-06T03:21:39.075459Z\",\n            \"created_by\": \"system\",\n            \"is_active\": true\n        },\n        {\n            \"id\": \"04f1a822-4d66-4f8b-9db4-c07077388d9a\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"experience_required\": \"5+ years\",\n            \"salary_range_min\": 80000,\n            \"salary_range_max\": 120000,\n            \"salary_range_text\": \"$80k - $120k USD\",\n            \"number_of_openings\": 2,\n            \"job_description\": \"We are looking for a Gopher to build high-performance microservices.\",\n            \"requirements\": \"Proficiency in Go, PostgreSQL, and Docker.\",\n            \"status\": \"active\",\n            \"created_at\": \"2026-04-05T04:44:14.004353Z\",\n            \"updated_at\": \"2026-04-05T04:44:14.004353Z\",\n            \"created_by\": \"system\",\n            \"is_active\": true\n        }\n    ],\n    \"limit\": 10,\n    \"page\": 1,\n    \"total\": 2,\n    \"total_pages\": 1\n}"
+						}
+					]
+				},
+				{
+					"name": "SSE",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "text/event-stream",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiIzZmQ2OTRiYi03Y2NjLTRhMTctYmY1MC1jYThlMzk1MjA2NGMiLCJlbWFpbCI6ImFtYW5yZWhhbmFobWVkQGdtYWlsLmNvbSIsImV4cCI6MTc3NTUzNTMyMCwiaWF0IjoxNzc1NDQ4OTIwLCJqdGkiOiIxZjdmNjc1Ny0zMTliLTQzZWEtODRmMC01MDJhYWZjMmE1NjIifQ.gr5aJWNnKPRxvLXi6ZkcQlCXohX5ci-TVpHIhtatbPY",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"events"
+							],
+							"query": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiIzZmQ2OTRiYi03Y2NjLTRhMTctYmY1MC1jYThlMzk1MjA2NGMiLCJlbWFpbCI6ImFtYW5yZWhhbmFobWVkQGdtYWlsLmNvbSIsImV4cCI6MTc3NTUzNTMyMCwiaWF0IjoxNzc1NDQ4OTIwLCJqdGkiOiIxZjdmNjc1Ny0zMTliLTQzZWEtODRmMC01MDJhYWZjMmE1NjIifQ.gr5aJWNnKPRxvLXi6ZkcQlCXohX5ci-TVpHIhtatbPY"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "SSE",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "text/event-stream",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/events?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiIzZmQ2OTRiYi03Y2NjLTRhMTctYmY1MC1jYThlMzk1MjA2NGMiLCJlbWFpbCI6ImFtYW5yZWhhbmFobWVkQGdtYWlsLmNvbSIsImV4cCI6MTc3NTUzNTMyMCwiaWF0IjoxNzc1NDQ4OTIwLCJqdGkiOiIxZjdmNjc1Ny0zMTliLTQzZWEtODRmMC01MDJhYWZjMmE1NjIifQ.gr5aJWNnKPRxvLXi6ZkcQlCXohX5ci-TVpHIhtatbPY",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"events"
+									],
+									"query": [
+										{
+											"key": "token",
+											"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiIzZmQ2OTRiYi03Y2NjLTRhMTctYmY1MC1jYThlMzk1MjA2NGMiLCJlbWFpbCI6ImFtYW5yZWhhbmFobWVkQGdtYWlsLmNvbSIsImV4cCI6MTc3NTUzNTMyMCwiaWF0IjoxNzc1NDQ4OTIwLCJqdGkiOiIxZjdmNjc1Ny0zMTliLTQzZWEtODRmMC01MDJhYWZjMmE1NjIifQ.gr5aJWNnKPRxvLXi6ZkcQlCXohX5ci-TVpHIhtatbPY"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/event-stream;charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 04:30:44 GMT"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "event:message\ndata:{\"payload\":\"\",\"type\":\"Type A\"}\n\n"
+						}
+					]
+				},
+				{
+					"name": "Submissions",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiIzZmQ2OTRiYi03Y2NjLTRhMTctYmY1MC1jYThlMzk1MjA2NGMiLCJlbWFpbCI6ImFtYW5yZWhhbmFobWVkQGdtYWlsLmNvbSIsImV4cCI6MTc3NTU2OTYxMiwiaWF0IjoxNzc1NDgzMjEyLCJqdGkiOiJiMWQzNWJmOS0xZWUyLTQyN2QtODMwZi00YzRkMTAwNTliYTgifQ.KbJDXax9AnUJaJ3HxtXEuB59TpSpoteudbbwZMt1hbQ",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/judge/submissions",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"judge",
+								"submissions"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Submissions",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/judge/submissions",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"judge",
+										"submissions"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 13:47:39 GMT"
+								},
+								{
+									"key": "Transfer-Encoding",
+									"value": "chunked"
+								}
+							],
+							"cookie": [],
+							"body": "[\n    {\n        \"id\": \"84fe0f34-7424-420b-9f45-04fb43b3df94\",\n        \"language\": \"js\",\n        \"code\": \"console.log(\\\"hello\\\")\",\n        \"stdout\": \"hello\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 46,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-06T13:47:16.605663Z\"\n    },\n    {\n        \"id\": \"320da568-c163-419a-b6a4-3d61cbb86b2d\",\n        \"language\": \"js\",\n        \"code\": \"console.log(\\\"hello\\\")\",\n        \"stdout\": \"hello\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 49,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-06T13:47:15.693386Z\"\n    },\n    {\n        \"id\": \"a93b5531-cbb3-4019-a60e-c4f82180ee15\",\n        \"language\": \"js\",\n        \"code\": \"console.log(\\\"hello\\\")\",\n        \"stdout\": \"hello\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 42,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-06T13:47:14.082409Z\"\n    },\n    {\n        \"id\": \"0059f298-a1d8-4038-94c8-b01e886101e5\",\n        \"language\": \"js\",\n        \"code\": \"console.log(\\\"hello\\\")\",\n        \"stdout\": \"hello\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 229,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-06T13:45:41.951901Z\"\n    },\n    {\n        \"id\": \"149a66d7-0302-428a-b25c-f9316940953b\",\n        \"language\": \"js\",\n        \"code\": \"console.log(\\\"hello\\\")\",\n        \"stdout\": \"hello\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 224,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-06T03:31:13.691236Z\"\n    },\n    {\n        \"id\": \"446a2a2c-9e1e-403c-b2a1-5e8742c172e2\",\n        \"language\": \"js\",\n        \"code\": \"console.log(\\\"Hello, World!\\\")\",\n        \"stdout\": \"Hello, World!\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 213,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-05T06:16:22.632825Z\"\n    },\n    {\n        \"id\": \"e4f92270-6593-4104-b6f5-9c2a910d3a79\",\n        \"language\": \"cpp\",\n        \"code\": \"#include <iostream>\\nint main() {\\n    std::cout << \\\"Hello, World!\\\" << std::endl;\\n    for (int i=0 ; i<40 ; i++){\\n        std::cout<<i<<\\\"\\\\n\\\";\\n    }\\n    return 0;\\n}\",\n        \"stdout\": \"Hello, World!\\n0\\n1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n9\\n10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20\\n21\\n22\\n23\\n24\\n25\\n26\\n27\\n28\\n29\\n30\\n31\\n32\\n33\\n34\\n35\\n36\\n37\\n38\\n39\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 2,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-05T06:16:12.637599Z\"\n    },\n    {\n        \"id\": \"b85f0430-b762-49c6-bb44-c29724888311\",\n        \"language\": \"cpp\",\n        \"code\": \"#include <iostream>\\nint main() {\\n    std::cout << \\\"Hello, World!\\\" << std::endl;\\n    for (int i=0 ; i<40 ; i++){\\n        std::cout<<i<<\\\"\\\\n\\\";\\n    }\\n    return 0;\\n}\",\n        \"stdout\": \"Hello, World!\\n0\\n1\\n2\\n3\\n4\\n5\\n6\\n7\\n8\\n9\\n10\\n11\\n12\\n13\\n14\\n15\\n16\\n17\\n18\\n19\\n20\\n21\\n22\\n23\\n24\\n25\\n26\\n27\\n28\\n29\\n30\\n31\\n32\\n33\\n34\\n35\\n36\\n37\\n38\\n39\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 3,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-05T06:15:57.270825Z\"\n    },\n    {\n        \"id\": \"3d03e11e-2e23-4c3c-8a38-c380a1eedbdb\",\n        \"language\": \"cpp\",\n        \"code\": \"#include <iostream>\\nint main() {\\n    std::cout << \\\"Hello, World!\\\" << std::endl;\\n    return 0;\\n}\",\n        \"stdout\": \"Hello, World!\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 2,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-05T06:15:31.771007Z\"\n    },\n    {\n        \"id\": \"86b42bb1-a29b-4902-b959-3a479688344d\",\n        \"language\": \"cpp\",\n        \"code\": \"#include <iostream>\\nint main() {\\n    std::cout << \\\"Hello, World!\\\" << std::endl;\\n    return 0;\\n}\",\n        \"stdout\": \"Hello, World!\\n\",\n        \"stderr\": \"\",\n        \"exit_code\": 0,\n        \"time_ms\": 7,\n        \"memory_kb\": 0,\n        \"status\": \"accepted\",\n        \"created_at\": \"2026-04-05T06:14:17.588543Z\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Submission",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiIzZmQ2OTRiYi03Y2NjLTRhMTctYmY1MC1jYThlMzk1MjA2NGMiLCJlbWFpbCI6ImFtYW5yZWhhbmFobWVkQGdtYWlsLmNvbSIsImV4cCI6MTc3NTU2OTYxMiwiaWF0IjoxNzc1NDgzMjEyLCJqdGkiOiJiMWQzNWJmOS0xZWUyLTQyN2QtODMwZi00YzRkMTAwNTliYTgifQ.KbJDXax9AnUJaJ3HxtXEuB59TpSpoteudbbwZMt1hbQ",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3333/api/v1/judge/submissions/84fe0f34-7424-420b-9f45-04fb43b3df94",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3333",
+							"path": [
+								"api",
+								"v1",
+								"judge",
+								"submissions",
+								"84fe0f34-7424-420b-9f45-04fb43b3df94"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get Submission",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/judge/submissions/84fe0f34-7424-420b-9f45-04fb43b3df94",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"judge",
+										"submissions",
+										"84fe0f34-7424-420b-9f45-04fb43b3df94"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT, DELETE"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Apr 2026 13:49:46 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "228"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"id\": \"84fe0f34-7424-420b-9f45-04fb43b3df94\",\n    \"language\": \"js\",\n    \"code\": \"console.log(\\\"hello\\\")\",\n    \"stdout\": \"hello\\n\",\n    \"stderr\": \"\",\n    \"exit_code\": 0,\n    \"time_ms\": 46,\n    \"memory_kb\": 0,\n    \"status\": \"accepted\",\n    \"created_at\": \"2026-04-06T13:47:16.605663Z\"\n}"
+						}
+					]
+				}
+			],
+			"description": "List of API Available for Candidates"
+		}
+	]
+}
