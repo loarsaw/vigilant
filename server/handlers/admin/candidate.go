@@ -1,4 +1,4 @@
-package handlers
+package admin
 
 import (
 	"database/sql"
@@ -321,7 +321,7 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 			&resumeUrl, &githubUrl, &skills, &phoneNumber, &experienceYears,
 			&cand.OnboadingComplete,
 			&interviewCurrentStage, &interviewNextStage,
-			&cand.CurrentStageQualified, &cand.InterviewCompleted, &lastLogin,
+			&lastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
@@ -339,12 +339,7 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 		if phoneNumber.Valid {
 			cand.PhoneNumber = phoneNumber.String
 		}
-		if interviewCurrentStage.Valid {
-			cand.InterviewCurrentStage = interviewCurrentStage.String
-		}
-		if interviewNextStage.Valid {
-			cand.InterviewNextStage = interviewNextStage.String
-		}
+
 		if lastLogin.Valid {
 			cand.LastLogin = &lastLogin.Time
 		}
@@ -392,7 +387,7 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
 		&cand.OnboadingComplete,
 		&interviewCurrentStage, &interviewNextStage,
-		&cand.CurrentStageQualified, &cand.InterviewCompleted, &cand.LastLogin,
+		&cand.LastLogin,
 	)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
@@ -403,9 +398,6 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidate"})
 		return
 	}
-
-	cand.InterviewCurrentStage = interviewCurrentStage.String
-	cand.InterviewNextStage = interviewNextStage.String
 
 	c.JSON(http.StatusOK, gin.H{
 		"candidate": cand,

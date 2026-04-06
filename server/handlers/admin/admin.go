@@ -1,7 +1,8 @@
-package handlers
+package admin
 
 import (
 	"database/sql"
+	"net/http"
 	"vigilant/config"
 	"vigilant/email"
 
@@ -35,4 +36,12 @@ func (h *AdminHandlers) loadMailer(c *gin.Context) (*email.Mailer, *email.SESCon
 	}
 
 	return mailer, sesCfg, nil
+}
+
+func (h *AdminHandlers) VerifyToken(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success":       true,
+		"message":       "Token is valid",
+		"authenticated": true,
+	})
 }

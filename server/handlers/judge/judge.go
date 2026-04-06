@@ -1,4 +1,4 @@
-package handlers
+package judge
 
 import (
 	"database/sql"
@@ -7,21 +7,27 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
+	"encoding/base64"
+	"vigilant/executor"
+	"vigilant/models"
+
+	"vigilant/config"
 
 	"github.com/gin-gonic/gin"
-	"vigilant/executor"
-	"encoding/base64"
-	"vigilant/models"
 )
 
+type Handlers struct {
+	DB  *sql.DB
+	Cfg *config.Config
+}
 
 func (h *Handlers) ListLanguages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"languages": []gin.H{
 			{
-				"id":      "c",
-				"name":    "C",
+				"id":   "c",
+				"name": "C",
 				"example": base64.StdEncoding.EncodeToString([]byte(`#include <stdio.h>
 int main() {
     printf("Hello, World!\n");
@@ -29,8 +35,8 @@ int main() {
 }`)),
 			},
 			{
-				"id":      "cpp",
-				"name":    "C++",
+				"id":   "cpp",
+				"name": "C++",
 				"example": base64.StdEncoding.EncodeToString([]byte(`#include <iostream>
 int main() {
     std::cout << "Hello, World!" << std::endl;
@@ -43,13 +49,13 @@ int main() {
 				"example": base64.StdEncoding.EncodeToString([]byte(`console.log("Hello, World!")`)),
 			},
 			{
-    "id":      "python",
-    "name":    "Python",
-    "example": base64.StdEncoding.EncodeToString([]byte(`print("Hello, World!")`)),
-},
+				"id":      "python",
+				"name":    "Python",
+				"example": base64.StdEncoding.EncodeToString([]byte(`print("Hello, World!")`)),
+			},
 			{
-				"id":      "java",
-				"name":    "Java",
+				"id":   "java",
+				"name": "Java",
 				"example": base64.StdEncoding.EncodeToString([]byte(`public class Main {
     public static void main(String[] args) {
         System.out.println("Hello, World!");
@@ -59,8 +65,6 @@ int main() {
 		},
 	})
 }
-
-
 
 func saveSubmission(db *sql.DB, s *models.Submission) (string, error) {
 	var id string
@@ -137,7 +141,7 @@ func (h *Handlers) ExecuteCode(c *gin.Context) {
 		return
 	}
 
-	result, err := executor.Execute(req.Language, code) 
+	result, err := executor.Execute(req.Language, code)
 	if err != nil {
 		log.Printf("[judge] execution error lang=%s err=%v", req.Language, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "execution failed"})
@@ -153,7 +157,7 @@ func (h *Handlers) ExecuteCode(c *gin.Context) {
 
 	sub := &models.Submission{
 		Language:  req.Language,
-		Code:      code, 
+		Code:      code,
 		Stdout:    result.Stdout,
 		Stderr:    result.Stderr,
 		ExitCode:  result.ExitCode,
@@ -162,13 +166,12 @@ func (h *Handlers) ExecuteCode(c *gin.Context) {
 		Status:    status,
 		CreatedAt: time.Now(),
 	}
-    id, err := saveSubmission(h.DB, sub)
-    if err != nil {
-      log.Printf("[judge] db save error: %v", err)
-    } else {
-      sub.ID = id
-    }	                         
-
+	id, err := saveSubmission(h.DB, sub)
+	if err != nil {
+		log.Printf("[judge] db save error: %v", err)
+	} else {
+		sub.ID = id
+	}
 
 	c.JSON(http.StatusOK, sub)
 }

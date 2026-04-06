@@ -1,12 +1,13 @@
-package handlers
+package admin
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"vigilant/sse"
+
+	"github.com/gin-gonic/gin"
 )
 
 func (h *AdminHandlers) SSEEvents(c *gin.Context) {
@@ -15,7 +16,6 @@ func (h *AdminHandlers) SSEEvents(c *gin.Context) {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	
 
 	if token != h.Cfg.AdminAuthToken {
 		c.AbortWithStatus(http.StatusUnauthorized)

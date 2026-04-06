@@ -1,6 +1,11 @@
 package models
 
-import "time"
+import (
+	"database/sql"
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type ProcessReport struct {
 	ID        int64     `json:"id,omitempty"`
@@ -19,24 +24,20 @@ type Process struct {
 }
 
 type Candidate struct {
-	ID                    string     `json:"id"`
-	Email                 string     `json:"email"`
-	PasswordHash          string     `json:"-"`
-	FullName              string     `json:"full_name,omitempty"`
-	CreatedAt             time.Time  `json:"created_at"`
-	UpdatedAt             time.Time  `json:"updated_at"`
-	ResumeUrl             string     `json:"resume_url"`
-	PhoneNumber           string     `json:"phone_number"`
-	Skills                string     `json:"skills"`
-	IsActive              bool       `json:"is_active"`
-	ExperienceYears       uint8      `json:"experience_years"`
-	OnboadingComplete     bool       `json:"onboarding_complete"`
-	GithubUrl             string     `json:"github_url"`
-	InterviewCurrentStage string     `json:"interview_current_stage"`
-	InterviewNextStage    string     `json:"interview_next_stage"`
-	CurrentStageQualified bool       `json:"current_stage_qualified"`
-	InterviewCompleted    bool       `json:"interview_completed"`
-	LastLogin             *time.Time `json:"last_login,omitempty"`
+	ID                string     `json:"id"`
+	Email             string     `json:"email"`
+	PasswordHash      string     `json:"-"`
+	FullName          string     `json:"full_name,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+	ResumeUrl         string     `json:"resume_url"`
+	PhoneNumber       string     `json:"phone_number"`
+	Skills            string     `json:"skills"`
+	IsActive          bool       `json:"is_active"`
+	ExperienceYears   uint8      `json:"experience_years"`
+	OnboadingComplete bool       `json:"onboarding_complete"`
+	GithubUrl         string     `json:"github_url"`
+	LastLogin         *time.Time `json:"last_login,omitempty"`
 }
 
 type CandidateLogin struct {
@@ -381,4 +382,20 @@ type JobApplication struct {
 
 type CreateJobApplicationRequest struct {
 	CoverLetter string `json:"cover_letter,omitempty"`
+}
+
+// models/administrator.go
+type Administrator struct {
+	ID          string         `json:"id"`
+	Email       string         `json:"email"`
+	FullName    string         `json:"full_name"`
+	Role        string         `json:"role"`
+	Department  sql.NullString `json:"department,omitempty"`
+	Designation sql.NullString `json:"designation,omitempty"`
+	PhoneNumber sql.NullString `json:"phone_number,omitempty"`
+	IsActive    bool           `json:"is_active"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	CreatedBy   uuid.NullUUID  `json:"created_by,omitempty"`
+	LastLogin   sql.NullTime   `json:"last_login,omitempty"`
 }

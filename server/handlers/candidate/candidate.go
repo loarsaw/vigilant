@@ -1,4 +1,4 @@
-package handlers
+package candidate
 
 import (
 	"database/sql"
@@ -28,48 +28,6 @@ func (h *Handlers) HealthCheck(c *gin.Context) {
 		"timestamp": time.Now(),
 		"service":   "vigilant-server",
 	})
-}
-
-func (h *AdminHandlers) VerifyToken(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success":       true,
-		"message":       "Token is valid",
-		"authenticated": true,
-	})
-}
-
-func (h *AdminHandlers) EndInterviewSession(c *gin.Context) {
-	id := c.Param("id")
-
-	var req struct {
-		Notes  string `json:"notes"`
-		Status string `json:"status"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		req.Status = "completed"
-	}
-
-	query := `
-        UPDATE interview_sessions
-        SET ended_at = NOW(),
-            status = $1,
-            notes = $2
-        WHERE id = $3 AND ended_at IS NULL`
-
-	result, err := h.DB.Exec(query, req.Status, req.Notes, id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to close session"})
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already closed"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "interview_ended", "id": id})
 }
 
 func (h *Handlers) GetActiveInterview(c *gin.Context) {

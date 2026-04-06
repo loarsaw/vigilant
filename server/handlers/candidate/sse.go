@@ -1,13 +1,14 @@
-package handlers
+package candidate
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
 
+	"vigilant/sse"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"vigilant/sse"
 )
 
 func (h *Handlers) SSEEvents(c *gin.Context) {
