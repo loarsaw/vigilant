@@ -637,6 +637,307 @@
 					]
 				},
 				{
+					"name": "Applications",
+					"item": [
+						{
+							"name": "Get Applicants",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/applications",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"applications"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Get Applicants",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/applications",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"applications"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 21:03:33 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "455"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"applications\": [\n        {\n            \"applied_at\": \"2026-04-06T20:52:12.911761Z\",\n            \"candidate_email\": \"abc@gmail.com\",\n            \"candidate_id\": \"7c3c662b-bb9d-4947-b50b-8985b0be09cf\",\n            \"candidate_name\": \"Aman Ahmed\",\n            \"cover_letter\": \"\",\n            \"department\": \"Engineering\",\n            \"id\": \"c22a0b7f-01dd-46e6-b580-70433ded9f07\",\n            \"notes\": \"\",\n            \"position_id\": \"8e4baf1f-5092-46a7-8b7a-f65a7a285bd8\",\n            \"position_title\": \"Senior Go Developer\",\n            \"status\": \"applied\",\n            \"updated_at\": \"2026-04-06T20:52:12.911761Z\"\n        }\n    ],\n    \"count\": 1\n}"
+								}
+							]
+						},
+						{
+							"name": "Get Applicant",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/applications/da6b4c5d-65dc-49c5-ae23-18e310bd4f48",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"applications",
+										"da6b4c5d-65dc-49c5-ae23-18e310bd4f48"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Get Applicant",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/applications/da6b4c5d-65dc-49c5-ae23-18e310bd4f48",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"applications",
+												"da6b4c5d-65dc-49c5-ae23-18e310bd4f48"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "",
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 21:24:02 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "1069"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"application\": {\n        \"id\": \"da6b4c5d-65dc-49c5-ae23-18e310bd4f48\",\n        \"candidate_id\": \"b9dc6d01-188d-466b-920c-74fdcba8d027\",\n        \"position_id\": \"d1ae44d4-482d-46ac-a6dd-66ba282dc63a\",\n        \"status\": \"interviewing\",\n        \"notes\": \"Hello\",\n        \"applied_at\": \"2026-04-06T21:13:43.274651Z\",\n        \"updated_at\": \"2026-04-06T21:23:20.244281Z\",\n        \"candidate\": {\n            \"id\": \"b9dc6d01-188d-466b-920c-74fdcba8d027\",\n            \"email\": \"abc@gmail.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"resume_url\": \"https://www.abkc.om\",\n            \"github_url\": \"amanahmed\",\n            \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n            \"phone_number\": \"2222222222\",\n            \"experience_years\": 1,\n            \"is_active\": false,\n            \"onboarding_complete\": false,\n            \"created_at\": \"0001-01-01T00:00:00Z\",\n            \"updated_at\": \"0001-01-01T00:00:00Z\"\n        },\n        \"position\": {\n            \"id\": \"d1ae44d4-482d-46ac-a6dd-66ba282dc63a\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"experience_required\": \"5+ years\",\n            \"number_of_openings\": 0,\n            \"job_description\": \"\",\n            \"requirements\": \"\",\n            \"status\": \"active\",\n            \"is_active\": false,\n            \"created_at\": \"0001-01-01T00:00:00Z\",\n            \"updated_at\": \"0001-01-01T00:00:00Z\"\n        }\n    }\n}"
+								}
+							]
+						},
+						{
+							"name": "Update Status",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Admin-Token",
+										"value": "admintokenvalue",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:3333/api/v1/admin/applications/da6b4c5d-65dc-49c5-ae23-18e310bd4f48",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "3333",
+									"path": [
+										"api",
+										"v1",
+										"admin",
+										"applications",
+										"da6b4c5d-65dc-49c5-ae23-18e310bd4f48"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Get Applicant Copy",
+									"originalRequest": {
+										"method": "PUT",
+										"header": [
+											{
+												"key": "X-Admin-Token",
+												"value": "admintokenvalue",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"status\":\"interviewing\",\n    \"notes\":\"Hello\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "http://localhost:3333/api/v1/admin/applications/da6b4c5d-65dc-49c5-ae23-18e310bd4f48/toggle",
+											"protocol": "http",
+											"host": [
+												"localhost"
+											],
+											"port": "3333",
+											"path": [
+												"api",
+												"v1",
+												"admin",
+												"applications",
+												"da6b4c5d-65dc-49c5-ae23-18e310bd4f48",
+												"toggle"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "",
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, X-Admin-Token, X-Vigilant-Token,X-Admin-Email, X-Admin-Password, X-System-Type"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT, DELETE"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Mon, 06 Apr 2026 21:24:17 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "189"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"data\": {\n        \"id\": \"da6b4c5d-65dc-49c5-ae23-18e310bd4f48\",\n        \"notes\": \"Hello\",\n        \"status\": \"interviewing\",\n        \"updated_at\": \"2026-04-06T21:24:17.903386Z\"\n    },\n    \"message\": \"application status updated successfully\"\n}"
+								}
+							]
+						}
+					]
+				},
+				{
 					"name": "Create Candidate",
 					"request": {
 						"method": "POST",
@@ -649,7 +950,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+							"raw": "{\n    \"email\":\"abc@gmail.com\",\n    \"password\":\"amanahmed\",\n    \"full_name\":\"Aman Ahmed\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -685,7 +986,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+									"raw": "{\n    \"email\":\"abc@gmail.com\",\n    \"password\":\"amanahmed\",\n    \"full_name\":\"Aman Ahmed\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -741,7 +1042,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n    \"email\": \"agfaje2846@parsitv.com\",\n    \"full_name\": \"Aman Ahmed\",\n    \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"is_active\": true\n}"
+							"body": "{\n    \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n    \"email\": \"abc@gmail.com\",\n    \"full_name\": \"Aman Ahmed\",\n    \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"is_active\": true\n}"
 						}
 					]
 				},
@@ -795,7 +1096,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"interviewer_email\": \"agfaje2846@parsitv.com\",\n    \"position\": \"Senior Software Engineer\",\n    \"interview_type\": \"Technical Round - System Design\",\n    \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n    \"scheduled_duration\": 60,\n    \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n    \"timezone\": \"UTC\"\n}",
+							"raw": "{\n    \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"interviewer_email\": \"abc@gmail.com\",\n    \"position\": \"Senior Software Engineer\",\n    \"interview_type\": \"Technical Round - System Design\",\n    \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n    \"scheduled_duration\": 60,\n    \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n    \"timezone\": \"UTC\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -831,7 +1132,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n \n  \n  \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n        \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n  \"interviewer_email\": \"agfaje2846@parsitv.com\",\n  \"position\": \"Senior Software Engineer\",\n  \"interview_type\": \"Technical Round - System Design\",\n  \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n  \"scheduled_duration\": 60,\n  \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n  \"timezone\": \"UTC\"\n}",
+									"raw": "{\n \n  \n  \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n        \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n  \"interviewer_email\": \"abc@gmail.com\",\n  \"position\": \"Senior Software Engineer\",\n  \"interview_type\": \"Technical Round - System Design\",\n  \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n  \"scheduled_duration\": 60,\n  \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n  \"timezone\": \"UTC\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -887,7 +1188,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n    \"candidate_email\": \"agfaje2846@parsitv.com\",\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"candidate_name\": \"Aman Ahmed\",\n    \"created_at\": \"2026-04-06T03:33:12.164374Z\",\n    \"id\": 2,\n    \"interview_platform\": 0,\n    \"interview_type\": \"Technical Round - System Design\",\n    \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n    \"interviewer_email\": \"agfaje2846@parsitv.com\",\n    \"message\": \"Interview session created successfully.\",\n    \"position\": \"Senior Software Engineer\",\n    \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n    \"scheduled_duration\": 60,\n    \"session_id\": \"4da40191-6df5-4e6e-870b-e2e2c78dc7f2\",\n    \"status\": \"scheduled\"\n}"
+							"body": "{\n    \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n    \"candidate_email\": \"abc@gmail.com\",\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"candidate_name\": \"Aman Ahmed\",\n    \"created_at\": \"2026-04-06T03:33:12.164374Z\",\n    \"id\": 2,\n    \"interview_platform\": 0,\n    \"interview_type\": \"Technical Round - System Design\",\n    \"interview_url\": \"https://meet.google.com/abc-defg-hij\",\n    \"interviewer_email\": \"abc@gmail.com\",\n    \"message\": \"Interview session created successfully.\",\n    \"position\": \"Senior Software Engineer\",\n    \"scheduled_at\": \"2026-04-10T14:30:00Z\",\n    \"scheduled_duration\": 60,\n    \"session_id\": \"4da40191-6df5-4e6e-870b-e2e2c78dc7f2\",\n    \"status\": \"scheduled\"\n}"
 						}
 					]
 				},
@@ -907,7 +1208,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+							"raw": "{\n    \"email\":\"qbc@gmail.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -945,7 +1246,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+									"raw": "{\n    \"email\":\"qbc@gmail.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1003,7 +1304,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"data\": [\n        {\n            \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n            \"application_status\": \"applied\",\n            \"applied_at\": \"2026-04-06T03:29:46.574888Z\",\n            \"position_id\": \"2a03b111-2624-4094-8dc1-c3da6af4909e\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"candidate_name\": \"Aman Ahmed\",\n            \"candidate_email\": \"agfaje2846@parsitv.com\",\n            \"interview_session_id\": \"4da40191-6df5-4e6e-870b-e2e2c78dc7f2\",\n            \"interview_status\": \"scheduled\",\n            \"interview_scheduled_at\": \"2026-04-10T14:30:00Z\",\n            \"interview_url\": \"https://meet.google.com/abc-defg-hij\"\n        }\n    ],\n    \"total\": 1\n}"
+							"body": "{\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"data\": [\n        {\n            \"application_id\": \"306236b3-8226-4b95-86a8-086a54571608\",\n            \"application_status\": \"applied\",\n            \"applied_at\": \"2026-04-06T03:29:46.574888Z\",\n            \"position_id\": \"2a03b111-2624-4094-8dc1-c3da6af4909e\",\n            \"position_title\": \"Senior Go Developer\",\n            \"department\": \"Engineering\",\n            \"location\": \"Remote\",\n            \"employment_type\": \"Full-time\",\n            \"candidate_name\": \"Aman Ahmed\",\n            \"candidate_email\": \"abc@gmail.com\",\n            \"interview_session_id\": \"4da40191-6df5-4e6e-870b-e2e2c78dc7f2\",\n            \"interview_status\": \"scheduled\",\n            \"interview_scheduled_at\": \"2026-04-10T14:30:00Z\",\n            \"interview_url\": \"https://meet.google.com/abc-defg-hij\"\n        }\n    ],\n    \"total\": 1\n}"
 						}
 					]
 				},
@@ -1020,7 +1321,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"candidate_name\": \"John Doe\",\n    \"candidate_email\": \"agfaje2846@parsitv.com\",\n    \"interviewer_email\": \"gofaje2846@parsitv.com\",\n    \"position\": \"Backend Engineer\",\n    \"interview_type\": \"Technical\",\n    \"scheduled_at\": \"Monday, April 7, 2026 at 2:00 PM UTC\",\n    \"duration_minutes\": 60,\n    \"meet_link\": \"https://meet.google.com/abc-defg-hij\",\n    \"entity_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}",
+							"raw": "{\n    \"candidate_name\": \"John Doe\",\n    \"candidate_email\": \"abc@gmail.com\",\n    \"interviewer_email\": \"qbc@gmail.com\",\n    \"position\": \"Backend Engineer\",\n    \"interview_type\": \"Technical\",\n    \"scheduled_at\": \"Monday, April 7, 2026 at 2:00 PM UTC\",\n    \"duration_minutes\": 60,\n    \"meet_link\": \"https://meet.google.com/abc-defg-hij\",\n    \"entity_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1057,7 +1358,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"candidate_name\": \"John Doe\",\n    \"candidate_email\": \"agfaje2846@parsitv.com\",\n    \"interviewer_email\": \"gofaje2846@parsitv.com\",\n    \"position\": \"Backend Engineer\",\n    \"interview_type\": \"Technical\",\n    \"scheduled_at\": \"Monday, April 7, 2026 at 2:00 PM UTC\",\n    \"duration_minutes\": 60,\n    \"meet_link\": \"https://meet.google.com/abc-defg-hij\",\n    \"entity_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}",
+									"raw": "{\n    \"candidate_name\": \"John Doe\",\n    \"candidate_email\": \"abc@gmail.com\",\n    \"interviewer_email\": \"qbc@gmail.com\",\n    \"position\": \"Backend Engineer\",\n    \"interview_type\": \"Technical\",\n    \"scheduled_at\": \"Monday, April 7, 2026 at 2:00 PM UTC\",\n    \"duration_minutes\": 60,\n    \"meet_link\": \"https://meet.google.com/abc-defg-hij\",\n    \"entity_id\": \"550e8400-e29b-41d4-a716-446655440000\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1114,7 +1415,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"message\": \"interview invites queued\",\n    \"recipients\": [\n        \"agfaje2846@parsitv.com\",\n        \"gofaje2846@parsitv.com\"\n    ]\n}"
+							"body": "{\n    \"message\": \"interview invites queued\",\n    \"recipients\": [\n        \"abc@gmail.com\",\n        \"qbc@gmail.com\"\n    ]\n}"
 						}
 					]
 				},
@@ -1431,7 +1732,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"data\": [\n        {\n            \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n            \"email\": \"agfaje2846@parsitv.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n            \"updated_at\": \"2026-04-06T03:27:54.624226Z\",\n            \"resume_url\": \"https://www.abkc.om\",\n            \"phone_number\": \"2222222222\",\n            \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n            \"is_active\": true,\n            \"experience_years\": 1,\n            \"onboarding_complete\": true,\n            \"github_url\": \"amanahmed\",\n            \"interview_current_stage\": \"\",\n            \"interview_next_stage\": \"\",\n            \"current_stage_qualified\": false,\n            \"interview_completed\": false,\n            \"last_login\": \"2026-04-06T03:27:39.574437Z\",\n            \"is_online\": false\n        },\n        {\n            \"id\": \"3fd694bb-7ccc-4a17-bf50-ca8e3952064c\",\n            \"email\": \"gofaje2846@parsitv.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"created_at\": \"2026-04-05T04:42:18.510878Z\",\n            \"updated_at\": \"2026-04-05T04:44:03.181262Z\",\n            \"resume_url\": \"https://drive.google.com/file/d/13ASjWLFcA1lRLWWMgzWnK2OLnuoyPPVF/view?usp=drive_link\",\n            \"phone_number\": \"9187309236\",\n            \"skills\": \"Python,Docker,GraphQL,Angular,AWS,Next.js,Node.js\",\n            \"is_active\": true,\n            \"experience_years\": 1,\n            \"onboarding_complete\": true,\n            \"github_url\": \"loarsaw\",\n            \"interview_current_stage\": \"\",\n            \"interview_next_stage\": \"\",\n            \"current_stage_qualified\": false,\n            \"interview_completed\": false,\n            \"last_login\": \"2026-04-05T06:17:00.306975Z\",\n            \"is_online\": false\n        }\n    ],\n    \"limit\": 10,\n    \"page\": 1,\n    \"total\": 2,\n    \"total_pages\": 1\n}"
+							"body": "{\n    \"data\": [\n        {\n            \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n            \"email\": \"abc@gmail.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n            \"updated_at\": \"2026-04-06T03:27:54.624226Z\",\n            \"resume_url\": \"https://www.abkc.om\",\n            \"phone_number\": \"2222222222\",\n            \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n            \"is_active\": true,\n            \"experience_years\": 1,\n            \"onboarding_complete\": true,\n            \"github_url\": \"amanahmed\",\n            \"interview_current_stage\": \"\",\n            \"interview_next_stage\": \"\",\n            \"current_stage_qualified\": false,\n            \"interview_completed\": false,\n            \"last_login\": \"2026-04-06T03:27:39.574437Z\",\n            \"is_online\": false\n        },\n        {\n            \"id\": \"3fd694bb-7ccc-4a17-bf50-ca8e3952064c\",\n            \"email\": \"qbc@gmail.com\",\n            \"full_name\": \"Aman Ahmed\",\n            \"created_at\": \"2026-04-05T04:42:18.510878Z\",\n            \"updated_at\": \"2026-04-05T04:44:03.181262Z\",\n            \"resume_url\": \"https://drive.google.com/file/d/13ASjWLFcA1lRLWWMgzWnK2OLnuoyPPVF/view?usp=drive_link\",\n            \"phone_number\": \"9187309236\",\n            \"skills\": \"Python,Docker,GraphQL,Angular,AWS,Next.js,Node.js\",\n            \"is_active\": true,\n            \"experience_years\": 1,\n            \"onboarding_complete\": true,\n            \"github_url\": \"loarsaw\",\n            \"interview_current_stage\": \"\",\n            \"interview_next_stage\": \"\",\n            \"current_stage_qualified\": false,\n            \"interview_completed\": false,\n            \"last_login\": \"2026-04-05T06:17:00.306975Z\",\n            \"is_online\": false\n        }\n    ],\n    \"limit\": 10,\n    \"page\": 1,\n    \"total\": 2,\n    \"total_pages\": 1\n}"
 						}
 					]
 				},
@@ -1738,7 +2039,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"candidate\": {\n        \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n        \"email\": \"agfaje2846@parsitv.com\",\n        \"full_name\": \"Aman Ahmed\",\n        \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n        \"updated_at\": \"2026-04-06T03:27:54.624226Z\",\n        \"resume_url\": \"https://www.abkc.om\",\n        \"phone_number\": \"2222222222\",\n        \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n        \"is_active\": true,\n        \"experience_years\": 1,\n        \"onboarding_complete\": true,\n        \"github_url\": \"amanahmed\",\n        \"interview_current_stage\": \"\",\n        \"interview_next_stage\": \"\",\n        \"current_stage_qualified\": false,\n        \"interview_completed\": false,\n        \"last_login\": \"2026-04-06T03:27:39.574437Z\"\n    },\n    \"is_online\": false\n}"
+							"body": "{\n    \"candidate\": {\n        \"id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n        \"email\": \"abc@gmail.com\",\n        \"full_name\": \"Aman Ahmed\",\n        \"created_at\": \"2026-04-06T03:25:50.272836Z\",\n        \"updated_at\": \"2026-04-06T03:27:54.624226Z\",\n        \"resume_url\": \"https://www.abkc.om\",\n        \"phone_number\": \"2222222222\",\n        \"skills\": \"Python,TypeScript,JavaScript,PostgreSQL,Git\",\n        \"is_active\": true,\n        \"experience_years\": 1,\n        \"onboarding_complete\": true,\n        \"github_url\": \"amanahmed\",\n        \"interview_current_stage\": \"\",\n        \"interview_next_stage\": \"\",\n        \"current_stage_qualified\": false,\n        \"interview_completed\": false,\n        \"last_login\": \"2026-04-06T03:27:39.574437Z\"\n    },\n    \"is_online\": false\n}"
 						}
 					]
 				},
@@ -2168,7 +2469,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\"\n}",
+							"raw": "{\n\"email\":\"abc@gmail.com\",\n    \"password\":\"amanahmed\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2198,7 +2499,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n\"email\":\"agfaje2846@parsitv.com\",\n    \"password\":\"amanahmed\"\n}",
+									"raw": "{\n\"email\":\"abc@gmail.com\",\n    \"password\":\"amanahmed\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2254,7 +2555,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"email\": \"agfaje2846@parsitv.com\",\n    \"expires_at\": \"2026-04-07T03:27:39.568847934Z\",\n    \"full_name\": \"Aman Ahmed\",\n    \"logged_in_at\": \"2026-04-06T03:27:39.569437Z\",\n    \"onboarding_complete\": false,\n    \"session_id\": \"b12e9479-66e5-4b3e-b67e-3c2e157942eb\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM\"\n}"
+							"body": "{\n    \"candidate_id\": \"e1d7c74a-88de-40bf-919d-639b4160f4d6\",\n    \"email\": \"abc@gmail.com\",\n    \"expires_at\": \"2026-04-07T03:27:39.568847934Z\",\n    \"full_name\": \"Aman Ahmed\",\n    \"logged_in_at\": \"2026-04-06T03:27:39.569437Z\",\n    \"onboarding_complete\": false,\n    \"session_id\": \"b12e9479-66e5-4b3e-b67e-3c2e157942eb\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYW5kaWRhdGVfaWQiOiJlMWQ3Yzc0YS04OGRlLTQwYmYtOTE5ZC02MzliNDE2MGY0ZDYiLCJlbWFpbCI6ImFtYW5haG1lZDEzODVAZ21haWwuY29tIiwiZXhwIjoxNzc1NTMyNDU5LCJpYXQiOjE3NzU0NDYwNTksImp0aSI6IjlkYjNhZjc1LWM2YWEtNDZmMC05OTA0LTZhOGJmMjg3NGRiOSJ9.BjW0DsxQyGd08HthhmtZt7qtx9JSwlU0gUFWahebdIM\"\n}"
 						}
 					]
 				},
@@ -2380,7 +2681,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+							"raw": "{\n    \"email\":\"qbc@gmail.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2410,7 +2711,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"email\":\"gofaje2846@parsitv.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
+									"raw": "{\n    \"email\":\"qbc@gmail.com\",\n    \"password\":\"amanahmed129912\",\n    \"full_name\":\"Aman Ahmed\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3081,7 +3382,7 @@
 							},
 							"status": "OK",
 							"code": 200,
-							"_postman_previewlanguage": "",
+							"_postman_previewlanguage": null,
 							"header": [
 								{
 									"key": "Access-Control-Allow-Credentials",

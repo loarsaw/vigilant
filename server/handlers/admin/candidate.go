@@ -252,6 +252,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		"message":            "Interview session created successfully.",
 	})
 }
+
 func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -288,9 +289,7 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	rows, err := h.DB.Query(fmt.Sprintf(`
 		SELECT id, email, full_name, created_at, updated_at, is_active,
 		       resume_url, github_url, skills, phone_number, experience_years,
-		       onboarding_complete,
-		       interview_current_stage, interview_next_stage,
-		       current_stage_qualified, interview_completed, last_login
+		       onboarding_complete,last_login
 		FROM candidates %s
 		ORDER BY created_at DESC
 		LIMIT %s OFFSET %s
@@ -311,7 +310,6 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	for rows.Next() {
 		var cand models.Candidate
 		var resumeUrl, githubUrl, skills, phoneNumber sql.NullString
-		var interviewCurrentStage, interviewNextStage sql.NullString
 		var lastLogin sql.NullTime
 		var experienceYears sql.NullInt16
 
@@ -319,8 +317,7 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
 			&cand.IsActive,
 			&resumeUrl, &githubUrl, &skills, &phoneNumber, &experienceYears,
-			&cand.OnboadingComplete,
-			&interviewCurrentStage, &interviewNextStage,
+			&cand.OnboardingComplete,
 			&lastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
@@ -372,21 +369,17 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 
 	var cand models.Candidate
-	var interviewCurrentStage, interviewNextStage sql.NullString
 
 	err := h.DB.QueryRow(`
 		SELECT id, email, full_name, created_at, updated_at, is_active,
 		       resume_url, github_url, skills, phone_number, experience_years,
-		       onboarding_complete,
-		       interview_current_stage, interview_next_stage,
-		       current_stage_qualified, interview_completed, last_login
+		       onboarding_complete,last_login
 		FROM candidates WHERE id = $1::uuid
 	`, candidateID).Scan(
 		&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
 		&cand.IsActive,
 		&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
-		&cand.OnboadingComplete,
-		&interviewCurrentStage, &interviewNextStage,
+		&cand.OnboardingComplete,
 		&cand.LastLogin,
 	)
 	if err == sql.ErrNoRows {
@@ -412,8 +405,6 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 		FullName              *string `json:"full_name"`
 		IsActive              *bool   `json:"is_active"`
 		Password              *string `json:"password"`
-		InterviewCurrentStage *string `json:"interview_current_stage"`
-		InterviewNextStage    *string `json:"interview_next_stage"`
 		CurrentStageQualified *bool   `json:"current_stage_qualified"`
 		InterviewCompleted    *bool   `json:"interview_completed"`
 		ResumeUrl             *string `json:"resume_url"`
@@ -452,16 +443,7 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 		args = append(args, string(hashedPassword))
 		argID++
 	}
-	if req.InterviewCurrentStage != nil {
-		updates = append(updates, fmt.Sprintf("interview_current_stage = $%d", argID))
-		args = append(args, *req.InterviewCurrentStage)
-		argID++
-	}
-	if req.InterviewNextStage != nil {
-		updates = append(updates, fmt.Sprintf("interview_next_stage = $%d", argID))
-		args = append(args, *req.InterviewNextStage)
-		argID++
-	}
+
 	if req.CurrentStageQualified != nil {
 		updates = append(updates, fmt.Sprintf("current_stage_qualified = $%d", argID))
 		args = append(args, *req.CurrentStageQualified)

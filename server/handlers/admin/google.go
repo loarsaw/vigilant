@@ -17,8 +17,6 @@ import (
 func (h *AdminHandlers) CreateGoogleCredential(c *gin.Context) {
 	var req struct {
 		CredentialName      string   `json:"credential_name" binding:"required"`
-		OrganizationID      *string  `json:"organization_id"`
-		UserID              *string  `json:"user_id"`
 		CredentialsJSON     string   `json:"credentials_json" binding:"required"`
 		IsDefault           bool     `json:"is_default"`
 		DelegatedAdminEmail *string  `json:"delegated_admin_email"`
@@ -66,8 +64,6 @@ func (h *AdminHandlers) CreateGoogleCredential(c *gin.Context) {
 
 	cred := &models.GoogleCredential{
 		CredentialName:      req.CredentialName,
-		OrganizationID:      req.OrganizationID,
-		UserID:              req.UserID,
 		ServiceAccountEmail: sa.ClientEmail,
 		ProjectID:           sa.ProjectID,
 		PrivateKeyID:        sa.PrivateKeyID,

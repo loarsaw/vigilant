@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"strings"
 
+	"vigilant/config"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"vigilant/config"
 )
 
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
@@ -17,16 +18,15 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		}
 
 		if cfg.AuthToken == "" && cfg.JWTSecret == "" {
-
 			c.Next()
 			return
 		}
 
+		// X-Vigilant-Token bypass (device/system token)
 		token := c.GetHeader("X-Vigilant-Token")
 		if token == "" {
 			token = c.Query("X-Vigilant-Token")
 		}
-
 		if token != "" && cfg.AuthToken != "" && token == cfg.AuthToken {
 			c.Next()
 			return
@@ -54,16 +54,16 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 		})
 
 		if err != nil || !jwtToken.Valid {
-
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: invalid or expired token"})
-
 			c.Abort()
 			return
 		}
 
 		if claims, ok := jwtToken.Claims.(jwt.MapClaims); ok {
 			c.Set("candidate_id", claims["candidate_id"])
+			c.Set("user_id", claims["candidate_id"])
 			c.Set("email", claims["email"])
+			c.Set("user_email", claims["email"])
 		}
 
 		c.Next()

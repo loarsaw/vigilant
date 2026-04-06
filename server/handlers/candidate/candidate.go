@@ -617,10 +617,10 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 		}
 
 		if createdBy.Valid {
-			pos.CreatedBy = createdBy.String
+			pos.CreatedBy = &createdBy.String
 		}
 		if updatedBy.Valid {
-			pos.UpdatedBy = updatedBy.String
+			pos.UpdatedBy = &updatedBy.String
 		}
 		if salaryRangeText.Valid {
 			pos.SalaryRangeText = salaryRangeText.String
