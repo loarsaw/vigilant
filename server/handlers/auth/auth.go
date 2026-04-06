@@ -50,7 +50,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 		&candidate.PasswordHash,
 		&candidate.FullName,
 		&candidate.IsActive,
-		&candidate.OnboadingComplete,
+		&candidate.OnboardingComplete,
 	)
 
 	if err == sql.ErrNoRows {
@@ -131,7 +131,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 		"email":               candidate.Email,
 		"full_name":           candidate.FullName,
 		"session_id":          sessionID,
-		"onboarding_complete": candidate.OnboadingComplete,
+		"onboarding_complete": candidate.OnboardingComplete,
 		"logged_in_at":        loggedInAt,
 		"expires_at":          expiresAt,
 	})

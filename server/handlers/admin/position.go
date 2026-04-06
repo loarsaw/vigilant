@@ -39,9 +39,11 @@ func (h *AdminHandlers) CreatePosition(c *gin.Context) {
 		return
 	}
 
-	userEmail := c.GetString("user_email")
-	if userEmail == "" {
-		userEmail = "system"
+	adminID := c.GetString("user_id")
+
+	var createdBy *string
+	if adminID != "" && adminID != "00000000-0000-0000-0000-000000000001" {
+		createdBy = &adminID
 	}
 
 	var positionID string
@@ -58,7 +60,7 @@ func (h *AdminHandlers) CreatePosition(c *gin.Context) {
 		req.PositionTitle, req.Department, req.Location, req.EmploymentType,
 		req.ExperienceRequired, req.SalaryRangeMin, req.SalaryRangeMax,
 		req.SalaryRangeText, req.NumberOfOpenings, req.JobDescription,
-		req.Requirements, "active", userEmail, true,
+		req.Requirements, "active", createdBy, true,
 	).Scan(&positionID)
 
 	if err != nil {
@@ -83,7 +85,7 @@ func (h *AdminHandlers) CreatePosition(c *gin.Context) {
 			JobDescription:     req.JobDescription,
 			Requirements:       req.Requirements,
 			Status:             "active",
-			CreatedBy:          userEmail,
+			CreatedBy:          createdBy,
 			IsActive:           true,
 		},
 	})
@@ -304,10 +306,10 @@ func (h *AdminHandlers) ListPositions(c *gin.Context) {
 		}
 
 		if createdBy.Valid {
-			pos.CreatedBy = createdBy.String
+			pos.CreatedBy = &createdBy.String
 		}
 		if updatedBy.Valid {
-			pos.UpdatedBy = updatedBy.String
+			pos.UpdatedBy = &updatedBy.String
 		}
 		if salaryRangeText.Valid {
 			pos.SalaryRangeText = salaryRangeText.String
@@ -365,10 +367,10 @@ func (h *AdminHandlers) GetPositionByID(c *gin.Context) {
 	}
 
 	if createdBy.Valid {
-		pos.CreatedBy = createdBy.String
+		pos.CreatedBy = &createdBy.String
 	}
 	if updatedBy.Valid {
-		pos.UpdatedBy = updatedBy.String
+		pos.UpdatedBy = &updatedBy.String
 	}
 	if salaryRangeText.Valid {
 		pos.SalaryRangeText = salaryRangeText.String
@@ -380,9 +382,10 @@ func (h *AdminHandlers) GetPositionByID(c *gin.Context) {
 func (h *AdminHandlers) UpdatePositionActiveStatus(c *gin.Context) {
 	positionID := c.Param("id")
 
-	userEmail := c.GetString("user_email")
-	if userEmail == "" {
-		userEmail = "system"
+	adminID := c.GetString("user_id")
+	var updatedBy *string
+	if adminID != "" && adminID != "00000000-0000-0000-0000-000000000001" {
+		updatedBy = &adminID
 	}
 
 	var exists bool
@@ -401,7 +404,7 @@ func (h *AdminHandlers) UpdatePositionActiveStatus(c *gin.Context) {
 		UPDATE hiring_positions
 		SET is_active = false, status = 'closed', updated_by = $1
 		WHERE id = $2
-	`, userEmail, positionID)
+	`, updatedBy, positionID)
 
 	if err != nil {
 		log.Printf("Error updating position status: %v", err)
@@ -436,9 +439,10 @@ func (h *AdminHandlers) UpdatePosition(c *gin.Context) {
 		return
 	}
 
-	userEmail := c.GetString("user_email")
-	if userEmail == "" {
-		userEmail = "system"
+	adminID := c.GetString("user_id")
+	var updatedBy *string
+	if adminID != "" && adminID != "00000000-0000-0000-0000-000000000001" {
+		updatedBy = &adminID
 	}
 
 	var exists bool
@@ -454,7 +458,7 @@ func (h *AdminHandlers) UpdatePosition(c *gin.Context) {
 	}
 
 	updates := []string{"updated_by = $1"}
-	args := []interface{}{userEmail}
+	args := []interface{}{updatedBy} // ← *string, nil becomes SQL NULL
 	argIndex := 2
 
 	if req.PositionTitle != "" {

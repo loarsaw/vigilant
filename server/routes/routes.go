@@ -24,12 +24,16 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	authGroup := r.Group("/api/v1/auth")
 	{
 		authGroup.POST("/login", authH.Login)
-		authGroup.POST("/logout", authH.Logout)
-		authGroup.GET("/me", authH.GetMe)
+		authProtected := r.Group("/api/v1/auth")
+
+		authProtected.Use(middleware.AuthMiddleware(cfg))
+		authProtected.POST("/logout", authH.Logout)
+		authProtected.GET("/me", authH.GetMe)
+
 	}
 
 	adminGroup := r.Group("/api/v1/admin")
-	adminGroup.Use(middleware.AdminAuthMiddleware(cfg))
+	adminGroup.Use(middleware.AdminAuthMiddleware(cfg, db))
 	registerAdminRoutes(adminGroup, adminH, judgeH)
 
 	apiGroup := r.Group("/api/v1")
@@ -76,6 +80,12 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 
 	// Judge
 	g.GET("/judge/languages", judgeH.ListLanguages)
+
+	// Applications
+	g.GET("/applications", h.ListJobApplications)
+	g.GET("/applications/:id", h.GetJobApplication)
+	g.PUT("/applications/:id/toggle", h.UpdateJobApplicationStatus)
+
 }
 func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *judge.Handlers) {
 	g.POST("/process", h.CreateProcessReport)
