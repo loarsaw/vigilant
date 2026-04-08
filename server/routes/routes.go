@@ -54,7 +54,6 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.GET("/candidates/:id", h.GetCandidate)
 	g.PUT("/candidates/:id", h.UpdateCandidate)
 	g.DELETE("/candidates/:id", h.DeleteCandidate)
-	g.POST("/bulk-candidates", h.BulkCreateCandidates)
 	g.POST("/csv-upload", h.ParseUserList)
 	g.POST("/candidates/:id/push", h.PushToCandidate)
 	g.GET("/candidates/:id/applications", h.GetCandidateApplications)
@@ -76,7 +75,6 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.POST("/google-creds", h.CreateGoogleCredential)
 	g.POST("/credentials/google", h.CreateGoogleCredential)
 	g.POST("/interviews/send-invite", h.SendInterviewInvite)
-	g.POST("/create-interview", h.CreateInterviewSession)
 
 	// Judge
 	g.GET("/judge/languages", judgeH.ListLanguages)
@@ -84,7 +82,14 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// Applications
 	g.GET("/applications", h.ListJobApplications)
 	g.GET("/applications/:id", h.GetJobApplication)
-	g.PUT("/applications/:id/toggle", h.UpdateJobApplicationStatus)
+	g.PATCH("/applications/:id/status", h.UpdateJobApplicationStatus)
+
+	// Interviews
+	g.GET("/interviews", h.ListInterviewSessions)
+	g.POST("/create-interview", h.CreateInterviewSession)
+	// g.POST("/interviews", h.CreateInterviewSession)
+
+	// g.PATCH("/applications/bulk/status", h.BulkUpdateJobApplicationStatus)
 
 }
 func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *judge.Handlers) {
