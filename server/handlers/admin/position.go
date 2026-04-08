@@ -399,10 +399,15 @@ func (h *AdminHandlers) UpdatePositionActiveStatus(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "position not found"})
 		return
 	}
+	// var newIsActive bool
+	// var newStatus string
 
 	result, err := h.DB.Exec(`
 		UPDATE hiring_positions
-		SET is_active = false, status = 'closed', updated_by = $1
+        SET 
+        	is_active = NOT is_active, 
+            status = CASE WHEN NOT is_active THEN 'open' ELSE 'closed' END,
+            updated_by = $1
 		WHERE id = $2
 	`, updatedBy, positionID)
 
@@ -425,7 +430,7 @@ func (h *AdminHandlers) UpdatePositionActiveStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":     "position status updated to inactive",
+		"message":     "position status updated",
 		"position_id": positionID,
 	})
 }
