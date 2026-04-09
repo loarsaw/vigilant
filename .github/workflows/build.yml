@@ -1,43 +1,73 @@
-# name: Build & Publish For Windows and Linux
+name: Build & Publish For Windows and Linux
 
-# on:
-#   push:
-#     branches:
-#       - master
-# jobs:
-#   publish:
-#     name: Build & Publish for ${{ matrix.os }}
-#     runs-on: ${{ matrix.os }}
-#     strategy:
-#       matrix:
-#         os: [windows-latest , ubuntu-latest]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master    
 
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-#         with:
-#           submodules: recursive
+jobs:
+  publish:
+    name: Build & Publish for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
 
-#       - name: Setup Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: "22"
-#           cache: 'npm'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-#       - name: Install dependencies
-#         run: npm install
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: 'npm'
 
-#       - name: Rebuild
-#         run: npm run rebuild
+      - name: Install Linux Build Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdpkg-perl fakeroot rpm
 
-#       - name: Install Linux Build Dependencies
-#         if: matrix.os == 'ubuntu-latest'
-#         run: |
-#           sudo apt-get update
-#           sudo apt-get install -y libdpkg-perl fakeroot rpm
+      - name: Install dependencies (vigilant)
+        working-directory: apps/vigilant
+        run: npm install
 
-#       - name: Publish to GitHub Releases
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#         run: |
-#           npm run publish
+      - name: Rebuild (vigilant)
+        working-directory: apps/vigilant
+        run: npm run rebuild
+
+      - name: Publish (vigilant)
+        working-directory: apps/vigilant
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
+
+      - name: Install dependencies (vigilant-code)
+        working-directory: apps/vigilant-code
+        run: npm install
+
+      - name: Rebuild (vigilant-code)
+        working-directory: apps/vigilant-code
+        run: npm run rebuild
+
+      - name: Publish (vigilant-code)
+        working-directory: apps/vigilant-code
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
+
+      - name: Install dependencies (vigilant-admin)
+        working-directory: apps/vigilant-admin
+        run: npm install
+
+      - name: Publish (vigilant-admin)
+        working-directory: apps/vigilant-admin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
