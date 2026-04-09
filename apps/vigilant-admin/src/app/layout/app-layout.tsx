@@ -2,27 +2,18 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  UserSearch,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Settings,
-  Mail,
-  Phone,
-  Wifi,
   BrickWallShieldIcon,
-  ClipboardCheck,
   UserCheck2,
   AppWindowMacIcon,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useAdminAuth } from '@/hooks/use-auth';
 
-// const NAV_ITEMS = [
-
-// ];
 
 export function SidebarLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -30,7 +21,6 @@ export function SidebarLayout() {
   const { role } = useAdminAuth();
 
   console.log(role);
-  const location = useLocation();
   const [NAV_ITEMS] = useState([
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Candidate List', to: '/candidates', icon: Users },
@@ -41,7 +31,6 @@ export function SidebarLayout() {
     { label: 'Settings', to: '/settings', icon: Settings },
   ]);
 
-  // const isSettingsRoute = location.pathname.startsWith('/settings');
 
   return (
     <div className="flex h-screen  overflow-hidden">
@@ -54,12 +43,16 @@ export function SidebarLayout() {
           className={`flex items-center gap-2.5 border-b border-white/[0.07] py-7 overflow-hidden
           ${collapsed ? 'justify-center px-0' : 'px-6'}`}
         >
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/40">
-            <span className="text-white font-bold text-sm">R</span>
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg  flex items-center justify-center shadow-lg shadow-indigo-500/40">
+            <img
+              src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
+              alt="Vigilant Logo"
+              className="w-6 h-6 object-contain"
+            />
           </div>
           {!collapsed && (
             <span className="text-white font-semibold text-base tracking-tight whitespace-nowrap">
-              Recruiter
+              Vigilant Admin
             </span>
           )}
         </div>

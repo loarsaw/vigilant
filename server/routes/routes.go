@@ -46,7 +46,6 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *judge.Handlers) {
 
 	// Admin auth
-	// g.POST("/login", h.AdminLogin)
 	g.GET("/me", h.GetAdminMe)
 
 	// Email
@@ -95,9 +94,6 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.GET("/interviews", h.ListInterviewSessionsIndividualCandiate)
 	g.POST("/create-interview", h.CreateInterviewSession)
 	g.GET("/interviewers", h.ListInterviewers)
-	// g.POST("/interviews", h.CreateInterviewSession)
-
-	// g.PATCH("/applications/bulk/status", h.BulkUpdateJobApplicationStatus)
 
 	// Admin management (super admin only)
 	g.POST("/admins", h.CreateAdmin)

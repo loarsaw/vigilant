@@ -95,14 +95,16 @@ export default function LoginPage() {
       <Card className="w-full max-w-md border-border/50 shadow-2xl animate-fade-in">
         <CardHeader className="text-center space-y-2">
           <div className="flex items-center justify-center mb-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">
-                V
-              </span>
+            <div className="w-10 h-10 rounded-lg  flex items-center justify-center shadow-md">
+              <img
+                src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
+                alt="Vigilant Logo"
+                className="w-7 h-7 object-contain"
+              />
             </div>
           </div>
           <CardTitle className="text-3xl font-bold text-primary">
-            Recruit
+            Vigilant Admin
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             Employer Dashboard

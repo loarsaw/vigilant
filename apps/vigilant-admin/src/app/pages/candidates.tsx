@@ -35,6 +35,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { useCandidates } from '@/hooks/use-candidates';
 import { useImportCandidates } from '@/hooks/use-import-candidates';
+import { AddCandidateDialog } from '@/components/candidate/add-candidate';
+import { ImportCandidatesDialog } from '@/components/candidate/import-candidate';
 
 export function CandidatesList() {
   const {
@@ -362,213 +364,25 @@ export function CandidatesList() {
       </Tabs>
 
       {/* Add Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Add New Candidate</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label>Full Name</Label>
-              <Input
-                placeholder="John Doe"
-                value={formData.full_name}
-                onChange={e =>
-                  setFormData({ ...formData, full_name: e.target.value })
-                }
-                className="bg-[#0f1419] border-gray-700 mt-1"
-              />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={e =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="bg-[#0f1419] border-gray-700 mt-1"
-              />
-            </div>
-            <div>
-              <Label>Password</Label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={e =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="bg-[#0f1419] border-gray-700 mt-1"
-              />
-            </div>
-            <div className="flex gap-3 pt-4">
-              <Button
-                className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
-                onClick={handleAddCandidate}
-                disabled={isAdding || !formData.full_name || !formData.email}
-              >
-                {isAdding ? (
-                  <Loader2 className="animate-spin h-4 w-4" />
-                ) : (
-                  'Create Candidate'
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 border-gray-700 text-white"
-                onClick={() => setShowAddDialog(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog
+      <AddCandidateDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onAdd={addCandidate}
+        isLoading={isAdding}
+      />
+
+      {/* Import Candidate Dialog */}
+
+      <ImportCandidatesDialog
         open={showImportDialog}
-        onOpenChange={open => {
-          setShowImportDialog(open);
-          if (!open) resetImport();
-        }}
-      >
-        <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white">
-          <DialogHeader>
-            <DialogTitle>Import Candidates</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 mt-4">
-            {/* Error state */}
-            {importError && (
-              <div className="p-3 bg-red-400/10 border border-red-400/20 rounded text-red-400 text-sm flex items-center gap-2">
-                <XCircle className="h-4 w-4 flex-shrink-0" />
-                {importError}
-              </div>
-            )}
-
-            {/* Success state */}
-            {importSuccess && importResult && (
-              <div className="space-y-3">
-                <div className="p-3 bg-green-400/10 border border-green-400/20 rounded text-green-400 text-sm flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                  Import complete
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-[#0f1419] rounded p-3">
-                    <p className="text-2xl font-bold text-white">
-                      {importResult.inserted}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">Inserted</p>
-                  </div>
-                  <div className="bg-[#0f1419] rounded p-3">
-                    <p className="text-2xl font-bold text-white">
-                      {importResult.skipped}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">Skipped</p>
-                  </div>
-                  <div className="bg-[#0f1419] rounded p-3">
-                    <p
-                      className={`text-2xl font-bold ${importResult.failed_count > 0 ? 'text-red-400' : 'text-white'}`}
-                    >
-                      {importResult.failed_count}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">Failed</p>
-                  </div>
-                </div>
-
-                {/* Failed emails detail */}
-                {importResult.failed_emails?.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-400 font-medium">
-                      Failed emails:
-                    </p>
-                    <div className="max-h-36 overflow-y-auto space-y-1">
-                      {importResult.failed_emails.map(f => (
-                        <div
-                          key={f.email}
-                          className="flex items-start justify-between gap-2 text-xs bg-[#0f1419] rounded px-3 py-2"
-                        >
-                          <span className="text-white">{f.email}</span>
-                          <span className="text-red-400 text-right">
-                            {f.error}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-700 text-white"
-                  onClick={() => {
-                    resetImport();
-                    setShowImportDialog(false);
-                  }}
-                >
-                  Done
-                </Button>
-              </div>
-            )}
-
-            {!importSuccess && (
-              <>
-                <p className="text-gray-400 text-sm">
-                  Upload a CSV with columns:{' '}
-                  <span className="text-cyan-400">
-                    full_name, email 
-                  </span>
-                </p>
-
-                <label className="block">
-                  <div
-                    className={`w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                      isImporting
-                        ? 'border-cyan-400/50 bg-cyan-400/5'
-                        : 'border-gray-700 hover:border-cyan-400/50 hover:bg-cyan-400/5'
-                    }`}
-                  >
-                    {isImporting ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
-                        <p className="text-sm text-gray-400">Importing...</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <Upload className="h-8 w-8 text-gray-500" />
-                        <p className="text-sm text-gray-400">
-                          Click to upload CSV
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          or drag and drop
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    className="hidden"
-                    disabled={isImporting}
-                    onChange={handleFileChange}
-                  />
-                </label>
-
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-700 text-white"
-                  onClick={() => setShowImportDialog(false)}
-                  disabled={isImporting}
-                >
-                  Cancel
-                </Button>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setShowImportDialog}
+        onImport={importCSV}
+        isImporting={isImporting}
+        isSuccess={importSuccess}
+        result={importResult}
+        error={importError}
+        onReset={resetImport}
+      />
     </div>
   );
 }

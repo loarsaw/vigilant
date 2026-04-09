@@ -11,6 +11,7 @@ import { HiringPositions } from './app/pages/hiring';
 import { CandidateDetail } from './app/pages/candidate-detailts';
 import { JobApplicationsList } from './app/pages/applications';
 import { JobApplicationDetails } from './app/pages/job-applicant-details';
+import { AdminList } from './app/pages/admins';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -27,10 +28,12 @@ root.render(
           <Route path="/dashboard" Component={Dashboard} />
           <Route path="/candidates" Component={CandidatesList} />
           <Route path="/applications" Component={JobApplicationsList} />
+          <Route path="/team" Component={AdminList} />
           <Route
             path="/applications/:candidateId/:applicationId"
             Component={JobApplicationDetails}
           />
+          Upcoming Interviews
           <Route path="/interviews" Component={JobApplicationsList} />
           <Route path="/hiring" Component={HiringPositions} />
           <Route path="/candidates/:candidateId" Component={CandidateDetail} />

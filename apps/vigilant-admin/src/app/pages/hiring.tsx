@@ -58,7 +58,6 @@ const EMPTY_FORM: CreatePositionPayload = {
 };
 
 export function HiringPositions() {
-  // ── Server-side filters ──────────────────────────────────────────────────
   const [search, setSearch] = useState('');
   const [statusFilter, setStatus] = useState<'all' | 'active' | 'inactive'>(
     'all'
@@ -95,7 +94,6 @@ export function HiringPositions() {
     limit,
   });
 
-  // ── Dialog state ─────────────────────────────────────────────────────────
   const [showDialog, setShowDialog] = useState(false);
   const [editingPosition, setEditingPosition] = useState<HiringPosition | null>(
     null
@@ -151,7 +149,6 @@ export function HiringPositions() {
     }
   };
 
-  // ── Filter helpers ───────────────────────────────────────────────────────
   const resetFilters = () => {
     setSearch('');
     setStatus('all');
@@ -183,7 +180,6 @@ export function HiringPositions() {
 
   return (
     <div className="space-y-6 p-10">
-      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-white">Hiring Positions</h2>
@@ -200,14 +196,12 @@ export function HiringPositions() {
         </Button>
       </div>
 
-      {/* ── Error ── */}
       {isFetchError && (
         <div className="p-4 bg-red-400/10 border border-red-400/20 rounded text-red-400 text-sm">
           {fetchErrorMessage ?? 'Failed to load positions.'}
         </div>
       )}
 
-      {/* ── Stats ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-[#1a1f2e] border-gray-800 p-6">
           <div className="flex items-center gap-3">
@@ -253,7 +247,6 @@ export function HiringPositions() {
         </Card>
       </div>
 
-      {/* ── Filters ── */}
       <Card className="bg-[#1a1f2e] border-gray-800 p-4">
         <div className="flex flex-col md:flex-row gap-3">
           {/* Search */}
@@ -270,7 +263,6 @@ export function HiringPositions() {
             />
           </div>
 
-          {/* Status */}
           <Select
             value={statusFilter}
             onValueChange={v => {
@@ -289,7 +281,6 @@ export function HiringPositions() {
             </SelectContent>
           </Select>
 
-          {/* is_active */}
           <Select
             value={isActiveFilter}
             onValueChange={v => {
@@ -308,7 +299,6 @@ export function HiringPositions() {
             </SelectContent>
           </Select>
 
-          {/* Department */}
           <div className="relative">
             <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -322,7 +312,6 @@ export function HiringPositions() {
             />
           </div>
 
-          {/* Location */}
           <div className="relative">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -336,7 +325,6 @@ export function HiringPositions() {
             />
           </div>
 
-          {/* Clear */}
           {hasActiveFilters && (
             <Button
               variant="outline"
@@ -538,7 +526,7 @@ export function HiringPositions() {
         </div>
       )}
 
-      {/* ── Add / Edit Dialog ── */}
+     
       <Dialog open={showDialog} onOpenChange={closeDialog}>
         <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

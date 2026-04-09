@@ -1,43 +1,42 @@
-  
-
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface WorkspaceEntryProps {
-  onSubmit: (workspace: string) => void
+  onSubmit: (workspace: string) => void;
 }
 
 export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
-  const [value, setValue] = useState('')
-  const [error, setError] = useState('')
+  const [value, setValue] = useState('');
+  const [error, setError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value)
-    setError('')
-  }
+    setValue(e.target.value);
+    setError('');
+  };
 
   const handleSubmit = () => {
     if (!value.trim()) {
-      setError('Please enter your workspace')
-      return
+      setError('Please enter your workspace');
+      return;
     }
 
-
-    const workspaceRegex = /^[a-zA-Z0-9._-]+$/
+    const workspaceRegex = /^[a-zA-Z0-9._-]+$/;
     if (!workspaceRegex.test(value)) {
-      setError('Invalid workspace format. Use letters, numbers, dots, hyphens, or underscores.')
-      return
+      setError(
+        'Invalid workspace format. Use letters, numbers, dots, hyphens, or underscores.'
+      );
+      return;
     }
 
-    onSubmit(value)
-  }
+    onSubmit(value);
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleSubmit()
+      handleSubmit();
     }
-  }
+  };
 
   return (
     <div className="w-full animate-fade-in">
@@ -50,7 +49,11 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
         </div>
 
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 mb-6 shadow-lg">
-          <span className="text-slate-950 text-xl font-bold">→</span>
+          <img
+            src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
+            alt="Vigilant Logo"
+            className="w-8 h-8 object-contain"
+          />
         </div>
 
         <h2 className="text-5xl font-bold text-white mb-3 text-balance">
@@ -98,5 +101,5 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
         </p>
       </div>
     </div>
-  )
+  );
 }
