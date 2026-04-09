@@ -6,28 +6,18 @@ import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
-  const { login, isLoggingIn, loginError, resetLogin, logout, setupPoller, setSessionMeta } = useAuth();
-  const router = useNavigate();
+  const { login, isLoggingIn, loginError, resetLogin, logout, setupPoller, setSessionMeta , user } = useAuth();
   const [step, setStep] = useState<
     'workspace' | 'credentials' | 'success' | 'waiting'
   >('workspace');
   const [workspace, setWorkspace] = useState('');
   const [username, setUsername] = useState('');
 
-async function values(){
-  const value =await window.api.getAllProcesses()
-console.log(value , "value")
-  
-} 
 
-useEffect(()=>{
-  values()
-} ,[] )
   const { data: setupStatus } = setupPoller(workspace, username, step === 'waiting');
 
   if (setupStatus?.assigned && setupStatus.setupPath && step === 'waiting') {
     setSessionMeta(workspace, setupStatus.setupPath);
-    router('/wait');
   }
 
   const handleWorkspaceSubmit = (value: string) => {

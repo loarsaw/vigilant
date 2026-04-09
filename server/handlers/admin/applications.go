@@ -190,6 +190,10 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 	sortBy := c.DefaultQuery("sort_by", "applied_at")
 	sortOrder := c.DefaultQuery("sort_order", "desc")
 
+	// Get admin role and ID from context
+	adminRole, _ := c.Get("admin_role")
+	adminID, _ := c.Get("admin_id")
+
 	if page < 1 {
 		page = 1
 	}
@@ -256,25 +260,39 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 		}
 	}
 
-	countQuery := `
-		SELECT COUNT(*)
+	baseJoins := `
 		FROM job_applications ja
 		JOIN candidates c ON ja.candidate_id = c.id
 		JOIN hiring_positions p ON ja.position_id = p.id
-		WHERE 1=1
 	`
 
+	interviewerFilter := ""
+	if adminRole == "interviewer" && adminID != nil {
+		baseJoins += `
+		JOIN interview_sessions isess ON ja.id = isess.application_id
+		`
+		interviewerFilter = fmt.Sprintf(`
+			AND isess.interviewer_id = '%s'
+			AND isess.scheduled_at > NOW()
+			AND isess.status IN ('scheduled', 'in_progress')
+		`, adminID)
+	}
+
+	countQuery := `
+		SELECT COUNT(DISTINCT ja.id)
+	` + baseJoins + `
+		WHERE 1=1
+	` + interviewerFilter
+
 	query := `
-		SELECT
+		SELECT DISTINCT
 			ja.id, ja.candidate_id, ja.position_id, ja.status,
 			ja.cover_letter, ja.notes, ja.applied_at, ja.updated_at,
 			c.email, c.full_name, c.phone_number, c.resume_url, c.skills, c.experience_years,
 			p.position_title, p.department, p.location
-		FROM job_applications ja
-		JOIN candidates c ON ja.candidate_id = c.id
-		JOIN hiring_positions p ON ja.position_id = p.id
+	` + baseJoins + `
 		WHERE 1=1
-	`
+	` + interviewerFilter
 
 	args := []interface{}{}
 	argCount := 1
@@ -318,12 +336,10 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 	var statsBreakdown map[string]int
 	if includeStats {
 		statsQuery := `
-			SELECT status, COUNT(*) as count
-			FROM job_applications ja
-			JOIN candidates c ON ja.candidate_id = c.id
-			JOIN hiring_positions p ON ja.position_id = p.id
+			SELECT ja.status, COUNT(DISTINCT ja.id) as count
+		` + baseJoins + `
 			WHERE 1=1
-		`
+		` + interviewerFilter
 
 		statsArgCount := 1
 		statsArgs := []interface{}{}
@@ -349,7 +365,7 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 			statsArgCount++
 		}
 
-		statsQuery += " GROUP BY status ORDER BY status"
+		statsQuery += " GROUP BY ja.status ORDER BY ja.status"
 
 		statsRows, err := h.DB.Query(statsQuery, statsArgs...)
 		if err != nil {
@@ -462,6 +478,13 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 		response["statistics"] = gin.H{
 			"total_applications": totalCount,
 			"status_breakdown":   statsBreakdown,
+		}
+	}
+
+	if adminRole == "interviewer" {
+		response["viewing_context"] = gin.H{
+			"role":        "interviewer",
+			"filter_note": "Showing only applications with upcoming interviews assigned to you",
 		}
 	}
 

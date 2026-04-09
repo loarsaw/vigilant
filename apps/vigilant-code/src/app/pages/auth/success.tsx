@@ -2,6 +2,7 @@ import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from "react-router-dom"
 import { useInterview } from '@/hooks/use-session'
+import { useAuth } from '@/hooks/use-auth'
 
 interface SuccessProps {
   workspace: string
@@ -9,14 +10,20 @@ interface SuccessProps {
   onProceed: () => void
 }
 
+
 export default function Success({ workspace, username, onProceed }: SuccessProps) {
   const router = useNavigate()
-  const { startInterview, isStarting, startError } = useInterview()
+  const {user} = useAuth()
+  const {  isStarting, startError } = useInterview()
 
   const handleProceed = async () => {
     try {
-      await startInterview()
-      router("/wait")
+if(!user?.onboarding_complete){
+  router("/onboarding")
+}else{
+
+  router("/dashboard")
+}
     } catch (err) {
     }
   }

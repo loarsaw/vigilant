@@ -1,7 +1,7 @@
+// src/pages/LoginPage.tsx
+
 import React, { useEffect } from 'react';
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,127 +12,82 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
-import { setBaseURL, saveCredentialsAuth, saveTokenAuth } from '@/lib/axios';
-
-interface LoginCredentials {
-  workspaceName: string;
-  email: string;
-  password: string;
-}
-
-interface TokenCredentials {
-  workspaceName: string;
-  authToken: string;
-}
-
-interface LoginResponse {
-  success: boolean;
-  token?: string;
-  user?: {
-    id: string;
-    email: string;
-    workspaceName: string;
-  };
-  message?: string;
-}
-
+import { useAdminAuth } from '@/hooks/use-auth';
 export default function LoginPage() {
-  const [iseDev, setIsDev] = useState(false);
-  const router = useNavigate();
+  const [isDev, setIsDev] = useState(false);
+  const navigate = useNavigate();
 
-  const [employerData, setEmployerData] = useState<LoginCredentials>({
+  const {
+    login,
+    loginWithToken,
+    isLoggingIn,
+    isLoggingInWithToken,
+    loginError,
+    tokenLoginError,
+  } = useAdminAuth();
+
+  const [emailData, setEmailData] = useState({
     workspaceName: '',
     email: '',
     password: '',
   });
 
-  const [tokenData, setTokenData] = useState<TokenCredentials>({
+  const [tokenData, setTokenData] = useState({
     workspaceName: '',
     authToken: '',
   });
 
-  async function isApp() {
-    const data = await window.api.isDev();
-    setIsDev(data.isDev);
+  async function checkIfDev() {
+    const data = await window.api?.isDev?.();
+    setIsDev(data?.isDev || false);
   }
 
   useEffect(() => {
-    isApp();
+    checkIfDev();
   }, []);
 
-  const buildApiUrl = (workspaceName: string) => {
-    const reversedDomain = workspaceName.split('.').reverse().join('.');
-    return !iseDev
-      ? `https://${reversedDomain}/api/v1/admin/access`
-      : 'http://localhost:3333/api/v1/admin/access';
-  };
-
-  // Email + password login — sends X-Admin-Email and X-Admin-Password headers
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-      const response = await axios.post(
-        buildApiUrl(credentials.workspaceName),
-        {},
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Email': credentials.email,
-            'X-Admin-Password': credentials.password,
-          },
-          timeout: 10000,
-        }
-      );
-      return response.data;
-    },
-    onSuccess: (_, credentials) => {
-      setBaseURL(credentials.workspaceName);
-      saveCredentialsAuth(credentials.email, credentials.password);
-      setEmployerData({ workspaceName: '', email: '', password: '' });
-      router('/dashboard');
-    },
-  });
-
-  // Token login — sends X-Admin-Token header
-  const tokenMutation = useMutation({
-    mutationFn: async (credentials: TokenCredentials): Promise<LoginResponse> => {
-      const response = await axios.post(
-        buildApiUrl(credentials.workspaceName),
-        {},
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Admin-Token': credentials.authToken,
-          },
-          timeout: 10000,
-        }
-      );
-      return response.data;
-    },
-    onSuccess: (_, credentials) => {
-      setBaseURL(credentials.workspaceName);
-      saveTokenAuth(credentials.authToken);
-      setTokenData({ workspaceName: '', authToken: '' });
-      router('/dashboard');
-    },
-  });
-
-  const handleEmployerLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!employerData.workspaceName || !employerData.email || !employerData.password) return;
-    loginMutation.mutate(employerData);
+    if (!emailData.workspaceName || !emailData.email || !emailData.password)
+      return;
+
+    try {
+      await login({
+        workspace: emailData.workspaceName,
+        credentials: {
+          email: emailData.email,
+          password: emailData.password,
+        },
+      });
+
+      setEmailData({ workspaceName: '', email: '', password: '' });
+
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
   };
 
-  const handleTokenLogin = (e: React.FormEvent) => {
+  const handleTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tokenData.workspaceName || !tokenData.authToken) return;
-    tokenMutation.mutate(tokenData);
+
+    try {
+      await loginWithToken({
+        workspace: tokenData.workspaceName,
+        credentials: {
+          token: tokenData.authToken,
+        },
+      });
+
+      setTokenData({ workspaceName: '', authToken: '' });
+
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Token login failed:', error);
+    }
   };
 
   return (
@@ -141,10 +96,14 @@ export default function LoginPage() {
         <CardHeader className="text-center space-y-2">
           <div className="flex items-center justify-center mb-2">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">RC</span>
+              <span className="text-sm font-bold text-primary-foreground">
+                V
+              </span>
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">Recruit</CardTitle>
+          <CardTitle className="text-3xl font-bold text-primary">
+            Recruit
+          </CardTitle>
           <CardDescription className="text-muted-foreground">
             Employer Dashboard
           </CardDescription>
@@ -158,18 +117,21 @@ export default function LoginPage() {
             </TabsList>
 
             <TabsContent value="email">
-              <form onSubmit={handleEmployerLogin} className="space-y-4">
+              <form onSubmit={handleEmailLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="employer-workspace">Workspace Name</Label>
                   <Input
                     id="employer-workspace"
                     placeholder="com.abc.server"
-                    value={employerData.workspaceName}
+                    value={emailData.workspaceName}
                     onChange={e =>
-                      setEmployerData({ ...employerData, workspaceName: e.target.value })
+                      setEmailData({
+                        ...emailData,
+                        workspaceName: e.target.value,
+                      })
                     }
                     className="bg-secondary/50 border-border"
-                    disabled={loginMutation.isPending}
+                    disabled={isLoggingIn}
                     required
                   />
                 </div>
@@ -179,12 +141,12 @@ export default function LoginPage() {
                     id="employer-email"
                     type="email"
                     placeholder="your.email@company.com"
-                    value={employerData.email}
+                    value={emailData.email}
                     onChange={e =>
-                      setEmployerData({ ...employerData, email: e.target.value })
+                      setEmailData({ ...emailData, email: e.target.value })
                     }
                     className="bg-secondary/50 border-border"
-                    disabled={loginMutation.isPending}
+                    disabled={isLoggingIn}
                     required
                   />
                 </div>
@@ -194,21 +156,21 @@ export default function LoginPage() {
                     id="employer-password"
                     type="password"
                     placeholder="Enter your password"
-                    value={employerData.password}
+                    value={emailData.password}
                     onChange={e =>
-                      setEmployerData({ ...employerData, password: e.target.value })
+                      setEmailData({ ...emailData, password: e.target.value })
                     }
                     className="bg-secondary/50 border-border"
-                    disabled={loginMutation.isPending}
+                    disabled={isLoggingIn}
                     required
                   />
                 </div>
 
-                {loginMutation.isError && (
+                {loginError && (
                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md animate-shake">
                     <p className="text-sm text-destructive">
-                      {loginMutation.error instanceof Error
-                        ? loginMutation.error.message
+                      {loginError instanceof Error
+                        ? loginError.message
                         : 'Login failed. Please check your credentials and try again.'}
                     </p>
                   </div>
@@ -217,9 +179,9 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full font-semibold mt-6"
-                  disabled={loginMutation.isPending}
+                  disabled={isLoggingIn}
                 >
-                  {loginMutation.isPending ? 'Logging in...' : 'Login'}
+                  {isLoggingIn ? 'Logging in...' : 'Login'}
                 </Button>
               </form>
             </TabsContent>
@@ -233,10 +195,13 @@ export default function LoginPage() {
                     placeholder="com.abc.server"
                     value={tokenData.workspaceName}
                     onChange={e =>
-                      setTokenData({ ...tokenData, workspaceName: e.target.value })
+                      setTokenData({
+                        ...tokenData,
+                        workspaceName: e.target.value,
+                      })
                     }
                     className="bg-secondary/50 border-border"
-                    disabled={tokenMutation.isPending}
+                    disabled={isLoggingInWithToken}
                     required
                   />
                 </div>
@@ -251,16 +216,16 @@ export default function LoginPage() {
                       setTokenData({ ...tokenData, authToken: e.target.value })
                     }
                     className="bg-secondary/50 border-border"
-                    disabled={tokenMutation.isPending}
+                    disabled={isLoggingInWithToken}
                     required
                   />
                 </div>
 
-                {tokenMutation.isError && (
+                {tokenLoginError && (
                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md animate-shake">
                     <p className="text-sm text-destructive">
-                      {tokenMutation.error instanceof Error
-                        ? tokenMutation.error.message
+                      {tokenLoginError instanceof Error
+                        ? tokenLoginError.message
                         : 'Login failed. Please check your token and try again.'}
                     </p>
                   </div>
@@ -269,9 +234,9 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full font-semibold mt-6"
-                  disabled={tokenMutation.isPending}
+                  disabled={isLoggingInWithToken}
                 >
-                  {tokenMutation.isPending ? 'Logging in...' : 'Login with Token'}
+                  {isLoggingInWithToken ? 'Logging in...' : 'Login with Token'}
                 </Button>
               </form>
             </TabsContent>

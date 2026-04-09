@@ -33,7 +33,6 @@ const {language} = useParams<{language:string}>()
       setCode(atob(languages[0].example));
     }
     if(language && languages.length > 0 && !selectedLang){
-      // console.log(languages.find((lang)=>lang.name==language) , "value")
       setSelectedLang(languages.find((lang)=>lang.name==language))
       setCode(atob(languages.find((lang)=>lang.name==language).example))
     }

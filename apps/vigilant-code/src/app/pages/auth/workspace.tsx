@@ -23,7 +23,7 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
       return
     }
 
-    // Basic validation for workspace format
+
     const workspaceRegex = /^[a-zA-Z0-9._-]+$/
     if (!workspaceRegex.test(value)) {
       setError('Invalid workspace format. Use letters, numbers, dots, hyphens, or underscores.')
