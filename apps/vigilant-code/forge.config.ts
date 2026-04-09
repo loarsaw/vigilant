@@ -12,6 +12,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     icon: './assets/icons/icon',
+    executableName:"vigilant-code"
   },
   rebuildConfig: {},
   makers: [

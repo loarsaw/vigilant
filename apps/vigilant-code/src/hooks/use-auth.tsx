@@ -13,6 +13,7 @@ interface AuthUser {
   email: string;
   full_name: string;
   session_id: number;
+  onboarding_complete:boolean;
 }
 
 
@@ -24,6 +25,7 @@ interface LoginResponse {
   logged_in_at: string;
   session_id: number;
   token: string;
+  onboarding_complete:boolean;
 }
 
 
@@ -123,6 +125,7 @@ useEffect(() => {
         email: data.email,
         full_name: data.full_name,
         session_id: data.session_id,
+        onboarding_complete:data.onboarding_complete
       });
       presenceSocket.connect({
         token: data.token,
