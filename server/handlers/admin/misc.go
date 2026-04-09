@@ -111,7 +111,10 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 
 		upcomingRows, err := h.DB.Query(`
             SELECT 
-                s.session_id, s.scheduled_at, s.status,
+                s.id,
+                s.session_id, 
+                s.candidate_id,
+                s.scheduled_at, s.status,
                 c.full_name AS candidate_name,
                 COALESCE(a.full_name, 'Unassigned') AS interviewer_name,
                 COALESCE(s.position, '') AS position
@@ -172,7 +175,10 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 
 		upcomingRows, err := h.DB.Query(`
             SELECT 
-                s.session_id, s.scheduled_at, s.status,
+                s.id,
+                s.session_id, 
+                s.candidate_id,
+                s.scheduled_at, s.status,
                 c.full_name AS candidate_name,
                 COALESCE(a.full_name, 'Unassigned') AS interviewer_name,
                 COALESCE(s.position, '') AS position
@@ -214,7 +220,10 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 
 		upcomingRows, err := h.DB.Query(`
             SELECT 
-                s.session_id, s.scheduled_at, s.status,
+                s.id,
+                s.session_id, 
+                s.candidate_id,
+                s.scheduled_at, s.status,
                 c.full_name AS candidate_name,
                 COALESCE(a.full_name, '') AS interviewer_name,
                 COALESCE(s.position, '') AS position
@@ -244,11 +253,25 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 func scanInterviewRows(rows *sql.Rows) []gin.H {
 	var list []gin.H
 	for rows.Next() {
-		var sessionID, status, candidateName, interviewerName, position string
+		var id int
+		var sessionID, candidateID, status, candidateName, interviewerName, position string
 		var scheduledAt time.Time
-		rows.Scan(&sessionID, &scheduledAt, &status, &candidateName, &interviewerName, &position)
+
+		rows.Scan(
+			&id,
+			&sessionID,
+			&candidateID,
+			&scheduledAt,
+			&status,
+			&candidateName,
+			&interviewerName,
+			&position,
+		)
+
 		list = append(list, gin.H{
+			"id":               id,
 			"session_id":       sessionID,
+			"candidate_id":     candidateID,
 			"scheduled_at":     scheduledAt,
 			"status":           status,
 			"candidate_name":   candidateName,
