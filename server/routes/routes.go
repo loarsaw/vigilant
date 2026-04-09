@@ -32,6 +32,7 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 
 	}
 
+	r.POST("/api/v1/admin/login", adminH.AdminLogin)
 	adminGroup := r.Group("/api/v1/admin")
 	adminGroup.Use(middleware.AdminAuthMiddleware(cfg, db))
 	registerAdminRoutes(adminGroup, adminH, judgeH)
@@ -43,6 +44,11 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	r.GET("/api/v1/events", candidateH.SSEEvents)
 }
 func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *judge.Handlers) {
+
+	// Admin auth
+	// g.POST("/login", h.AdminLogin)
+	g.GET("/me", h.GetAdminMe)
+
 	// Email
 	g.POST("/email-config", h.SaveEmailConfig)
 	g.GET("/email-config", h.GetEmailConfig)
@@ -58,12 +64,13 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.POST("/candidates/:id/push", h.PushToCandidate)
 	g.GET("/candidates/:id/applications", h.GetCandidateApplications)
 	g.POST("/candidates/send-credentials", h.SendCandidateCredentialsEmail)
+	g.PATCH("/candidates/:id/password", h.UpdateCandidatePassword)
 
 	// Positions
 	g.POST("/positions", h.CreatePosition)
 	g.GET("/positions", h.ListPositions)
 	g.GET("/positions/:id", h.GetPositionByID)
-	g.PUT("/positions/:id", h.UpdatePosition)
+	g.PATCH("/positions/:id", h.UpdatePosition)
 	g.PATCH("/positions/:id/toggle-active", h.UpdatePositionActiveStatus)
 	g.DELETE("/positions/:id", h.DeletePosition)
 
@@ -85,11 +92,21 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.PATCH("/applications/:id/status", h.UpdateJobApplicationStatus)
 
 	// Interviews
-	g.GET("/interviews", h.ListInterviewSessions)
+	g.GET("/interviews", h.ListInterviewSessionsIndividualCandiate)
 	g.POST("/create-interview", h.CreateInterviewSession)
+	g.GET("/interviewers", h.ListInterviewers)
 	// g.POST("/interviews", h.CreateInterviewSession)
 
 	// g.PATCH("/applications/bulk/status", h.BulkUpdateJobApplicationStatus)
+
+	// Admin management (super admin only)
+	g.POST("/admins", h.CreateAdmin)
+	g.GET("/admins", h.ListAdmins)
+	g.GET("/admins/:id", h.GetAdmin)
+	g.PATCH("/admins/:id", h.UpdateAdmin)
+	g.DELETE("/admins/:id", h.DeleteAdmin)
+	g.PATCH("/admins/:id/toggle-active", h.ToggleAdminActive)
+	g.POST("/admins/:id/reset-password", h.ResetAdminPassword)
 
 }
 func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *judge.Handlers) {
