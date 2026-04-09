@@ -11,8 +11,6 @@ const config: ForgeConfig = {
     asar: true,
     icon: './assets/icons/icon',
     executableName: 'vigilant-admin',
-
-
   },
   rebuildConfig: {},
   makers: [
