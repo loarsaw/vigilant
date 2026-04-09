@@ -32,6 +32,7 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 
 	}
 
+	r.POST("/api/v1/admin/login", adminH.AdminLogin)
 	adminGroup := r.Group("/api/v1/admin")
 	adminGroup.Use(middleware.AdminAuthMiddleware(cfg, db))
 	registerAdminRoutes(adminGroup, adminH, judgeH)
@@ -43,6 +44,10 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	r.GET("/api/v1/events", candidateH.SSEEvents)
 }
 func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *judge.Handlers) {
+
+	// Admin auth
+	g.GET("/me", h.GetAdminMe)
+
 	// Email
 	g.POST("/email-config", h.SaveEmailConfig)
 	g.GET("/email-config", h.GetEmailConfig)
@@ -54,17 +59,17 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.GET("/candidates/:id", h.GetCandidate)
 	g.PUT("/candidates/:id", h.UpdateCandidate)
 	g.DELETE("/candidates/:id", h.DeleteCandidate)
-	g.POST("/bulk-candidates", h.BulkCreateCandidates)
 	g.POST("/csv-upload", h.ParseUserList)
 	g.POST("/candidates/:id/push", h.PushToCandidate)
 	g.GET("/candidates/:id/applications", h.GetCandidateApplications)
 	g.POST("/candidates/send-credentials", h.SendCandidateCredentialsEmail)
+	g.PATCH("/candidates/:id/password", h.UpdateCandidatePassword)
 
 	// Positions
 	g.POST("/positions", h.CreatePosition)
 	g.GET("/positions", h.ListPositions)
 	g.GET("/positions/:id", h.GetPositionByID)
-	g.PUT("/positions/:id", h.UpdatePosition)
+	g.PATCH("/positions/:id", h.UpdatePosition)
 	g.PATCH("/positions/:id/toggle-active", h.UpdatePositionActiveStatus)
 	g.DELETE("/positions/:id", h.DeletePosition)
 
@@ -76,7 +81,6 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.POST("/google-creds", h.CreateGoogleCredential)
 	g.POST("/credentials/google", h.CreateGoogleCredential)
 	g.POST("/interviews/send-invite", h.SendInterviewInvite)
-	g.POST("/create-interview", h.CreateInterviewSession)
 
 	// Judge
 	g.GET("/judge/languages", judgeH.ListLanguages)
@@ -84,7 +88,21 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// Applications
 	g.GET("/applications", h.ListJobApplications)
 	g.GET("/applications/:id", h.GetJobApplication)
-	g.PUT("/applications/:id/toggle", h.UpdateJobApplicationStatus)
+	g.PATCH("/applications/:id/status", h.UpdateJobApplicationStatus)
+
+	// Interviews
+	g.GET("/interviews", h.ListInterviewSessionsIndividualCandiate)
+	g.POST("/create-interview", h.CreateInterviewSession)
+	g.GET("/interviewers", h.ListInterviewers)
+
+	// Admin management (super admin only)
+	g.POST("/admins", h.CreateAdmin)
+	g.GET("/admins", h.ListAdmins)
+	g.GET("/admins/:id", h.GetAdmin)
+	g.PATCH("/admins/:id", h.UpdateAdmin)
+	g.DELETE("/admins/:id", h.DeleteAdmin)
+	g.PATCH("/admins/:id/toggle-active", h.ToggleAdminActive)
+	g.POST("/admins/:id/reset-password", h.ResetAdminPassword)
 
 }
 func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *judge.Handlers) {

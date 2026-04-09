@@ -13,10 +13,7 @@ import (
 	"vigilant/models"
 	"vigilant/websocket"
 
-	"time"
-
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -115,141 +112,6 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 		"full_name":  candidate.FullName,
 		"created_at": candidate.CreatedAt,
 		"is_active":  candidate.IsActive,
-	})
-}
-
-func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
-	var req struct {
-		CandidateID       string    `json:"candidate_id" binding:"required"`
-		ApplicationID     string    `json:"application_id"`
-		InterviewerEmail  string    `json:"interviewer_email" binding:"required,email"`
-		Position          string    `json:"position" binding:"required"`
-		InterviewType     string    `json:"interview_type" binding:"required"`
-		ScheduledAt       time.Time `json:"scheduled_at" binding:"required"`
-		ScheduledDuration int       `json:"scheduled_duration" binding:"required,min=15"`
-		InterviewURL      string    `json:"interview_url" binding:"required"`
-		TimeZone          string    `json:"timezone"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format", "details": err.Error()})
-		return
-	}
-
-	if req.TimeZone == "" {
-		req.TimeZone = "Asia/Kolkata"
-	}
-
-	var candidateEmail, candidateName string
-	err := h.DB.QueryRowContext(c.Request.Context(), `
-		SELECT email, full_name
-		FROM candidates
-		WHERE id = $1 AND is_active = true
-	`, req.CandidateID).Scan(&candidateEmail, &candidateName)
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "candidate not found or inactive"})
-		return
-	}
-	if err != nil {
-		log.Printf("Error looking up candidate: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	// If application_id provided, verify it x
-	if req.ApplicationID != "" {
-		var appExists bool
-		err = h.DB.QueryRowContext(c.Request.Context(), `
-			SELECT EXISTS(
-				SELECT 1 FROM job_applications
-				WHERE id = $1 AND candidate_id = $2
-			)
-		`, req.ApplicationID, req.CandidateID).Scan(&appExists)
-		if err != nil {
-			log.Printf("Error verifying application: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-			return
-		}
-		if !appExists {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "application not found or does not belong to candidate"})
-			return
-		}
-	}
-
-	// =====================================================================
-	// TODO: Google Calendar integration
-	// =====================================================================
-
-	sessionID := uuid.New().String()
-
-	metadata := fmt.Sprintf(`{
-		"candidate_email": "%s",
-		"candidate_name": "%s",
-		"timezone": "%s"
-	}`, candidateEmail, candidateName, req.TimeZone)
-
-	var applicationID interface{}
-	if req.ApplicationID != "" {
-		applicationID = req.ApplicationID
-	}
-
-	var id int64
-	var createdAt time.Time
-
-	err = h.DB.QueryRowContext(c.Request.Context(), `
-		INSERT INTO interview_sessions (
-			session_id, candidate_id, candidate_session_id,
-			application_id, interviewer_email, position,
-			interview_type, interview_platform, interview_url,
-			scheduled_at, started_at, scheduled_duration,
-			status, metadata
-		) VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, $8, $9, NULL, $10, $11, $12)
-		RETURNING id, created_at
-	`,
-		sessionID,
-		req.CandidateID,
-		applicationID,
-		req.InterviewerEmail,
-		req.Position,
-		req.InterviewType,
-		0,
-		req.InterviewURL,
-		req.ScheduledAt,
-		req.ScheduledDuration,
-		"scheduled",
-		metadata,
-	).Scan(&id, &createdAt)
-
-	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) && pqErr.Code == "23503" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "candidate not found"})
-			return
-		}
-		log.Printf("Error creating interview session: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create interview session"})
-		return
-	}
-
-	log.Printf("Interview session created. ID: %d, candidate: %s", id, candidateEmail)
-
-	c.JSON(http.StatusCreated, gin.H{
-		"id":                 id,
-		"session_id":         sessionID,
-		"candidate_id":       req.CandidateID,
-		"application_id":     req.ApplicationID,
-		"interviewer_email":  req.InterviewerEmail,
-		"candidate_email":    candidateEmail,
-		"candidate_name":     candidateName,
-		"position":           req.Position,
-		"interview_type":     req.InterviewType,
-		"interview_platform": 0,
-		"interview_url":      req.InterviewURL,
-		"scheduled_at":       req.ScheduledAt,
-		"scheduled_duration": req.ScheduledDuration,
-		"status":             "scheduled",
-		"created_at":         createdAt,
-		"message":            "Interview session created successfully.",
 	})
 }
 
@@ -505,180 +367,102 @@ func (h *AdminHandlers) DeleteCandidate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "deleted", "id": candidateID})
 }
 
-func (h *AdminHandlers) BulkCreateCandidates(c *gin.Context) {
-	var req []struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-		FullName string `json:"full_name"`
+func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
+	callerRole := c.GetString("admin_role")
+	if callerRole == "interviewer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden"})
+		return
 	}
 
+	candidateID := c.Param("id")
+
+	var req struct {
+		NewPassword string `json:"new_password" binding:"required,min=8"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if len(req) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no candidates provided"})
-		return
-	}
-
-	const maxBatchSize = 500
-	if len(req) > maxBatchSize {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("batch size exceeds maximum of %d", maxBatchSize)})
-		return
-	}
-
-	type preparedCandidate struct {
-		ID            string
-		Email         string
-		PasswordHash  string
-		FullName      string
-		PlainPassword string
-	}
-
-	var validationErrors []gin.H
-	prepared := make([]preparedCandidate, 0, len(req))
-
-	for i, candidate := range req {
-		candidate.Email = strings.ToLower(strings.TrimSpace(candidate.Email))
-
-		rowErrors := gin.H{}
-		hasError := false
-
-		if candidate.Email == "" {
-			rowErrors["email"] = "email is required"
-			hasError = true
-		}
-		if len(candidate.Password) < 8 {
-			rowErrors["password"] = "password must be at least 8 characters"
-			hasError = true
-		}
-		if len(candidate.Password) > 72 {
-			rowErrors["password"] = "password must be 72 characters or fewer"
-			hasError = true
-		}
-
-		if hasError {
-			rowErrors["index"] = i
-			rowErrors["email"] = candidate.Email
-			validationErrors = append(validationErrors, rowErrors)
-			continue
-		}
-
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(candidate.Password), bcrypt.DefaultCost)
-		if err != nil {
-			log.Printf("Error hashing password for %s: %v", candidate.Email, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process passwords"})
-			return
-		}
-
-		prepared = append(prepared, preparedCandidate{
-			ID:            uuid.New().String(),
-			Email:         candidate.Email,
-			PasswordHash:  string(hashedPassword),
-			FullName:      candidate.FullName,
-			PlainPassword: candidate.Password,
-		})
-	}
-
-	if len(validationErrors) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error":  "validation failed for one or more candidates",
-			"errors": validationErrors,
-		})
+	if len(req.NewPassword) > 72 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be 72 characters or fewer"})
 		return
 	}
 
 	ctx := c.Request.Context()
 
-	tx, err := h.DB.BeginTx(ctx, nil)
+	// Fetch candidate details for the email
+	var candidateEmail, fullName string
+	var isActive bool
+	err := h.DB.QueryRowContext(ctx, `
+		SELECT email, full_name, is_active FROM candidates WHERE id = $1
+	`, candidateID).Scan(&candidateEmail, &fullName, &isActive)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
+		return
+	}
 	if err != nil {
-		log.Printf("Error starting transaction: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		log.Printf("UpdateCandidatePassword: failed to fetch candidate: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch candidate"})
 		return
 	}
-	defer func() {
-		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
-			log.Printf("Error rolling back transaction: %v", err)
-		}
-	}()
+	if !isActive {
+		c.JSON(http.StatusForbidden, gin.H{"error": "candidate account is deactivated"})
+		return
+	}
 
-	stmt, err := tx.PrepareContext(ctx, `
-		INSERT INTO candidates (id, email, password_hash, full_name, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, NOW(), NOW())
-		ON CONFLICT (email) DO UPDATE SET
-			password_hash = EXCLUDED.password_hash,
-			updated_at = NOW()
-		RETURNING (xmax = 0) AS was_inserted
-	`)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
-		log.Printf("Error preparing statement: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare statement"})
-		return
-	}
-	defer stmt.Close()
-
-	inserted := 0
-	updated := 0
-	var newCandidates []preparedCandidate
-
-	for _, candidate := range prepared {
-		var wasInserted bool
-		err = stmt.QueryRowContext(ctx,
-			candidate.ID, candidate.Email, candidate.PasswordHash, candidate.FullName,
-		).Scan(&wasInserted)
-
-		if err != nil {
-			log.Printf("Error upserting candidate %s: %v", candidate.Email, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process candidates"})
-			return
-		}
-
-		if wasInserted {
-			inserted++
-			newCandidates = append(newCandidates, candidate)
-		} else {
-			updated++
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		log.Printf("Error committing transaction: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to commit transaction"})
+		log.Printf("UpdateCandidatePassword: failed to hash password: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
 		return
 	}
 
-	// Send welcome emails to newly inserted candidates only — non-fatal
-	emailsFailed := 0
-	if len(newCandidates) > 0 {
-		mailer, sesCfg, err := h.loadMailer(c)
+	_, err = h.DB.ExecContext(ctx, `
+		UPDATE candidates SET password_hash = $1 WHERE id = $2
+	`, string(hashedPassword), candidateID)
+	if err != nil {
+		log.Printf("UpdateCandidatePassword: failed to update password: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update password"})
+		return
+	}
+
+	// Send email — same pattern as CreateCandidate
+	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
+	if err != nil {
+		log.Printf("UpdateCandidatePassword: failed to decode encryption key: %v", err)
+	} else {
+		sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
 		if err != nil {
-			log.Printf("BulkCreateCandidates: email config not available, skipping emails: %v", err)
+			log.Printf("UpdateCandidatePassword: failed to load SES config: %v", err)
 		} else {
-			candidates := make([]email.CandidateEmailData, 0, len(newCandidates))
-			for _, nc := range newCandidates {
-				candidates = append(candidates, email.CandidateEmailData{
-					FullName: nc.FullName,
-					Email:    nc.Email,
-					Password: nc.PlainPassword,
+			body, err := email.Render(email.TemplateCandidateCredentials, email.CandidateCredentialsData{
+				CandidateName: fullName,
+				Email:         candidateEmail,
+				Password:      req.NewPassword,
+				LoginURL:      sesCfg.SESLoginURL,
+			})
+			if err != nil {
+				log.Printf("UpdateCandidatePassword: failed to render email: %v", err)
+			} else {
+				_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
+					ToEmail:     candidateEmail,
+					ToName:      fullName,
+					FromEmail:   sesCfg.SESFromEmail,
+					Subject:     "Your Vigilant Account Password Has Been Updated",
+					BodyHTML:    body,
+					Template:    email.TemplateCandidateCredentials,
+					EntityType:  "candidate",
+					EntityID:    candidateID,
+					TriggeredBy: "update_candidate_password",
+					Priority:    email.PriorityHigh,
 				})
-			}
-
-			results := mailer.SendBulk(ctx, email.BuildBulkCredentialsEmails(candidates, sesCfg.SESLoginURL))
-			for _, r := range results {
-				if !r.Success {
-					emailsFailed++
-					log.Printf("BulkCreateCandidates: failed to send email to %s: %s", r.Email, r.Error)
+				if err != nil {
+					log.Printf("UpdateCandidatePassword: failed to enqueue email: %v", err)
 				}
 			}
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "import completed",
-		"inserted":      inserted,
-		"updated":       updated,
-		"emails_sent":   len(newCandidates) - emailsFailed,
-		"emails_failed": emailsFailed,
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
 }

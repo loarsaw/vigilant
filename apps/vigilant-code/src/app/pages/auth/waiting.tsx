@@ -25,7 +25,7 @@ export default function WaitingSetup() {
   const workspace = sessionMeta?.workspace ?? ''
   const setupPath = sessionMeta?.setupPath ?? ''
   const username = authUser?.full_name ?? ''
-const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
+  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
   const [received, setReceived] = useState(false)
 
   useEffect(() => {
@@ -49,7 +49,6 @@ const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
         setReceived(true)
         router(`/code/${payload.framework.toLowerCase()}`)   
         }
-     
       },
     })
 
@@ -107,7 +106,6 @@ const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null)
           </p>
 
            <Button
-              // onClick={() => router('/code')}
               disabled={true}
               className="w-full py-3 text-base font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-600 hover:to-cyan-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
             >

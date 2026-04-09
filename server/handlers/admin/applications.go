@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 	"vigilant/models"
 
@@ -15,7 +16,7 @@ func (h *AdminHandlers) UpdateJobApplicationStatus(c *gin.Context) {
 	applicationID := c.Param("id")
 
 	var req struct {
-		Status string `json:"status" binding:"required,oneof=applied screening interviewing offered hired rejected"`
+		Status string `json:"status" binding:"required,oneof=applied screening interviewing offered hired rejected withdrawn"`
 		Notes  string `json:"notes"`
 	}
 
@@ -154,7 +155,6 @@ func (h *AdminHandlers) GetJobApplication(c *gin.Context) {
 		return
 	}
 
-	// Unwrap nullable fields
 	app.CoverLetter = coverLetter.String
 	app.Notes = notes.String
 	candidate.PhoneNumber = phoneNumber.String
@@ -174,45 +174,218 @@ func (h *AdminHandlers) GetJobApplication(c *gin.Context) {
 		"application": app,
 	})
 }
+
 func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 	status := c.Query("status")
 	positionID := c.Query("position_id")
 	candidateID := c.Query("candidate_id")
+	department := c.Query("department")
 
-	query := `
-		SELECT
-			ja.id, ja.candidate_id, ja.position_id, ja.status,
-			ja.cover_letter, ja.notes, ja.applied_at, ja.updated_at,
-			c.email, c.full_name,
-			p.position_title, p.department
+	includePositionDetails := c.DefaultQuery("include_position", "false") == "true"
+	includeStats := c.DefaultQuery("include_stats", "false") == "true"
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	sortBy := c.DefaultQuery("sort_by", "applied_at")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
+
+	// Get admin role and ID from context
+	adminRole, _ := c.Get("admin_role")
+	adminID, _ := c.Get("admin_id")
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	offset := (page - 1) * limit
+
+	validStatuses := map[string]bool{
+		"applied": true, "screening": true, "interviewing": true,
+		"offered": true, "hired": true, "rejected": true, "withdrawn": true,
+	}
+	if status != "" && !validStatuses[status] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":          "invalid status",
+			"valid_statuses": []string{"applied", "screening", "interviewing", "offered", "hired", "rejected", "withdrawn"},
+		})
+		return
+	}
+
+	validSortFields := map[string]string{
+		"applied_at":     "ja.applied_at",
+		"updated_at":     "ja.updated_at",
+		"candidate_name": "c.full_name",
+		"position_title": "p.position_title",
+		"status":         "ja.status",
+	}
+
+	sortField, validSort := validSortFields[sortBy]
+	if !validSort {
+		sortField = "ja.applied_at"
+	}
+
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "desc"
+	}
+
+	var positionDetails *gin.H
+	if positionID != "" && includePositionDetails {
+		var positionTitle, dept, location, posStatus string
+		err := h.DB.QueryRow(`
+			SELECT position_title, department, location, status
+			FROM hiring_positions
+			WHERE id = $1::uuid
+		`, positionID).Scan(&positionTitle, &dept, &location, &posStatus)
+
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "position not found"})
+			return
+		}
+		if err != nil {
+			log.Printf("Error fetching position: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch position"})
+			return
+		}
+
+		positionDetails = &gin.H{
+			"id":         positionID,
+			"title":      positionTitle,
+			"department": dept,
+			"location":   location,
+			"status":     posStatus,
+		}
+	}
+
+	baseJoins := `
 		FROM job_applications ja
 		JOIN candidates c ON ja.candidate_id = c.id
 		JOIN hiring_positions p ON ja.position_id = p.id
-		WHERE 1=1
 	`
+
+	interviewerFilter := ""
+	if adminRole == "interviewer" && adminID != nil {
+		baseJoins += `
+		JOIN interview_sessions isess ON ja.id = isess.application_id
+		`
+		interviewerFilter = fmt.Sprintf(`
+			AND isess.interviewer_id = '%s'
+			AND isess.scheduled_at > NOW()
+			AND isess.status IN ('scheduled', 'in_progress')
+		`, adminID)
+	}
+
+	countQuery := `
+		SELECT COUNT(DISTINCT ja.id)
+	` + baseJoins + `
+		WHERE 1=1
+	` + interviewerFilter
+
+	query := `
+		SELECT DISTINCT
+			ja.id, ja.candidate_id, ja.position_id, ja.status,
+			ja.cover_letter, ja.notes, ja.applied_at, ja.updated_at,
+			c.email, c.full_name, c.phone_number, c.resume_url, c.skills, c.experience_years,
+			p.position_title, p.department, p.location
+	` + baseJoins + `
+		WHERE 1=1
+	` + interviewerFilter
 
 	args := []interface{}{}
 	argCount := 1
 
 	if status != "" {
 		query += fmt.Sprintf(" AND ja.status = $%d", argCount)
+		countQuery += fmt.Sprintf(" AND ja.status = $%d", argCount)
 		args = append(args, status)
 		argCount++
 	}
 
 	if positionID != "" {
-		query += fmt.Sprintf(" AND ja.position_id = $%d", argCount)
+		query += fmt.Sprintf(" AND ja.position_id = $%d::uuid", argCount)
+		countQuery += fmt.Sprintf(" AND ja.position_id = $%d::uuid", argCount)
 		args = append(args, positionID)
 		argCount++
 	}
 
 	if candidateID != "" {
-		query += fmt.Sprintf(" AND ja.candidate_id = $%d", argCount)
+		query += fmt.Sprintf(" AND ja.candidate_id = $%d::uuid", argCount)
+		countQuery += fmt.Sprintf(" AND ja.candidate_id = $%d::uuid", argCount)
 		args = append(args, candidateID)
 		argCount++
 	}
 
-	query += ` ORDER BY ja.applied_at DESC`
+	if department != "" {
+		query += fmt.Sprintf(" AND p.department = $%d", argCount)
+		countQuery += fmt.Sprintf(" AND p.department = $%d", argCount)
+		args = append(args, department)
+		argCount++
+	}
+
+	var totalCount int
+	err := h.DB.QueryRow(countQuery, args...).Scan(&totalCount)
+	if err != nil {
+		log.Printf("Error counting job applications: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count applications"})
+		return
+	}
+
+	var statsBreakdown map[string]int
+	if includeStats {
+		statsQuery := `
+			SELECT ja.status, COUNT(DISTINCT ja.id) as count
+		` + baseJoins + `
+			WHERE 1=1
+		` + interviewerFilter
+
+		statsArgCount := 1
+		statsArgs := []interface{}{}
+
+		if status != "" {
+			statsQuery += fmt.Sprintf(" AND ja.status = $%d", statsArgCount)
+			statsArgs = append(statsArgs, status)
+			statsArgCount++
+		}
+		if positionID != "" {
+			statsQuery += fmt.Sprintf(" AND ja.position_id = $%d::uuid", statsArgCount)
+			statsArgs = append(statsArgs, positionID)
+			statsArgCount++
+		}
+		if candidateID != "" {
+			statsQuery += fmt.Sprintf(" AND ja.candidate_id = $%d::uuid", statsArgCount)
+			statsArgs = append(statsArgs, candidateID)
+			statsArgCount++
+		}
+		if department != "" {
+			statsQuery += fmt.Sprintf(" AND p.department = $%d", statsArgCount)
+			statsArgs = append(statsArgs, department)
+			statsArgCount++
+		}
+
+		statsQuery += " GROUP BY ja.status ORDER BY ja.status"
+
+		statsRows, err := h.DB.Query(statsQuery, statsArgs...)
+		if err != nil {
+			log.Printf("Warning: Failed to fetch stats: %v", err)
+		} else {
+			defer statsRows.Close()
+			statsBreakdown = make(map[string]int)
+			for statsRows.Next() {
+				var st string
+				var count int
+				if err := statsRows.Scan(&st, &count); err == nil {
+					statsBreakdown[st] = count
+				}
+			}
+		}
+	}
+
+	query += fmt.Sprintf(" ORDER BY %s %s LIMIT $%d OFFSET $%d",
+		sortField, sortOrder, argCount, argCount+1)
+	args = append(args, limit, offset)
 
 	rows, err := h.DB.Query(query, args...)
 	if err != nil {
@@ -222,37 +395,48 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	applications := []gin.H{} // ← initialize so JSON returns [] not null when empty
+	applications := []gin.H{}
 
 	for rows.Next() {
 		var app models.JobApplication
-		var candidateEmail, candidateName, positionTitle, department string
-		var coverLetter, notes sql.NullString // ← these can be NULL in DB
+		var candidateEmail, candidateName, positionTitle, dept, location string
+		var coverLetter, notes, phoneNumber, resumeURL, skills sql.NullString
+		var experienceYears sql.NullInt16
 
 		err := rows.Scan(
 			&app.ID, &app.CandidateID, &app.PositionID, &app.Status,
 			&coverLetter, &notes, &app.AppliedAt, &app.UpdatedAt,
-			&candidateEmail, &candidateName,
-			&positionTitle, &department,
+			&candidateEmail, &candidateName, &phoneNumber, &resumeURL, &skills, &experienceYears,
+			&positionTitle, &dept, &location,
 		)
 		if err != nil {
 			log.Printf("Error scanning job application: %v", err)
 			continue
 		}
 
+		var expYears uint8
+		if experienceYears.Valid {
+			expYears = uint8(experienceYears.Int16)
+		}
+
 		applications = append(applications, gin.H{
-			"id":              app.ID,
-			"candidate_id":    app.CandidateID,
-			"candidate_email": candidateEmail,
-			"candidate_name":  candidateName,
-			"position_id":     app.PositionID,
-			"position_title":  positionTitle,
-			"department":      department,
-			"status":          app.Status,
-			"cover_letter":    coverLetter.String,
-			"notes":           notes.String,
-			"applied_at":      app.AppliedAt,
-			"updated_at":      app.UpdatedAt,
+			"id":               app.ID,
+			"candidate_id":     app.CandidateID,
+			"candidate_email":  candidateEmail,
+			"candidate_name":   candidateName,
+			"candidate_phone":  phoneNumber.String,
+			"resume_url":       resumeURL.String,
+			"skills":           skills.String,
+			"experience_years": expYears,
+			"position_id":      app.PositionID,
+			"position_title":   positionTitle,
+			"department":       dept,
+			"location":         location,
+			"status":           app.Status,
+			"cover_letter":     coverLetter.String,
+			"notes":            notes.String,
+			"applied_at":       app.AppliedAt,
+			"updated_at":       app.UpdatedAt,
 		})
 	}
 
@@ -262,18 +446,51 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	totalPages := (totalCount + limit - 1) / limit
+
+	response := gin.H{
 		"applications": applications,
-		"count":        len(applications),
-	})
+		"filters": gin.H{
+			"status":       status,
+			"position_id":  positionID,
+			"candidate_id": candidateID,
+			"department":   department,
+		},
+		"pagination": gin.H{
+			"current_page": page,
+			"per_page":     limit,
+			"total_count":  totalCount,
+			"total_pages":  totalPages,
+			"has_next":     page < totalPages,
+			"has_prev":     page > 1,
+		},
+		"sort": gin.H{
+			"sort_by":    sortBy,
+			"sort_order": sortOrder,
+		},
+	}
+
+	if positionDetails != nil {
+		response["position"] = positionDetails
+	}
+
+	if includeStats && statsBreakdown != nil {
+		response["statistics"] = gin.H{
+			"total_applications": totalCount,
+			"status_breakdown":   statsBreakdown,
+		}
+	}
+
+	if adminRole == "interviewer" {
+		response["viewing_context"] = gin.H{
+			"role":        "interviewer",
+			"filter_note": "Showing only applications with upcoming interviews assigned to you",
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
-// TODO Bulk Update
 func (h *AdminHandlers) BulkUpdateJobApplicationStatus(c *gin.Context) {
-	// var req struct {
-	// 	ApplicationIDs []string `json:"application_ids" binding:"required,min=1"`
-	// 	Status         string   `json:"status" binding:"required,oneof=applied screening interviewing offered hired rejected withdrawn"`
-	// 	Notes          string   `json:"notes"`
-	// }
 
 }
