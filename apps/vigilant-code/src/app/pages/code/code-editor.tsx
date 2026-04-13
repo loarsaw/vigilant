@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
-import Editor from "@monaco-editor/react";
-import { useJudge } from "@/hooks/use-judge";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
+import { useJudge } from '@/hooks/use-judge';
+import { useParams } from 'react-router-dom';
 
 const MONACO_LANG_MAP: Record<string, string> = {
-  c:    "c",
-  cpp:  "cpp",
-  js:   "javascript",
-  java: "java",
-  python: "python",
-
+  c: 'c',
+  cpp: 'cpp',
+  js: 'javascript',
+  java: 'java',
+  python: 'python',
 };
 
 export default function CodeEditor() {
@@ -22,24 +21,23 @@ export default function CodeEditor() {
     executeError,
     reset,
   } = useJudge();
-const {language} = useParams<{language:string}>()
+  const { language } = useParams<{ language: string }>();
   const [selectedLang, setSelectedLang] = useState(languages[0] ?? null);
-  const [code, setCode] = useState("");
-
+  const [code, setCode] = useState('');
 
   useEffect(() => {
     if (languages.length > 0 && !selectedLang) {
       setSelectedLang(languages[0]);
       setCode(atob(languages[0].example));
     }
-    if(language && languages.length > 0 && !selectedLang){
-      setSelectedLang(languages.find((lang)=>lang.name==language))
-      setCode(atob(languages.find((lang)=>lang.name==language).example))
+    if (language && languages.length > 0 && !selectedLang) {
+      setSelectedLang(languages.find(lang => lang.name == language));
+      setCode(atob(languages.find(lang => lang.name == language).example));
     }
-  }, [languages , language]);
+  }, [languages, language]);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const lang = languages.find((l) => l.id === e.target.value);
+    const lang = languages.find(l => l.id === e.target.value);
     if (lang) {
       setSelectedLang(lang);
       setCode(atob(lang.example));
@@ -59,14 +57,16 @@ const {language} = useParams<{language:string}>()
         <h1 className="text-2xl font-bold">Code Editor</h1>
         <div className="flex items-center gap-4">
           {isLoadingLanguages ? (
-            <div className="px-4 py-2 text-sm text-gray-400">Loading languages...</div>
+            <div className="px-4 py-2 text-sm text-gray-400">
+              Loading languages...
+            </div>
           ) : (
             <select
-              value={selectedLang?.id ?? ""}
+              value={selectedLang?.id ?? ''}
               onChange={handleLanguageChange}
               className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {languages.map((lang) => (
+              {languages.map(lang => (
                 <option key={lang.id} value={lang.id}>
                   {lang.name}
                 </option>
@@ -86,7 +86,11 @@ const {language} = useParams<{language:string}>()
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
                   <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
                 </svg>
                 Run Code
@@ -106,14 +110,14 @@ const {language} = useParams<{language:string}>()
           <div className="flex-1 overflow-hidden">
             <Editor
               height="100%"
-              language={MONACO_LANG_MAP[selectedLang?.id ?? ""] ?? "plaintext"}
+              language={MONACO_LANG_MAP[selectedLang?.id ?? ''] ?? 'plaintext'}
               value={code}
-              onChange={(value) => setCode(value ?? "")}
+              onChange={value => setCode(value ?? '')}
               theme="vs-dark"
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,
-                lineNumbers: "on",
+                lineNumbers: 'on',
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
               }}
@@ -131,11 +135,11 @@ const {language} = useParams<{language:string}>()
                 <span>{(result.memory_kb / 1024).toFixed(1)}MB</span>
                 <span
                   className={
-                    result.status === "accepted"
-                      ? "text-green-400"
-                      : result.status === "timeout"
-                      ? "text-yellow-400"
-                      : "text-red-400"
+                    result.status === 'accepted'
+                      ? 'text-green-400'
+                      : result.status === 'timeout'
+                        ? 'text-yellow-400'
+                        : 'text-red-400'
                   }
                 >
                   {result.status}
@@ -146,7 +150,9 @@ const {language} = useParams<{language:string}>()
 
           <div className="flex-1 p-4 overflow-auto">
             {isExecuting && (
-              <p className="text-gray-400 text-sm animate-pulse">Executing...</p>
+              <p className="text-gray-400 text-sm animate-pulse">
+                Executing...
+              </p>
             )}
 
             {!isExecuting && executeError && (
@@ -174,7 +180,9 @@ const {language} = useParams<{language:string}>()
             )}
 
             {!isExecuting && !result && !executeError && (
-              <p className="text-gray-500 text-sm">Output will appear here...</p>
+              <p className="text-gray-500 text-sm">
+                Output will appear here...
+              </p>
             )}
           </div>
         </div>
@@ -183,10 +191,28 @@ const {language} = useParams<{language:string}>()
       {/* Footer */}
       {result && (
         <div className="px-6 py-2 bg-gray-800 border-t border-gray-700 text-xs text-gray-400 flex gap-6">
-          <span>Submission ID: <span className="text-gray-300">{result.id}</span></span>
-          <span>Time: <span className="text-gray-300">{result.time_ms}ms</span></span>
-          <span>Memory: <span className="text-gray-300">{(result.memory_kb / 1024).toFixed(1)} MB</span></span>
-          <span>Status: <span className={result.status === "accepted" ? "text-green-400" : "text-red-400"}>{result.status}</span></span>
+          <span>
+            Submission ID: <span className="text-gray-300">{result.id}</span>
+          </span>
+          <span>
+            Time: <span className="text-gray-300">{result.time_ms}ms</span>
+          </span>
+          <span>
+            Memory:{' '}
+            <span className="text-gray-300">
+              {(result.memory_kb / 1024).toFixed(1)} MB
+            </span>
+          </span>
+          <span>
+            Status:{' '}
+            <span
+              className={
+                result.status === 'accepted' ? 'text-green-400' : 'text-red-400'
+              }
+            >
+              {result.status}
+            </span>
+          </span>
         </div>
       )}
     </div>

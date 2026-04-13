@@ -272,7 +272,7 @@ export function EmailCard({
           (value) => handleEmailChange('provider', value as 'aws' | 'twilio'),
           [
             { value: 'aws',    label: 'AWS SES' },
-            { value: 'twilio', label: 'Twilio SendGrid' },
+            // { value: 'twilio', label: 'Twilio SendGrid' },
           ]
         )}
 

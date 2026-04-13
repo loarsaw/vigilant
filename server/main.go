@@ -7,6 +7,7 @@ import (
 	"vigilant/config"
 	"vigilant/db"
 	"vigilant/email"
+	"vigilant/middleware"
 	"vigilant/routes"
 	"vigilant/server"
 	"vigilant/websocket"
@@ -37,10 +38,18 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
+	// Apply global rate limiting for all remainder routes
+	r.Use(middleware.RateLimitMiddleware(middleware.PublicLimiter))
+
 	routes.Register(r, database, cfg)
 
-	websocket.Manager.Cfg = cfg
-	r.GET("/api/v1/ws/presence", websocket.Manager.HandleConnection)
+	wsGroup := r.Group("/api/v1/ws")
+	wsGroup.Use(middleware.RateLimitMiddleware(middleware.APILimiter))
+	{
+		websocket.Manager.Cfg = cfg
+		wsGroup.GET("/presence", websocket.Manager.HandleConnection)
+	}
 
+	log.Printf("Server starting on %s:%s with tiered rate limiting enabled", cfg.ServerHost, cfg.ServerPort)
 	server.Run(r, cfg.ServerHost+":"+cfg.ServerPort)
 }

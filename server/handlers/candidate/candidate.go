@@ -278,37 +278,9 @@ func (h *Handlers) CompleteOnboarding(c *gin.Context) {
 	}
 	candidateID := fmt.Sprintf("%v", rawID)
 
-	var req struct {
-		PhoneNumber     string   `json:"phone_number"`
-		GithubID        string   `json:"github_id"`
-		ResumeLink      string   `json:"resume_link"`
-		Skills          []string `json:"skills"`
-		ExperienceYears int      `json:"experience_years"`
-	}
-
+	var req models.CompleteOnboardingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-		return
-	}
-
-	if req.PhoneNumber == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "phone_number is required"})
-		return
-	}
-	if req.GithubID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "github_id is required"})
-		return
-	}
-	if req.ResumeLink == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "resume_link is required"})
-		return
-	}
-	if len(req.Skills) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "at least one skill is required"})
-		return
-	}
-	if req.ExperienceYears < 0 || req.ExperienceYears > 50 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "experience_years must be between 0 and 50"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body", "details": err.Error()})
 		return
 	}
 
@@ -462,6 +434,7 @@ func (h *Handlers) GetPositionDetails(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
 }
+
 func (h *Handlers) ListPositions(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -661,6 +634,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 		"total_pages": int(math.Ceil(float64(total) / float64(limit))),
 	})
 }
+
 func (h *Handlers) ApplyForPosition(c *gin.Context) {
 
 	candidateIDVal, exists := c.Get("candidate_id")

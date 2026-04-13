@@ -6,15 +6,44 @@ import { useAuth } from '@/hooks/use-auth';
 import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
-  const { login, isLoggingIn, loginError, resetLogin, logout, setupPoller, setSessionMeta , user } = useAuth();
+  const {
+    login,
+    isLoggingIn,
+    loginError,
+    resetLogin,
+    logout,
+    setupPoller,
+    setSessionMeta,
+    user,
+  } = useAuth();
   const [step, setStep] = useState<
     'workspace' | 'credentials' | 'success' | 'waiting'
   >('workspace');
   const [workspace, setWorkspace] = useState('');
   const [username, setUsername] = useState('');
 
+  const getErrorMessage = (error: any) => {
+    if (!error) return undefined;
 
-  const { data: setupStatus } = setupPoller(workspace, username, step === 'waiting');
+    const status = error.response?.status;
+
+    switch (status) {
+      case 401:
+        return 'Invalid email or password. Please check your credentials.';
+      case 403:
+        return 'Access denied. Your account may be restricted; please contact your administrator.';
+      case 404:
+        return 'Workspace not found. Please go back and check the workspace ID.';
+      default:
+        return 'An unexpected error occurred. Please try again later.';
+    }
+  };
+
+  const { data: setupStatus } = setupPoller(
+    workspace,
+    username,
+    step === 'waiting'
+  );
 
   if (setupStatus?.assigned && setupStatus.setupPath && step === 'waiting') {
     setSessionMeta(workspace, setupStatus.setupPath);
@@ -76,7 +105,7 @@ export default function LoginPage() {
             onBack={handleBackClick}
             onSubmit={handleCredentialsSubmit}
             isLoading={isLoggingIn}
-            error={loginError?.message}
+            error={getErrorMessage(loginError)}
           />
         </div>
 
