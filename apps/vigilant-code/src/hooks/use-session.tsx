@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 interface CreateInterviewResponse {
   id: number;
@@ -42,20 +42,20 @@ interface ProcessReportPayload {
 }
 
 async function createInterview(candidateSessionId: string): Promise<CreateInterviewResponse> {
-  const { data } = await apiClient.post<CreateInterviewResponse>('/create-interview', {
+  const { data } = await apiClient.post<CreateInterviewResponse>("/create-interview", {
     candidate_session_id: candidateSessionId,
   });
   return data;
 }
 
 async function reportProcesses(payload: ProcessReportPayload): Promise<void> {
-  await apiClient.post('/process', payload);
+  await apiClient.post("/process", payload);
 }
 
 export function useInterview() {
   const queryClient = useQueryClient();
 
-  const user = queryClient.getQueryData<AuthUser>(['auth', 'me']);
+  const user = queryClient.getQueryData<AuthUser>(["auth", "me"]);
 
   const {
     mutateAsync: startInterview,
@@ -65,24 +65,27 @@ export function useInterview() {
     reset,
   } = useMutation({
     mutationFn: () => {
-      if (!user?.session_id) throw new Error('No active session');
+      if (!user?.session_id) throw new Error("No active session");
       return createInterview(user.session_id);
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['interview', 'session'], data);
+      queryClient.setQueryData(["interview", "session"], data);
     },
   });
 
-  const currentSession = queryClient.getQueryData<CreateInterviewResponse>(['interview', 'session']);
+  const currentSession = queryClient.getQueryData<CreateInterviewResponse>([
+    "interview",
+    "session",
+  ]);
   const interviewSessionId = currentSession?.session_id ?? interviewSession?.session_id ?? null;
 
-const {
+  const {
     mutateAsync: sendProcessReport,
     isPending: isSendingReport,
     error: reportError,
   } = useMutation({
     mutationFn: (processes: ProcessPayload[]) => {
-      if (!interviewSessionId) throw new Error('No active interview session');
+      if (!interviewSessionId) throw new Error("No active interview session");
       return reportProcesses({ session_id: interviewSessionId, processes });
     },
   });
@@ -95,11 +98,11 @@ const {
           await sendProcessReport(processes);
         }
       } catch (err) {
-        console.error('Process report failed:', err);
+        console.error("Process report failed:", err);
       }
     }, 5000);
 
-    return () => clearInterval(interval); 
+    return () => clearInterval(interval);
   };
 
   return {
@@ -113,6 +116,6 @@ const {
     sendProcessReport,
     isSendingReport,
     reportError,
-    startReporting,  
+    startReporting,
   };
 }

@@ -4,40 +4,30 @@ import { useJudge } from "@/hooks/use-judge";
 import { useParams } from "react-router-dom";
 
 const MONACO_LANG_MAP: Record<string, string> = {
-  c:    "c",
-  cpp:  "cpp",
-  js:   "javascript",
+  c: "c",
+  cpp: "cpp",
+  js: "javascript",
   java: "java",
   python: "python",
-
 };
 
 export default function CodeEditor() {
-  const {
-    languages,
-    isLoadingLanguages,
-    execute,
-    result,
-    isExecuting,
-    executeError,
-    reset,
-  } = useJudge();
-const {language} = useParams<{language:string}>()
+  const { languages, isLoadingLanguages, execute, result, isExecuting, executeError, reset } =
+    useJudge();
+  const { language } = useParams<{ language: string }>();
   const [selectedLang, setSelectedLang] = useState(languages[0] ?? null);
   const [code, setCode] = useState("");
-
 
   useEffect(() => {
     if (languages.length > 0 && !selectedLang) {
       setSelectedLang(languages[0]);
       setCode(atob(languages[0].example));
     }
-    if(language && languages.length > 0 && !selectedLang){
-      // console.log(languages.find((lang)=>lang.name==language) , "value")
-      setSelectedLang(languages.find((lang)=>lang.name==language))
-      setCode(atob(languages.find((lang)=>lang.name==language).example))
+    if (language && languages.length > 0 && !selectedLang) {
+      setSelectedLang(languages.find((lang) => lang.name == language));
+      setCode(atob(languages.find((lang) => lang.name == language).example));
     }
-  }, [languages , language]);
+  }, [languages, language]);
 
   const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const lang = languages.find((l) => l.id === e.target.value);
@@ -135,8 +125,8 @@ const {language} = useParams<{language:string}>()
                     result.status === "accepted"
                       ? "text-green-400"
                       : result.status === "timeout"
-                      ? "text-yellow-400"
-                      : "text-red-400"
+                        ? "text-yellow-400"
+                        : "text-red-400"
                   }
                 >
                   {result.status}
@@ -146,9 +136,7 @@ const {language} = useParams<{language:string}>()
           </div>
 
           <div className="flex-1 p-4 overflow-auto">
-            {isExecuting && (
-              <p className="text-gray-400 text-sm animate-pulse">Executing...</p>
-            )}
+            {isExecuting && <p className="text-gray-400 text-sm animate-pulse">Executing...</p>}
 
             {!isExecuting && executeError && (
               <pre className="text-red-400 font-mono text-sm whitespace-pre-wrap">
@@ -184,10 +172,21 @@ const {language} = useParams<{language:string}>()
       {/* Footer */}
       {result && (
         <div className="px-6 py-2 bg-gray-800 border-t border-gray-700 text-xs text-gray-400 flex gap-6">
-          <span>Submission ID: <span className="text-gray-300">{result.id}</span></span>
-          <span>Time: <span className="text-gray-300">{result.time_ms}ms</span></span>
-          <span>Memory: <span className="text-gray-300">{(result.memory_kb / 1024).toFixed(1)} MB</span></span>
-          <span>Status: <span className={result.status === "accepted" ? "text-green-400" : "text-red-400"}>{result.status}</span></span>
+          <span>
+            Submission ID: <span className="text-gray-300">{result.id}</span>
+          </span>
+          <span>
+            Time: <span className="text-gray-300">{result.time_ms}ms</span>
+          </span>
+          <span>
+            Memory: <span className="text-gray-300">{(result.memory_kb / 1024).toFixed(1)} MB</span>
+          </span>
+          <span>
+            Status:{" "}
+            <span className={result.status === "accepted" ? "text-green-400" : "text-red-400"}>
+              {result.status}
+            </span>
+          </span>
         </div>
       )}
     </div>

@@ -1,30 +1,31 @@
-import { rm, mkdir, cp } from 'fs/promises';
-import path from 'node:path';
+import { rm, mkdir, cp } from "fs/promises";
+import path from "node:path";
 
-import { FuseV1Options, FuseVersion } from '@electron/fuses';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { FusesPlugin } from '@electron-forge/plugin-fuses';
-import { VitePlugin } from '@electron-forge/plugin-vite';
-import type { ForgeConfig } from '@electron-forge/shared-types';
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
+import { MakerDeb } from "@electron-forge/maker-deb";
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import { VitePlugin } from "@electron-forge/plugin-vite";
+import type { ForgeConfig } from "@electron-forge/shared-types";
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './assets/icons/icon',
+    icon: "./assets/icons/icon",
+    executableName: "vigilant-code",
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      setupIcon: './assets/icons/win/icon.ico',
+      setupIcon: "./assets/icons/win/icon.ico",
       iconUrl:
-        'https://raw.githubusercontent.com/loarsaw/vigilant/refs/heads/master/assets/icons/win/icon.ico',
+        "https://raw.githubusercontent.com/loarsaw/vigilant/refs/heads/master/assets/icons/win/icon.ico",
     }),
     new MakerDeb({
       options: {
-        maintainer: 'loarsaw',
-        homepage: 'https://github.com/loarsaw/vigilant',
-        icon: './assets/icons/png/512x512.png',
+        maintainer: "loarsaw",
+        homepage: "https://github.com/loarsaw/vigilant",
+        icon: "./assets/icons/png/512x512.png",
       },
     }),
   ],
@@ -32,20 +33,20 @@ const config: ForgeConfig = {
     new VitePlugin({
       build: [
         {
-          entry: 'src/main.ts',
-          config: 'vite.main.config.ts',
-          target: 'main',
+          entry: "src/main.ts",
+          config: "vite.main.config.ts",
+          target: "main",
         },
         {
-          entry: 'src/preload.ts',
-          config: 'vite.preload.config.ts',
-          target: 'preload',
+          entry: "src/preload.ts",
+          config: "vite.preload.config.ts",
+          target: "preload",
         },
       ],
       renderer: [
         {
-          name: 'main_window',
-          config: 'vite.renderer.config.ts',
+          name: "main_window",
+          config: "vite.renderer.config.ts",
         },
       ],
     }),
@@ -61,11 +62,11 @@ const config: ForgeConfig = {
   ],
   publishers: [
     {
-      name: '@electron-forge/publisher-github',
+      name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: 'loarsaw',
-          name: 'vigilant',
+          owner: "loarsaw",
+          name: "vigilant",
         },
         prerelease: true,
       },
@@ -74,8 +75,8 @@ const config: ForgeConfig = {
   hooks: {
     async packageAfterCopy(_forgeConfig, buildPath) {
       const projectRoot = process.cwd();
-      const sourceBuildDir = path.resolve(projectRoot, 'build');
-      const destBuildDir = path.resolve(buildPath, 'build');
+      const sourceBuildDir = path.resolve(projectRoot, "build");
+      const destBuildDir = path.resolve(buildPath, "build");
 
       try {
         await rm(destBuildDir, { recursive: true, force: true });

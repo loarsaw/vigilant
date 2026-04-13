@@ -8,19 +8,19 @@ import (
 )
 
 type Config struct {
-	ServerPort           string
-	ServerHost           string
-	PostgresHost         string
-	PostgresPort         string
-	PostgresDB           string
-	PostgresUser         string
-	PostgresPassword     string
-	AuthToken            string
+	ServerPort       string
+	ServerHost       string
+	PostgresHost     string
+	PostgresPort     string
+	PostgresDB       string
+	PostgresUser     string
+	PostgresPassword string
+	AuthToken        string
 
 	// Admin settings
 	AdminAuthToken      string
-	AdminEmail          string 
-	AdminPassword       string 
+	AdminEmail          string
+	AdminPassword       string
 	AdminIPAddress      string
 	AdminSessionTimeout string
 
@@ -108,9 +108,9 @@ func Load() (*Config, error) {
 			config.AuthToken = value
 		case "ADMIN_AUTH_TOKEN":
 			config.AdminAuthToken = value
-		case "ADMIN_EMAIL": // NEW
+		case "ADMIN_EMAIL":
 			config.AdminEmail = value
-		case "ADMIN_PASSWORD": // NEW
+		case "ADMIN_PASSWORD":
 			config.AdminPassword = value
 		case "ADMIN_IP_ADDRESS":
 			config.AdminIPAddress = value
@@ -133,7 +133,7 @@ func Load() (*Config, error) {
 		case "ALLOW_ORIGIN":
 			config.AllowOrigin = value
 		case "ENCRYPTION_KEY":
-    		config.EncryptionKey = value			
+			config.EncryptionKey = value
 		}
 	}
 
@@ -155,7 +155,6 @@ func (c *Config) GetDSN() string {
 	)
 }
 
-// GetAdminIPs returns a slice of allowed admin IP addresses
 func (c *Config) GetAdminIPs() []string {
 	if c.AdminIPAddress == "" {
 		return []string{}
