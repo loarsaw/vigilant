@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"vigilant/email"
@@ -405,6 +406,11 @@ func (h *AdminHandlers) ParseUserList(c *gin.Context) {
 	prepared := make([]preparedCandidate, 0, len(users))
 	var prepareErrors []gin.H
 
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+
 	for i, u := range users {
 		plainPassword, err := generateSecurePassword(12)
 		if err != nil {
@@ -413,7 +419,7 @@ func (h *AdminHandlers) ParseUserList(c *gin.Context) {
 			continue
 		}
 
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcryptCost)
 		if err != nil {
 			log.Printf("ParseUserList: hash fail for %s: %v", u.Email, err)
 			prepareErrors = append(prepareErrors, gin.H{"index": i, "email": u.Email, "error": "password hashing failed"})

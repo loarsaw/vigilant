@@ -3,6 +3,7 @@ package middleware
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -36,6 +37,23 @@ type AdminClaims struct {
 func AdminAuthMiddleware(cfg *config.Config, db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
+		allowedIPs := cfg.GetAdminIPs()
+		if len(allowedIPs) > 0 {
+			clientIP := c.ClientIP()
+			allowed := false
+			for _, ip := range allowedIPs {
+				if ip == clientIP {
+					allowed = true
+					break
+				}
+			}
+			if !allowed {
+				c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: IP not allowed"})
+				c.Abort()
+				return
+			}
+		}
+
 		adminToken := c.GetHeader("X-Admin-Token")
 		if adminToken != "" && cfg.AdminAuthToken != "" && adminToken == cfg.AdminAuthToken {
 			setSuperAdminContext(c)
@@ -43,14 +61,14 @@ func AdminAuthMiddleware(cfg *config.Config, db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		adminEmail := c.GetHeader("X-Admin-Email")
-		adminPassword := c.GetHeader("X-Admin-Password")
-		if adminEmail != "" && adminPassword != "" {
-			if authenticateAdminByCredentials(c, db, adminEmail, adminPassword) {
-				c.Next()
-			}
-			return
-		}
+		// adminEmail := c.GetHeader("X-Admin-Email")
+		// adminPassword := c.GetHeader("X-Admin-Password")
+		// if adminEmail != "" && adminPassword != "" {
+		// 	if authenticateAdminByCredentials(c, db, adminEmail, adminPassword) {
+		// 		c.Next()
+		// 	}
+		// 	return
+		// }
 
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -86,15 +104,22 @@ func AdminAuthMiddleware(cfg *config.Config, db *sql.DB) gin.HandlerFunc {
 }
 
 // IssueAdminJWT generates a signed JWT for an admin after successful login.
-// Call this from your POST /api/v1/admin/login handler.
+// Call this from your POST /api/v1/admin/admin-handler.
 func IssueAdminJWT(cfg *config.Config, adminID, email, role, fullName string) (string, error) {
+	timeoutHours := 24
+	if cfg.AdminSessionTimeout != "" {
+		if parsed, err := strconv.Atoi(cfg.AdminSessionTimeout); err == nil && parsed > 0 {
+			timeoutHours = parsed
+		}
+	}
+
 	claims := AdminClaims{
 		AdminID:  adminID,
 		Email:    email,
 		Role:     role,
 		FullName: fullName,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(12 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(timeoutHours) * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Subject:   adminID,
 		},

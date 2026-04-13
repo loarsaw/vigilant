@@ -108,10 +108,6 @@ func Load() (*Config, error) {
 			config.AuthToken = value
 		case "ADMIN_AUTH_TOKEN":
 			config.AdminAuthToken = value
-		case "ADMIN_EMAIL":
-			config.AdminEmail = value
-		case "ADMIN_PASSWORD":
-			config.AdminPassword = value
 		case "ADMIN_IP_ADDRESS":
 			config.AdminIPAddress = value
 		case "ADMIN_SESSION_TIMEOUT":

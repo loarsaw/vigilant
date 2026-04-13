@@ -35,7 +35,11 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
@@ -70,7 +74,6 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
 		log.Printf("CreateCandidate: failed to decode encryption key: %v", err)
-
 	} else {
 		sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
 		if err != nil {
@@ -371,8 +374,12 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "candidate account is deactivated"})
 		return
 	}
-	// TODO - Move to Utility
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcryptCost)
 	if err != nil {
 		log.Printf("UpdateCandidatePassword: failed to hash password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})

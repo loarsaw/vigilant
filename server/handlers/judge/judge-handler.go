@@ -148,11 +148,19 @@ func (h *Handlers) ExecuteCode(c *gin.Context) {
 		return
 	}
 
+	highMemoryThreshold, err := strconv.ParseInt(h.Cfg.HighMemoryThreshold, 10, 64)
+	if err != nil || highMemoryThreshold <= 0 {
+		highMemoryThreshold = 500
+	}
+	highMemory := result.MemoryKB > highMemoryThreshold*1024
+
 	status := "accepted"
 	if result.ExitCode == 124 {
 		status = "timeout"
 	} else if result.ExitCode != 0 {
 		status = "error"
+	} else if highMemory {
+		status = "high_memory"
 	}
 
 	sub := &models.Submission{
@@ -211,4 +219,41 @@ func (h *Handlers) ListSubmissions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, subs)
+}
+
+func StartCleanupWorker(db *sql.DB, cfg *config.Config) {
+	retentionHours, err := strconv.Atoi(cfg.DataRetentionHours)
+	if err != nil || retentionHours <= 0 {
+		retentionHours = 72
+	}
+
+	retention := time.Duration(retentionHours) * time.Hour
+
+	go func() {
+		cleanupSubmissions(db, retention)
+
+		ticker := time.NewTicker(6 * time.Hour)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			cleanupSubmissions(db, retention)
+		}
+	}()
+}
+
+func cleanupSubmissions(db *sql.DB, retention time.Duration) {
+	result, err := db.Exec(`
+		DELETE FROM judge_submissions
+		WHERE created_at < NOW() - $1::interval
+	`, retention.String())
+
+	if err != nil {
+		log.Printf("[judge] cleanup error: %v", err)
+		return
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows > 0 {
+		log.Printf("[judge] cleanup deleted %d submissions older than %s", rows, retention)
+	}
 }

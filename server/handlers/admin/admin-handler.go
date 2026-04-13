@@ -3,6 +3,7 @@ package admin
 import (
 	"database/sql"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,13 +45,16 @@ func (h *AdminHandlers) CreateAdmin(c *gin.Context) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
 	}
 
-	// SuperAdminUUID is not in administrators table pass NULL
 	var createdBy *string
 	if callerID != middleware.SuperAdminUUID {
 		createdBy = &callerID
@@ -365,7 +369,11 @@ func (h *AdminHandlers) ResetAdminPassword(c *gin.Context) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcryptCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
@@ -379,8 +387,6 @@ func (h *AdminHandlers) ResetAdminPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "password reset successfully"})
 }
-
-// Issues a JWT for HR and interviewers
 
 func (h *AdminHandlers) AdminLogin(c *gin.Context) {
 	var req struct {

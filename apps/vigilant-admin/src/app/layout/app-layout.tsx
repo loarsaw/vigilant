@@ -17,7 +17,7 @@ import { useAdminAuth } from "@/hooks/use-auth";
 export function SidebarLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const { role } = useAdminAuth();
+  const { role, logout } = useAdminAuth();
 
   console.log(role);
   const [NAV_ITEMS] = useState([
@@ -86,7 +86,11 @@ export function SidebarLayout() {
         <div className="p-2 border-t border-white/[0.07]">
           <Button
             variant="ghost"
-            onClick={() => navigate("/")}
+            onClick={() => {
+              logout().then(() => {
+                navigate("/");
+              });
+            }}
             className={`w-full flex items-center gap-3 text-white/40 hover:bg-red-500/10 hover:text-red-300 h-auto
               ${collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"}`}
           >

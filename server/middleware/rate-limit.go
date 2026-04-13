@@ -2,8 +2,11 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
+
+	"vigilant/config"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/time/rate"
@@ -26,7 +29,6 @@ func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
 		r:   r,
 		b:   b,
 	}
-
 	// Start cleanup routine to prevent memory leaks
 	go limiter.cleanupRoutine()
 	return limiter
@@ -36,7 +38,6 @@ func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
 func (i *IPRateLimiter) AddIP(ip string) *rate.Limiter {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-
 	limiter := rate.NewLimiter(i.r, i.b)
 	i.ips[ip] = limiter
 	return limiter
@@ -47,11 +48,9 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 	i.mu.RLock()
 	limiter, exists := i.ips[ip]
 	i.mu.RUnlock()
-
 	if !exists {
 		return i.AddIP(ip)
 	}
-
 	return limiter
 }
 
@@ -59,11 +58,8 @@ func (i *IPRateLimiter) GetLimiter(ip string) *rate.Limiter {
 func (i *IPRateLimiter) cleanupRoutine() {
 	ticker := time.NewTicker(10 * time.Minute)
 	defer ticker.Stop()
-
 	for range ticker.C {
 		i.mu.Lock()
-		// Simple cleanup: clear all entries periodically
-		// In production, you might want to track last access time
 		i.ips = make(map[string]*rate.Limiter)
 		i.mu.Unlock()
 	}
@@ -73,7 +69,6 @@ func (i *IPRateLimiter) cleanupRoutine() {
 func RateLimitMiddleware(limiter *IPRateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
-
 		ipLimiter := limiter.GetLimiter(ip)
 		if !ipLimiter.Allow() {
 			c.JSON(http.StatusTooManyRequests, gin.H{
@@ -83,7 +78,6 @@ func RateLimitMiddleware(limiter *IPRateLimiter) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
 }
@@ -122,7 +116,18 @@ var (
 	SSELimiter = NewIPRateLimiter(rate.Limit(5), 10)
 )
 
-// CustomRateLimitMiddleware creates a middleware with custom limits
+func InitLimiters(cfg *config.Config) {
+	rateLimitPerMin, err := strconv.Atoi(cfg.RateLimitPerMinute)
+	if err != nil || rateLimitPerMin <= 0 {
+		rateLimitPerMin = 120 // fallback
+	}
+
+	ratePerSecond := rate.Limit(float64(rateLimitPerMin) / 60.0)
+	burst := rateLimitPerMin // burst = full minute's allowance
+
+	APILimiter = NewIPRateLimiter(ratePerSecond, burst)
+}
+
 func CustomRateLimitMiddleware(requestsPerSecond float64, burst int) gin.HandlerFunc {
 	limiter := NewIPRateLimiter(rate.Limit(requestsPerSecond), burst)
 	return RateLimitMiddleware(limiter)

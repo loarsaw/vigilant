@@ -21,6 +21,8 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	middleware.InitLimiters(cfg)
+
 	database, err := db.InitDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
