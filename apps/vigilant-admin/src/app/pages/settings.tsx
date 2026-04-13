@@ -1,48 +1,42 @@
-import { useState } from 'react';
-import { Save,  Settings2, CheckCircle2} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Save, Settings2, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-import { EmailCard } from '@/components/settings/email';
+import { EmailCard } from "@/components/settings/email";
 
 export function Settings() {
- 
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   const [configuredSections, setConfiguredSections] = useState({
     email: false,
     calendar: false,
   });
 
- 
   const [editMode, setEditMode] = useState({
     email: true,
     calendar: true,
   });
 
-
-
   const handleSave = async () => {
-    setSaveStatus('saving');
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-  
+    setSaveStatus("saving");
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     setConfiguredSections({
       email: editMode.email,
-      
+
       calendar: editMode.calendar,
     });
-    
+
     setEditMode({
       email: false,
-     
+
       calendar: false,
     });
-    
-    setSaveStatus('saved');
-    setTimeout(() => setSaveStatus('idle'), 2000);
-  };
 
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus("idle"), 2000);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0e14] via-[#0f1419] to-[#0a0e14] p-6 lg:p-8">
@@ -56,23 +50,25 @@ export function Settings() {
               </div>
               Settings
             </h1>
-            <p className="text-gray-400 mt-2 text-sm">Configure your application integrations and API credentials</p>
+            <p className="text-gray-400 mt-2 text-sm">
+              Configure your application integrations and API credentials
+            </p>
           </div>
-          <Button 
+          <Button
             onClick={handleSave}
-            disabled={saveStatus === 'saving'}
+            disabled={saveStatus === "saving"}
             className={`whitespace-nowrap ${
-              saveStatus === 'saved' 
-                ? 'bg-emerald-500 hover:bg-emerald-600' 
-                : 'bg-cyan-400 hover:bg-cyan-500'
+              saveStatus === "saved"
+                ? "bg-emerald-500 hover:bg-emerald-600"
+                : "bg-cyan-400 hover:bg-cyan-500"
             } text-[#1a1f2e] font-semibold transition-colors`}
           >
-            {saveStatus === 'saving' ? (
+            {saveStatus === "saving" ? (
               <>
                 <div className="animate-spin mr-2">⏳</div>
                 Saving...
               </>
-            ) : saveStatus === 'saved' ? (
+            ) : saveStatus === "saved" ? (
               <>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Saved!
@@ -87,8 +83,11 @@ export function Settings() {
         </div>
 
         {/* Email Configuration */}
-        <EmailCard editMode={editMode} setEditMode={setEditMode} configuredSections={configuredSections}/>
-
+        <EmailCard
+          editMode={editMode}
+          setEditMode={setEditMode}
+          configuredSections={configuredSections}
+        />
       </div>
     </div>
   );

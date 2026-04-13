@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 interface OnboardingPayload {
   phone_number: string;
@@ -11,7 +11,7 @@ interface OnboardingPayload {
 
 const onboardingApi = {
   complete: async (payload: OnboardingPayload): Promise<void> => {
-    await apiClient.post('/onboarding', payload);
+    await apiClient.post("/onboarding", payload);
   },
 };
 
@@ -26,8 +26,7 @@ export function useOnboarding() {
   } = useMutation({
     mutationFn: (payload: OnboardingPayload) => onboardingApi.complete(payload),
     onSuccess: () => {
-     
-      queryClient.setQueryData<Record<string, unknown>>(['auth', 'me'], (prev) => {
+      queryClient.setQueryData<Record<string, unknown>>(["auth", "me"], (prev) => {
         if (!prev) return prev;
         return { ...prev, onboarding_complete: true };
       });

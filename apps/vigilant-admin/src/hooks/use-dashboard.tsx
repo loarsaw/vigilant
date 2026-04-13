@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 interface InterviewItem {
   session_id: string;
@@ -41,13 +41,13 @@ export interface DashboardStats {
 }
 
 const fetchDashboardStats = async (): Promise<DashboardStats> => {
-  const response = await apiClient.get('/dashboard');
+  const response = await apiClient.get("/dashboard");
   return response.data;
 };
 
 export function useDashboard() {
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['dashboard'],
+    queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
     staleTime: 1000 * 60 * 2,
     refetchInterval: 1000 * 60 * 5,

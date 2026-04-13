@@ -1,21 +1,21 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Send, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useInterview } from '@/hooks/use-interview'
-import { toast } from 'sonner'
+import { useState, useEffect } from "react";
+import { Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useInterview } from "@/hooks/use-interview";
+import { toast } from "sonner";
 
 interface EmailModalProps {
-  isOpen: boolean
-  onClose: () => void
-  candidateId: string
-  candidateName: string
-  candidateEmail: string
+  isOpen: boolean;
+  onClose: () => void;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
 }
 
 export function EmailModal({
@@ -25,22 +25,22 @@ export function EmailModal({
   candidateName,
   candidateEmail,
 }: EmailModalProps) {
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
 
-  const { sendEmailAsync, isSendingEmail } = useInterview(candidateId)
+  const { sendEmailAsync, isSendingEmail } = useInterview(candidateId);
 
   useEffect(() => {
     if (!isOpen) {
-      setSubject('')
-      setBody('')
+      setSubject("");
+      setBody("");
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
-      toast.error('Subject and message are required')
-      return
+      toast.error("Subject and message are required");
+      return;
     }
 
     try {
@@ -49,13 +49,13 @@ export function EmailModal({
         candidate_name: candidateName,
         subject,
         message: body,
-      })
-      toast.success(`Email sent to ${candidateName}`)
-      onClose()
+      });
+      toast.success(`Email sent to ${candidateName}`);
+      onClose();
     } catch (err: any) {
-      toast.error(err?.message ?? 'Failed to send email')
+      toast.error(err?.message ?? "Failed to send email");
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -107,7 +107,7 @@ export function EmailModal({
               ) : (
                 <Send className="h-4 w-4 mr-2" />
               )}
-              {isSendingEmail ? 'Sending...' : 'Send Email'}
+              {isSendingEmail ? "Sending..." : "Send Email"}
             </Button>
             <Button
               variant="outline"
@@ -121,5 +121,5 @@ export function EmailModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

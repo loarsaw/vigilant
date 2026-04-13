@@ -1,23 +1,23 @@
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { MapPin, Briefcase, Clock, DollarSign, Calendar } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Briefcase, Clock, DollarSign, Calendar } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface JobCardProps {
-  id: string
-  position_title: string
-  department: string
-  location: string
-  employment_type: string
-  experience_required: string
-  salary_range_text: string
-  number_of_openings: number
-  job_description: string
-  requirements: string
-  isApplied?: boolean
-  interviewDate?: string
-  interviewTime?: string
-  onApply?: (jobId: string) => void
+  id: string;
+  position_title: string;
+  department: string;
+  location: string;
+  employment_type: string;
+  experience_required: string;
+  salary_range_text: string;
+  number_of_openings: number;
+  job_description: string;
+  requirements: string;
+  isApplied?: boolean;
+  interviewDate?: string;
+  interviewTime?: string;
+  onApply?: (jobId: string) => void;
 }
 
 export default function JobCard({
@@ -36,7 +36,7 @@ export default function JobCard({
   interviewTime,
   onApply,
 }: JobCardProps) {
-  const router = useNavigate()
+  const router = useNavigate();
   return (
     <div className="bg-gradient-to-br from-slate-800/50 to-blue-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 aspect-square flex flex-col justify-between">
       <div className="flex flex-col justify-between h-full">
@@ -77,40 +77,40 @@ export default function JobCard({
         </div>
 
         {/* Action Section */}
-       {isApplied ? (
-  <div className="space-y-2">
-    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 space-y-2">
-      <p className="text-xs font-semibold text-emerald-400">Interview Scheduled</p>
-      <div className="flex items-center gap-2">
-        <Calendar className="w-3 h-3 text-emerald-400" />
-        <span className="text-xs text-slate-300">{interviewDate || 'Date TBA'}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Clock className="w-3 h-3 text-emerald-400" />
-        <span className="text-xs text-slate-300">{interviewTime || 'Time TBA'}</span>
+        {isApplied ? (
+          <div className="space-y-2">
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 space-y-2">
+              <p className="text-xs font-semibold text-emerald-400">Interview Scheduled</p>
+              <div className="flex items-center gap-2">
+                <Calendar className="w-3 h-3 text-emerald-400" />
+                <span className="text-xs text-slate-300">{interviewDate || "Date TBA"}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-3 h-3 text-emerald-400" />
+                <span className="text-xs text-slate-300">{interviewTime || "Time TBA"}</span>
+              </div>
+            </div>
+
+            {/* New Join Lobby Button */}
+            <Button
+              variant="outline"
+              className="w-full py-2 text-xs font-semibold border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-all"
+              onClick={() => {
+                router("/wait");
+              }}
+            >
+              Join Lobby
+            </Button>
+          </div>
+        ) : (
+          <Button
+            onClick={() => onApply?.(id)}
+            className="w-full py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-600 hover:to-cyan-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95"
+          >
+            Apply
+          </Button>
+        )}
       </div>
     </div>
-    
-    {/* New Join Lobby Button */}
-    <Button 
-      variant="outline"
-      className="w-full py-2 text-xs font-semibold border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10 transition-all"
-      onClick={() =>{
-        router("/wait")
-      }}
-    >
-      Join Lobby
-    </Button>
-  </div>
-) : (
-  <Button
-    onClick={() => onApply?.(id)}
-    className="w-full py-2 text-sm font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-600 hover:to-cyan-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95"
-  >
-    Apply
-  </Button>
-)}
-      </div>
-    </div>
-  )
+  );
 }

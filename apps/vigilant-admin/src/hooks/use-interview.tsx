@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
-import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
+import { useState } from "react";
 
 export interface Interview {
   id: string;
@@ -9,7 +9,7 @@ export interface Interview {
   interview_type: string;
   scheduled_date: string;
   scheduled_time: string;
-  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  status: "scheduled" | "in-progress" | "completed" | "cancelled";
 }
 
 export interface CandidateApplication {
@@ -49,26 +49,24 @@ export interface SendCustomEmailPayload {
 }
 
 const fetchInterviews = async (params: any) => {
-  const response = await apiClient.get('/interviews', { params });
+  const response = await apiClient.get("/interviews", { params });
   return response.data;
 };
 
 const fetchCandidateApplications = async (
-  candidateId: string
+  candidateId: string,
 ): Promise<CandidateApplicationsResponse> => {
-  const response = await apiClient.get(
-    `/candidates/${candidateId}/applications`
-  );
+  const response = await apiClient.get(`/candidates/${candidateId}/applications`);
   return response.data;
 };
 
 const createInterview = async (payload: CreateInterviewPayload) => {
-  const response = await apiClient.post('/create-interview', payload);
+  const response = await apiClient.post("/create-interview", payload);
   return response.data;
 };
 
 const sendCustomEmail = async (payload: SendCustomEmailPayload) => {
-  const response = await apiClient.post('/emails/send', payload);
+  const response = await apiClient.post("/emails/send", payload);
   return response.data;
 };
 
@@ -81,13 +79,13 @@ export function useInterview(candidateId?: string) {
   const [page, setPage] = useState(1);
 
   const { data: interviewData, isLoading: isLoadingInterviews } = useQuery({
-    queryKey: ['interviews', { page, candidateId }],
+    queryKey: ["interviews", { page, candidateId }],
     queryFn: () => fetchInterviews({ page, candidate_id: candidateId }),
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: appData, isLoading: isLoadingApps } = useQuery({
-    queryKey: ['candidate-applications', candidateId],
+    queryKey: ["candidate-applications", candidateId],
     queryFn: () => fetchCandidateApplications(candidateId!),
     enabled: !!candidateId,
   });
@@ -95,10 +93,10 @@ export function useInterview(candidateId?: string) {
   const scheduleMutation = useMutation({
     mutationFn: createInterview,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['interviews'] });
+      queryClient.invalidateQueries({ queryKey: ["interviews"] });
       if (candidateId) {
         queryClient.invalidateQueries({
-          queryKey: ['candidate-applications', candidateId],
+          queryKey: ["candidate-applications", candidateId],
         });
       }
     },
@@ -111,8 +109,8 @@ export function useInterview(candidateId?: string) {
   const statusMutation = useMutation({
     mutationFn: updateApplicationStatus,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidate-applications'] });
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ["candidate-applications"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
 
@@ -122,7 +120,7 @@ export function useInterview(candidateId?: string) {
   // })) ?? [];
 
   const applicationOptions =
-    appData?.data.map(app => ({
+    appData?.data.map((app) => ({
       application_id: app.application_id,
       position: app.position_title,
     })) ?? [];
@@ -146,10 +144,10 @@ export function useInterview(candidateId?: string) {
     sendEmailAsync: emailMutation.mutateAsync,
 
     approveApplication: (id: string, notes?: string) =>
-      statusMutation.mutate({ id, payload: { status: 'offered', notes } }),
+      statusMutation.mutate({ id, payload: { status: "offered", notes } }),
 
     rejectApplication: (id: string, notes?: string) =>
-      statusMutation.mutate({ id, payload: { status: 'rejected', notes } }),
+      statusMutation.mutate({ id, payload: { status: "rejected", notes } }),
 
     scheduleError: scheduleMutation.error?.message ?? null,
     emailError: emailMutation.error?.message ?? null,

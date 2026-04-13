@@ -1,6 +1,6 @@
-import { Loader2, Upload, XCircle, CheckCircle2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Loader2, Upload, XCircle, CheckCircle2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ImportCandidatesDialogProps {
   open: boolean;
@@ -13,10 +13,16 @@ interface ImportCandidatesDialogProps {
   onReset: () => void;
 }
 
-export function ImportCandidatesDialog({ 
-  open, onOpenChange, onImport, isImporting, isSuccess, result, error, onReset 
+export function ImportCandidatesDialog({
+  open,
+  onOpenChange,
+  onImport,
+  isImporting,
+  isSuccess,
+  result,
+  error,
+  onReset,
 }: ImportCandidatesDialogProps) {
-  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) onImport(file);
@@ -52,7 +58,11 @@ export function ImportCandidatesDialog({
               <div className="grid grid-cols-3 gap-2 text-center">
                 <StatBox value={result.inserted} label="Inserted" />
                 <StatBox value={result.skipped} label="Skipped" />
-                <StatBox value={result.failed_count} label="Failed" isError={result.failed_count > 0} />
+                <StatBox
+                  value={result.failed_count}
+                  label="Failed"
+                  isError={result.failed_count > 0}
+                />
               </div>
 
               {result.failed_emails?.length > 0 && (
@@ -60,7 +70,10 @@ export function ImportCandidatesDialog({
                   <p className="text-xs text-gray-400 font-medium">Failed emails:</p>
                   <div className="max-h-36 overflow-y-auto space-y-1">
                     {result.failed_emails.map((f: any) => (
-                      <div key={f.email} className="flex items-start justify-between gap-2 text-xs bg-[#0f1419] rounded px-3 py-2">
+                      <div
+                        key={f.email}
+                        className="flex items-start justify-between gap-2 text-xs bg-[#0f1419] rounded px-3 py-2"
+                      >
                         <span className="text-white">{f.email}</span>
                         <span className="text-red-400">{f.error}</span>
                       </div>
@@ -69,7 +82,11 @@ export function ImportCandidatesDialog({
                 </div>
               )}
 
-              <Button variant="outline" className="w-full border-gray-700 text-white" onClick={handleClose}>
+              <Button
+                variant="outline"
+                className="w-full border-gray-700 text-white"
+                onClick={handleClose}
+              >
                 Done
               </Button>
             </div>
@@ -80,9 +97,13 @@ export function ImportCandidatesDialog({
               </p>
 
               <label className="block">
-                <div className={`w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                  isImporting ? 'border-cyan-400/50 bg-cyan-400/5' : 'border-gray-700 hover:border-cyan-400/50 hover:bg-cyan-400/5'
-                }`}>
+                <div
+                  className={`w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                    isImporting
+                      ? "border-cyan-400/50 bg-cyan-400/5"
+                      : "border-gray-700 hover:border-cyan-400/50 hover:bg-cyan-400/5"
+                  }`}
+                >
                   {isImporting ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
@@ -95,10 +116,21 @@ export function ImportCandidatesDialog({
                     </div>
                   )}
                 </div>
-                <input type="file" accept=".csv" className="hidden" disabled={isImporting} onChange={handleFileChange} />
+                <input
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  disabled={isImporting}
+                  onChange={handleFileChange}
+                />
               </label>
 
-              <Button variant="outline" className="w-full border-gray-700 text-white" onClick={() => onOpenChange(false)} disabled={isImporting}>
+              <Button
+                variant="outline"
+                className="w-full border-gray-700 text-white"
+                onClick={() => onOpenChange(false)}
+                disabled={isImporting}
+              >
                 Cancel
               </Button>
             </>
@@ -112,7 +144,7 @@ export function ImportCandidatesDialog({
 function StatBox({ value, label, isError }: { value: number; label: string; isError?: boolean }) {
   return (
     <div className="bg-[#0f1419] rounded p-3">
-      <p className={`text-2xl font-bold ${isError ? 'text-red-400' : 'text-white'}`}>{value}</p>
+      <p className={`text-2xl font-bold ${isError ? "text-red-400" : "text-white"}`}>{value}</p>
       <p className="text-xs text-gray-400 mt-1">{label}</p>
     </div>
   );

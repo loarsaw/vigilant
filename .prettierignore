@@ -1,7 +1,36 @@
-node_modules/
-dist/
-out/
-.vite/
-*.min.js
-package-lock.json
-coverage/
+# Dependencies
+**/node_modules/
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+
+# Build outputs
+**/dist/
+**/build/
+**/out/
+**/.next/
+**/.nuxt/
+**/coverage/
+
+# Server (Go files)
+server/
+
+# Environment files
+**/.env
+**/.env.*
+
+# Logs
+**/*.log
+**/logs/
+
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# IDE
+**/.vscode/
+**/.idea/
+
+# Config
+docker-compose.yml
+vigilant.conf

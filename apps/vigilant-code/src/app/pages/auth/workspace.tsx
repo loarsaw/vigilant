@@ -1,7 +1,7 @@
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface WorkspaceEntryProps {
   onSubmit: (workspace: string) => void;
@@ -18,7 +18,7 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      workspace: '',
+      workspace: "",
     },
   });
 
@@ -44,21 +44,14 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
           />
         </div>
 
-        <h2 className="text-5xl font-bold text-white mb-3 text-balance">
-          Welcome back
-        </h2>
+        <h2 className="text-5xl font-bold text-white mb-3 text-balance">Welcome back</h2>
 
-        <p className="text-lg text-slate-300 font-light">
-          Enter your workspace to continue
-        </p>
+        <p className="text-lg text-slate-300 font-light">Enter your workspace to continue</p>
       </div>
 
       <form onSubmit={handleSubmit(onInternalSubmit)} className="space-y-6">
         <div className="space-y-2">
-          <Label
-            htmlFor="workspace"
-            className="block text-sm font-medium text-slate-200"
-          >
+          <Label htmlFor="workspace" className="block text-sm font-medium text-slate-200">
             Workspace
           </Label>
 
@@ -67,18 +60,17 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
               id="workspace"
               type="text"
               placeholder="com.abc.entry"
-              {...register('workspace', {
-                required: 'Please enter your workspace',
+              {...register("workspace", {
+                required: "Please enter your workspace",
                 pattern: {
                   value: /^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$/i,
-                  message:
-                    'Format must be domain.subdomain.entry (e.g., com.asd.asdasd)',
+                  message: "Format must be domain.subdomain.entry (e.g., com.asd.asdasd)",
                 },
               })}
               className={`px-6 py-3 text-lg border-2 bg-slate-900 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 ${
                 errors.workspace
-                  ? 'border-red-500/70 focus:border-red-500 focus:ring-red-500/20'
-                  : 'border-slate-700 focus:border-blue-500 focus:ring-blue-500/30'
+                  ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-slate-700 focus:border-blue-500 focus:ring-blue-500/30"
               }`}
             />
           </div>

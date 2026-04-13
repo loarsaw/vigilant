@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 
 interface CredentialsValues {
   username: string;
@@ -18,7 +18,13 @@ interface CredentialsProps {
   error?: string;
 }
 
-export default function Credentials({ workspace, onBack, onSubmit, isLoading, error }: CredentialsProps) {
+export default function Credentials({
+  workspace,
+  onBack,
+  onSubmit,
+  isLoading,
+  error,
+}: CredentialsProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -27,15 +33,14 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
     formState: { errors },
   } = useForm<CredentialsValues>({
     defaultValues: {
-      username: '',
-      password: '',
+      username: "",
+      password: "",
     },
   });
 
   const onInternalSubmit = async (data: CredentialsValues) => {
     await onSubmit(data);
   };
-
 
   return (
     <div className="w-full animate-fade-in">
@@ -53,13 +58,9 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
           <span className="text-slate-950 text-xl font-bold">🔐</span>
         </div>
 
-        <h2 className="text-4xl font-bold text-white mb-2 text-balance">
-          Sign in to {workspace}
-        </h2>
+        <h2 className="text-4xl font-bold text-white mb-2 text-balance">Sign in to {workspace}</h2>
 
-        <p className="text-slate-300 font-light">
-          Enter your email and password to continue
-        </p>
+        <p className="text-slate-300 font-light">Enter your email and password to continue</p>
       </div>
 
       <form onSubmit={handleSubmit(onInternalSubmit)} className="space-y-6">
@@ -70,12 +71,12 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
           </Label>
 
           <Input
-            {...register('username', { 
-              required: 'Email is required',
+            {...register("username", {
+              required: "Email is required",
               pattern: {
                 value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address'
-              }
+                message: "Invalid email address",
+              },
             })}
             id="email"
             type="email"
@@ -83,8 +84,8 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
             disabled={isLoading}
             className={`px-6 py-3 text-base border-2 bg-slate-900 text-white placeholder:text-slate-500 rounded-xl focus:outline-none transition-all duration-200 ${
               errors.username
-                ? 'border-red-500 focus:ring-4 focus:ring-red-500/30'
-                : 'border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/30'
+                ? "border-red-500 focus:ring-4 focus:ring-red-500/30"
+                : "border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/30"
             } disabled:opacity-50`}
           />
 
@@ -103,18 +104,21 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
 
           <div className="relative">
             <Input
-              {...register('password', { 
-                required: 'Password is required',
-                minLength: { value: 6, message: 'Password must be at least 6 characters' }
+              {...register("password", {
+                required: "Password is required",
+                minLength: {
+                  value: 6,
+                  message: "Password must be at least 6 characters",
+                },
               })}
               id="password"
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               disabled={isLoading}
               className={`px-6 py-3 pr-12 text-base border-2 bg-slate-900 text-white placeholder:text-slate-500 rounded-xl focus:outline-none transition-all duration-200 ${
                 errors.password
-                  ? 'border-red-500 focus:ring-4 focus:ring-red-500/30'
-                  : 'border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/30'
+                  ? "border-red-500 focus:ring-4 focus:ring-red-500/30"
+                  : "border-slate-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/30"
               } disabled:opacity-50`}
             />
 
@@ -147,7 +151,7 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
               Signing in...
             </span>
           ) : (
-            'Sign In'
+            "Sign In"
           )}
         </Button>
 
@@ -156,8 +160,6 @@ export default function Credentials({ workspace, onBack, onSubmit, isLoading, er
             <p className="text-sm text-red-400 font-medium text-center">{error}</p>
           </div>
         )}
-
-        
       </form>
     </div>
   );

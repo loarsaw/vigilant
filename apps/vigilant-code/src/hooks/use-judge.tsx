@@ -1,10 +1,10 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 export interface Language {
   id: string;
   name: string;
-  example: string; 
+  example: string;
 }
 
 interface LanguagesResponse {
@@ -20,24 +20,22 @@ export interface Submission {
   exit_code: number;
   time_ms: number;
   memory_kb: number;
-  status: 'accepted' | 'error' | 'timeout';
+  status: "accepted" | "error" | "timeout";
   created_at: string;
 }
 
 export interface ExecuteRequest {
   language: string;
-  code_b64: string; 
+  code_b64: string;
 }
 
-
-
 async function fetchLanguages(): Promise<LanguagesResponse> {
-  const response = await apiClient.get<LanguagesResponse>('/judge/languages');
+  const response = await apiClient.get<LanguagesResponse>("/judge/languages");
   return response.data;
 }
 
 async function executeCode(payload: ExecuteRequest): Promise<Submission> {
-  const response = await apiClient.post<Submission>('/judge/execute', payload);
+  const response = await apiClient.post<Submission>("/judge/execute", payload);
   return response.data;
 }
 
@@ -47,67 +45,58 @@ async function fetchSubmission(id: string): Promise<Submission> {
 }
 
 async function fetchSubmissions(limit = 50): Promise<Submission[]> {
-  const response = await apiClient.get<Submission[]>('/judge/submissions', {
+  const response = await apiClient.get<Submission[]>("/judge/submissions", {
     params: { limit },
   });
   return response.data;
 }
 
-
-
 export function useJudge() {
-  
   const {
     data: languagesData,
     isLoading: isLoadingLanguages,
     isError: isLanguagesError,
     error: languagesError,
   } = useQuery<LanguagesResponse, Error>({
-    queryKey: ['judge', 'languages'],
+    queryKey: ["judge", "languages"],
     queryFn: fetchLanguages,
-    staleTime: Infinity, 
+    staleTime: Infinity,
   });
 
-  
   const {
     data: submissions,
     isLoading: isLoadingSubmissions,
     isError: isSubmissionsError,
     refetch: refetchSubmissions,
   } = useQuery<Submission[], Error>({
-    queryKey: ['judge', 'submissions'],
+    queryKey: ["judge", "submissions"],
     queryFn: () => fetchSubmissions(),
     staleTime: 1000 * 30,
   });
 
-  
   const useSubmission = (id: string | undefined) =>
     useQuery<Submission, Error>({
-      queryKey: ['judge', 'submissions', id],
+      queryKey: ["judge", "submissions", id],
       queryFn: () => fetchSubmission(id!),
       enabled: !!id,
-      staleTime: Infinity, 
+      staleTime: Infinity,
     });
 
-  
   const executeMutation = useMutation<Submission, Error, ExecuteRequest>({
     mutationFn: executeCode,
   });
 
-  
   const execute = (language: string, code: string) => {
     const code_b64 = btoa(unescape(encodeURIComponent(code)));
     executeMutation.mutate({ language, code_b64 });
   };
 
   return {
-    
     languages: languagesData?.languages ?? [],
     isLoadingLanguages,
     isLanguagesError,
     languagesError: languagesError?.message ?? null,
 
-    
     execute,
     result: executeMutation.data ?? null,
     isExecuting: executeMutation.isPending,
@@ -115,13 +104,11 @@ export function useJudge() {
     isSuccess: executeMutation.isSuccess,
     reset: executeMutation.reset,
 
-    
     submissions: submissions ?? [],
     isLoadingSubmissions,
     isSubmissionsError,
     refetchSubmissions,
 
-    
     useSubmission,
   };
 }

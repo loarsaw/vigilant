@@ -1,30 +1,30 @@
-import type { ForgeConfig } from '@electron-forge/shared-types';
-import { MakerSquirrel } from '@electron-forge/maker-squirrel';
-import { MakerZIP } from '@electron-forge/maker-zip';
-import { MakerDeb } from '@electron-forge/maker-deb';
-import { VitePlugin } from '@electron-forge/plugin-vite';
-import { FusesPlugin } from '@electron-forge/plugin-fuses';
-import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import type { ForgeConfig } from "@electron-forge/shared-types";
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
+import { MakerDeb } from "@electron-forge/maker-deb";
+import { VitePlugin } from "@electron-forge/plugin-vite";
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './assets/icons/icon',
-    executableName: 'vigilant-admin',
+    icon: "./assets/icons/icon",
+    executableName: "vigilant-admin",
   },
   rebuildConfig: {},
   makers: [
     new MakerSquirrel({
-      setupIcon: './assets/icons/win/icon.ico',
+      setupIcon: "./assets/icons/win/icon.ico",
       iconUrl:
-        'https://raw.githubusercontent.com/loarsaw/vigilant/refs/heads/master/assets/icons/win/icon.ico',
+        "https://raw.githubusercontent.com/loarsaw/vigilant/refs/heads/master/assets/icons/win/icon.ico",
     }),
-    new MakerZIP({}, ['darwin']),
+    new MakerZIP({}, ["darwin"]),
     new MakerDeb({
       options: {
-        maintainer: 'loarsaw',
-        homepage: 'https://github.com/loarsaw/vigilant',
-        icon: './assets/icons/png/512x512.png',
+        maintainer: "loarsaw",
+        homepage: "https://github.com/loarsaw/vigilant",
+        icon: "./assets/icons/png/512x512.png",
       },
     }),
   ],
@@ -32,20 +32,20 @@ const config: ForgeConfig = {
     new VitePlugin({
       build: [
         {
-          entry: 'src/main.ts',
-          config: 'vite.main.config.ts',
-          target: 'main',
+          entry: "src/main.ts",
+          config: "vite.main.config.ts",
+          target: "main",
         },
         {
-          entry: 'src/preload.ts',
-          config: 'vite.preload.config.ts',
-          target: 'preload',
+          entry: "src/preload.ts",
+          config: "vite.preload.config.ts",
+          target: "preload",
         },
       ],
       renderer: [
         {
-          name: 'main_window',
-          config: 'vite.renderer.config.ts',
+          name: "main_window",
+          config: "vite.renderer.config.ts",
         },
       ],
     }),
@@ -61,11 +61,11 @@ const config: ForgeConfig = {
   ],
   publishers: [
     {
-      name: '@electron-forge/publisher-github',
+      name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: 'loarsaw',
-          name: 'vigilant',
+          owner: "loarsaw",
+          name: "vigilant",
         },
         prerelease: true,
       },

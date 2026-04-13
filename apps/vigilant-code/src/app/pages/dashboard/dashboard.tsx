@@ -1,7 +1,14 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Briefcase, Loader2, AlertCircle, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useState } from "react";
+import {
+  Briefcase,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -9,9 +16,9 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb'
-import JobCard from '@/components/job-card'
-import { useHiringPositions } from '@/hooks/use-hiring'
+} from "@/components/ui/breadcrumb";
+import JobCard from "@/components/job-card";
+import { useHiringPositions } from "@/hooks/use-hiring";
 import {
   Dialog,
   DialogContent,
@@ -19,73 +26,71 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function Dashboard() {
-  const [applyingToId, setApplyingToId] = useState<string | null>(null)
-  const [coverLetter, setCoverLetter] = useState('')
-  
- 
-  const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 9 
+  const [applyingToId, setApplyingToId] = useState<string | null>(null);
+  const [coverLetter, setCoverLetter] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
 
   const {
     positions,
-    pagination, 
+    pagination,
     isLoadingPositions,
     isFetchError,
     fetchErrorMessage,
     applyForPosition,
     isApplying,
-  } = useHiringPositions({ 
-    page: currentPage, 
+  } = useHiringPositions({
+    page: currentPage,
     limit: pageSize,
-    is_active: true 
-  })
+    is_active: true,
+  });
 
-  const appliedPositionIds = new Set(
-    positions.filter((p) => !!p.application_id).map((p) => p.id)
-  )
+  const appliedPositionIds = new Set(positions.filter((p) => !!p.application_id).map((p) => p.id));
 
-  const selectedPosition = positions.find((p) => p.id === applyingToId)
-
+  const selectedPosition = positions.find((p) => p.id === applyingToId);
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleOpenApplyDialog = (jobId: string) => {
-    setCoverLetter('')
-    setApplyingToId(jobId)
-  }
+    setCoverLetter("");
+    setApplyingToId(jobId);
+  };
 
   const handleCloseDialog = () => {
-    if (isApplying) return
-    setApplyingToId(null)
-    setCoverLetter('')
-  }
+    if (isApplying) return;
+    setApplyingToId(null);
+    setCoverLetter("");
+  };
 
   const handleConfirmApply = () => {
-    if (!applyingToId) return
+    if (!applyingToId) return;
 
     applyForPosition(
       { positionId: applyingToId, payload: { cover_letter: coverLetter } },
       {
         onSuccess: () => {
-          toast.success(`Applied to ${selectedPosition?.position_title ?? 'position'} successfully!`)
-          setApplyingToId(null)
-          setCoverLetter('')
+          toast.success(
+            `Applied to ${selectedPosition?.position_title ?? "position"} successfully!`,
+          );
+          setApplyingToId(null);
+          setCoverLetter("");
         },
         onError: (err) => {
-          toast.error(err.message ?? 'Failed to apply. Please try again.')
+          toast.error(err.message ?? "Failed to apply. Please try again.");
         },
-      }
-    )
-  }
+      },
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-hidden">
@@ -142,7 +147,10 @@ export default function Dashboard() {
             <div className="bg-gradient-to-br from-slate-800/50 to-blue-900/30 border border-slate-700/50 rounded-lg p-4">
               <p className="text-slate-400 text-sm font-medium mb-1">Current Page</p>
               <p className="text-2xl font-bold text-emerald-400">
-                {pagination.currentPage} <span className="text-sm font-normal text-slate-500">of {pagination.totalPages}</span>
+                {pagination.currentPage}{" "}
+                <span className="text-sm font-normal text-slate-500">
+                  of {pagination.totalPages}
+                </span>
               </p>
             </div>
             <div className="bg-gradient-to-br from-slate-800/50 to-blue-900/30 border border-slate-700/50 rounded-lg p-4">
@@ -154,8 +162,8 @@ export default function Dashboard() {
           {/* Job Cards Grid */}
           <div className="space-y-6">
             <div className="flex justify-between items-end mb-6">
-               <h2 className="text-2xl font-bold text-white">Available Jobs</h2>
-               <p className="text-slate-500 text-sm">Showing {positions.length} positions</p>
+              <h2 className="text-2xl font-bold text-white">Available Jobs</h2>
+              <p className="text-slate-500 text-sm">Showing {positions.length} positions</p>
             </div>
 
             {isLoadingPositions && (
@@ -168,7 +176,7 @@ export default function Dashboard() {
             {isFetchError && (
               <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
                 <AlertCircle className="w-5 h-5" />
-                <p>Error loading jobs: {fetchErrorMessage ?? 'Please try again later.'}</p>
+                <p>Error loading jobs: {fetchErrorMessage ?? "Please try again later."}</p>
               </div>
             )}
 
@@ -181,6 +189,7 @@ export default function Dashboard() {
                         <JobCard
                           {...job}
                           isApplied={appliedPositionIds.has(job.id)}
+                          // @ts-ignore
                           applicationStatus={job.application_status}
                           interview={job.interview}
                           onApply={() => handleOpenApplyDialog(job.id)}
@@ -207,23 +216,25 @@ export default function Dashboard() {
                       <ChevronLeft className="w-4 h-4 mr-1" />
                       Previous
                     </Button>
-                    
+
                     <div className="flex items-center gap-1 mx-4">
-                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => handlePageChange(pageNum)}
-                          className={
-                            currentPage === pageNum 
-                              ? "bg-blue-600 hover:bg-blue-500" 
-                              : "text-slate-400 hover:text-white hover:bg-slate-800"
-                          }
-                        >
-                          {pageNum}
-                        </Button>
-                      ))}
+                      {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
+                        (pageNum) => (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "ghost"}
+                            size="sm"
+                            onClick={() => handlePageChange(pageNum)}
+                            className={
+                              currentPage === pageNum
+                                ? "bg-blue-600 hover:bg-blue-500"
+                                : "text-slate-400 hover:text-white hover:bg-slate-800"
+                            }
+                          >
+                            {pageNum}
+                          </Button>
+                        ),
+                      )}
                     </div>
 
                     <Button
@@ -245,8 +256,8 @@ export default function Dashboard() {
           <div className="mt-16 text-center">
             <p className="text-slate-400">
               {appliedPositionIds.size > 0
-                ? `You've applied to ${appliedPositionIds.size} position${appliedPositionIds.size !== 1 ? 's' : ''}. Good luck!`
-                : 'Ready to join our team? Start applying to positions today!'}
+                ? `You've applied to ${appliedPositionIds.size} position${appliedPositionIds.size !== 1 ? "s" : ""}. Good luck!`
+                : "Ready to join our team? Start applying to positions today!"}
             </p>
           </div>
         </div>
@@ -266,8 +277,7 @@ export default function Dashboard() {
 
           <div className="py-2 space-y-3">
             <label className="text-sm text-slate-300 font-medium">
-              Cover Letter{' '}
-              <span className="text-slate-500 font-normal">(optional)</span>
+              Cover Letter <span className="text-slate-500 font-normal">(optional)</span>
             </label>
             <Textarea
               value={coverLetter}
@@ -308,5 +318,5 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

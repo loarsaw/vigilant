@@ -1,5 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, setBaseURL, setAuthToken } from '@/lib/axios';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiClient, setBaseURL, setAuthToken } from "@/lib/axios";
 
 interface LoginCredentials {
   email: string;
@@ -29,12 +29,9 @@ interface LoginResponse {
 }
 
 const adminAuthApi = {
-  login: async (
-    workspace: string,
-    credentials: LoginCredentials
-  ): Promise<LoginResponse> => {
+  login: async (workspace: string, credentials: LoginCredentials): Promise<LoginResponse> => {
     await setBaseURL(workspace);
-    const { data } = await apiClient.post<LoginResponse>('/login', {
+    const { data } = await apiClient.post<LoginResponse>("/login", {
       email: credentials.email,
       password: credentials.password,
     });
@@ -43,38 +40,37 @@ const adminAuthApi = {
 
   loginWithToken: async (
     workspace: string,
-    credentials: TokenCredentials
+    credentials: TokenCredentials,
   ): Promise<LoginResponse> => {
     await setBaseURL(workspace);
     const { data } = await apiClient.post<LoginResponse>(
-      '/access',
+      "/access",
       {},
       {
         headers: {
-          'X-Admin-Token': credentials.token,
+          "X-Admin-Token": credentials.token,
         },
-      }
+      },
     );
-    localStorage.setItem("super_admin_token" , credentials.token)
+    localStorage.setItem("super_admin_token", credentials.token);
     return data;
   },
 
   logout: async (): Promise<void> => {
-    await apiClient.post('/logout');
-    localStorage.clear()
+    await apiClient.post("/logout");
+    localStorage.clear();
   },
 
   me: async (): Promise<AdminUser> => {
-    const { data } = await apiClient.get<AdminUser>('/me');
+    const { data } = await apiClient.get<AdminUser>("/me");
     return data;
   },
 };
 
-
 const STORAGE_KEYS = {
-  WORKSPACE: 'admin_workspace',
-  TOKEN: 'admin_token',
-  USER: 'admin_user',
+  WORKSPACE: "admin_workspace",
+  TOKEN: "admin_token",
+  USER: "admin_user",
 } as const;
 
 function saveToLocalStorage(workspace: string, token: string, user: AdminUser) {
@@ -105,16 +101,15 @@ function clearLocalStorage() {
   localStorage.removeItem(STORAGE_KEYS.USER);
 }
 
-
 export function useAdminAuth() {
   const queryClient = useQueryClient();
 
   const stored = loadFromLocalStorage();
   const canFetchMe =
-    (!!apiClient.defaults.headers.common['Authorization'] || !!stored?.token) &&
+    (!!apiClient.defaults.headers.common["Authorization"] || !!stored?.token) &&
     (!!apiClient.defaults.baseURL || !!stored?.workspace);
 
-  if (stored && !apiClient.defaults.headers.common['Authorization']) {
+  if (stored && !apiClient.defaults.headers.common["Authorization"]) {
     setBaseURL(stored.workspace);
     setAuthToken(stored.token);
   }
@@ -124,7 +119,7 @@ export function useAdminAuth() {
     isLoading: isLoadingUser,
     isError: isAuthError,
   } = useQuery({
-    queryKey: ['admin', 'me'],
+    queryKey: ["admin", "me"],
     queryFn: adminAuthApi.me,
     retry: false,
     staleTime: 1000 * 60 * 5,
@@ -145,7 +140,7 @@ export function useAdminAuth() {
       updated_at: new Date().toISOString(),
     };
 
-    queryClient.setQueryData(['admin', 'me'], adminUser);
+    queryClient.setQueryData(["admin", "me"], adminUser);
     saveToLocalStorage(workspace, data.token, adminUser);
   }
 
@@ -178,27 +173,26 @@ export function useAdminAuth() {
       workspace: string;
       credentials: TokenCredentials;
     }) => adminAuthApi.loginWithToken(workspace, credentials),
-   
+
     onSuccess: (data, { workspace }) => handleLoginSuccess(data, workspace),
   });
 
   const { mutateAsync: logout, isPending: isLoggingOut } = useMutation({
     mutationFn: adminAuthApi.logout,
     onSuccess: () => {
-      queryClient.removeQueries({ queryKey: ['admin'] });
+      queryClient.removeQueries({ queryKey: ["admin"] });
       queryClient.clear();
       clearLocalStorage();
-      delete apiClient.defaults.headers.common['Authorization'];
+      delete apiClient.defaults.headers.common["Authorization"];
       delete apiClient.defaults.baseURL;
     },
   });
 
   const role = user?.role ?? null;
-  const isInterviewer = role === 'interviewer';
-  const isAdmin = role === 'hr';
-  const isSuperAdmin = role === 'superadmin';
-  const hasRole = (allowedRoles: string[]) =>
-    role ? allowedRoles.includes(role) : false;
+  const isInterviewer = role === "interviewer";
+  const isAdmin = role === "hr";
+  const isSuperAdmin = role === "superadmin";
+  const hasRole = (allowedRoles: string[]) => (role ? allowedRoles.includes(role) : false);
 
   return {
     user: user ?? null,

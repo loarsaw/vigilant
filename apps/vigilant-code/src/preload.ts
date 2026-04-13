@@ -1,8 +1,8 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld('api', {
-  isDev: () => ipcRenderer.invoke('dev:isDev'),
-  getAllProcesses: () => ipcRenderer.invoke('get-all-processes'),
+contextBridge.exposeInMainWorld("api", {
+  isDev: () => ipcRenderer.invoke("dev:isDev"),
+  getAllProcesses: () => ipcRenderer.invoke("get-all-processes"),
 });
 
 declare global {

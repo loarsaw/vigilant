@@ -1,24 +1,42 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router";
 import {
-  ArrowLeft, Mail, Phone, Calendar, Award, FileText,
-  CheckCircle, XCircle, Send, Loader2, Zap, Code2, Layers, Terminal,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCandidate } from '@/hooks/use-candidates';
-import { Interview, useInterview } from '@/hooks/use-interview';
-import { useJobApplications } from '@/hooks/use-job-applications';
-import { UpcomingInterview } from '@/components/upcoming-interview';
-import { EmailModal } from '@/components/qa/email-modal';
-import { ScheduleInterviewModal } from '@/components/qa/schedule-interview-modal';
-import { pushToCandidate } from '@/lib/axios';
-import { CandidateLevel, Framework } from '@/types/types';
+  ArrowLeft,
+  Mail,
+  Phone,
+  Calendar,
+  Award,
+  FileText,
+  CheckCircle,
+  XCircle,
+  Send,
+  Loader2,
+  Zap,
+  Code2,
+  Layers,
+  Terminal,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useCandidate } from "@/hooks/use-candidates";
+import { Interview, useInterview } from "@/hooks/use-interview";
+import { useJobApplications } from "@/hooks/use-job-applications";
+import { UpcomingInterview } from "@/components/upcoming-interview";
+import { EmailModal } from "@/components/qa/email-modal";
+import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
+import { pushToCandidate } from "@/lib/axios";
+import { CandidateLevel, Framework } from "@/types/types";
 
-type SessionType = 'dsa' | 'framework' | '';
-type DSALanguage = 'C' | 'C++' | 'Python' | 'Java';
+type SessionType = "dsa" | "framework" | "";
+type DSALanguage = "C" | "C++" | "Python" | "Java";
 
 export function JobApplicationDetails() {
   const { candidateId, applicationId } = useParams();
@@ -26,53 +44,65 @@ export function JobApplicationDetails() {
 
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   const { interviews } = useInterview(candidateId);
-  const { approveApplication, rejectApplication, isApprovingOrRejecting } =
-    useJobApplications();
+  const { approveApplication, rejectApplication, isApprovingOrRejecting } = useJobApplications();
 
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
-  const interviewHistory = interviews.filter((i:Interview) => i.status === 'completed');
-  const [dsaLanguage, setDsaLanguage]     = useState<DSALanguage | ''>('');
-  const [sessionType, setSessionType]     = useState<SessionType>('');
-  const [level, setLevel]                 = useState<CandidateLevel | ''>('');
-  const [framework, setFramework]         = useState<Framework | ''>('');
-  const [showEmailModal, setShowEmailModal]       = useState(false);
+  const interviewHistory = interviews.filter((i: Interview) => i.status === "completed");
+  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | "">("");
+  const [sessionType, setSessionType] = useState<SessionType>("");
+  const [level, setLevel] = useState<CandidateLevel | "">("");
+  const [framework, setFramework] = useState<Framework | "">("");
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
-  const [dispatched, setDispatched]       = useState(false);
-  const [emailFormData, setEmailFormData] = useState({ to: '', subject: '', body: '' });
+  const [dispatched, setDispatched] = useState(false);
+  const [emailFormData, setEmailFormData] = useState({
+    to: "",
+    subject: "",
+    body: "",
+  });
 
   useEffect(() => {
     if (candidateData) {
-      setEmailFormData(prev => ({ ...prev, to: candidateData.email }));
+      setEmailFormData((prev) => ({ ...prev, to: candidateData.email }));
     }
   }, [candidateData]);
 
   const canDispatch =
-    sessionType === 'framework' ? level !== '' && framework !== '' :
-    sessionType === 'dsa'       ? dsaLanguage !== '' :
-    false;
+    sessionType === "framework"
+      ? level !== "" && framework !== ""
+      : sessionType === "dsa"
+        ? dsaLanguage !== ""
+        : false;
 
   const handleSessionTypeChange = (value: SessionType) => {
     setSessionType(value);
     setDispatched(false);
-    setLevel('');
-    setFramework('');
-    setDsaLanguage('');
+    setLevel("");
+    setFramework("");
+    setDsaLanguage("");
   };
 
   const handleDispatch = async () => {
     if (!canDispatch || !candidateId) return;
     setIsDispatching(true);
     try {
-      if (sessionType === 'framework') {
-        await pushToCandidate(candidateId, 'session_config', { type: 'framework', framework, level });
-      } else if (sessionType === 'dsa') {
-        await pushToCandidate(candidateId, 'session_config', { type: 'dsa', language: dsaLanguage });
+      if (sessionType === "framework") {
+        await pushToCandidate(candidateId, "session_config", {
+          type: "framework",
+          framework,
+          level,
+        });
+      } else if (sessionType === "dsa") {
+        await pushToCandidate(candidateId, "session_config", {
+          type: "dsa",
+          language: dsaLanguage,
+        });
       }
       setDispatched(true);
     } catch (err) {
-      console.error('Failed to dispatch:', err);
+      console.error("Failed to dispatch:", err);
     } finally {
       setIsDispatching(false);
     }
@@ -105,19 +135,18 @@ export function JobApplicationDetails() {
   }
 
   const skillsArray = candidateData.skills
-    ? candidateData.skills.split(',').map(s => s.trim())
+    ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
-console.log(candidateData , "ca")
+  console.log(candidateData, "ca");
   return (
     <div className="space-y-6 p-5">
-
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/applications')}
+            onClick={() => navigate("/applications")}
             className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -143,9 +172,11 @@ console.log(candidateData , "ca")
             disabled={isApprovingOrRejecting}
             onClick={() => rejectApplication(applicationId!)}
           >
-            {isApprovingOrRejecting
-              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              : <XCircle className="h-4 w-4 mr-2" />}
+            {isApprovingOrRejecting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <XCircle className="h-4 w-4 mr-2" />
+            )}
             Reject
           </Button>
           <Button
@@ -153,16 +184,17 @@ console.log(candidateData , "ca")
             disabled={isApprovingOrRejecting}
             onClick={() => approveApplication(applicationId!)}
           >
-            {isApprovingOrRejecting
-              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              : <CheckCircle className="h-4 w-4 mr-2" />}
+            {isApprovingOrRejecting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CheckCircle className="h-4 w-4 mr-2" />
+            )}
             Approve
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
         {/* ── Left Column ── */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="bg-[#1a1f2e] border-gray-800">
@@ -179,7 +211,7 @@ console.log(candidateData , "ca")
                   <p className="text-white mt-1">
                     {candidateData.experience_years
                       ? `${candidateData.experience_years} years`
-                      : 'Not specified'}
+                      : "Not specified"}
                   </p>
                 </div>
                 <div>
@@ -195,7 +227,7 @@ console.log(candidateData , "ca")
                 <p className="text-gray-400 text-sm mb-2">Skills</p>
                 <div className="flex flex-wrap gap-2">
                   {skillsArray.length > 0 ? (
-                    skillsArray.map(skill => (
+                    skillsArray.map((skill) => (
                       <span
                         key={skill}
                         className="bg-gray-800 px-3 py-1 rounded-full text-gray-300 text-sm"
@@ -260,8 +292,8 @@ console.log(candidateData , "ca")
               <div className="pt-2 border-t border-gray-800">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400 text-sm">Account Status</span>
-                  <Badge variant={candidateData.is_active ? 'default' : 'secondary'}>
-                    {candidateData.is_active ? 'Active' : 'Inactive'}
+                  <Badge variant={candidateData.is_active ? "default" : "secondary"}>
+                    {candidateData.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 {candidateData.last_login && (
@@ -285,7 +317,8 @@ console.log(candidateData , "ca")
             <CardContent>
               <div className="flex items-center justify-center p-8 border-2 border-dashed border-border rounded-lg">
                 <p className="text-muted-foreground italic text-sm text-center">
-                  Waiting for candidate to connect to session...<br />
+                  Waiting for candidate to connect to session...
+                  <br />
                   (Telemetry will appear once session is initialized)
                 </p>
               </div>
@@ -295,7 +328,6 @@ console.log(candidateData , "ca")
 
         {/* ── Right Column ── */}
         <div className="space-y-6">
-
           {/* Quick Actions */}
           <Card className="bg-[#1a1f2e] border-gray-800">
             <CardHeader>
@@ -321,7 +353,7 @@ console.log(candidateData , "ca")
                 <Button
                   variant="outline"
                   className="w-full border-gray-700 text-gray-300"
-                  onClick={() => window.open(candidateData.resume_url, '_blank')}
+                  onClick={() => window.open(candidateData.resume_url, "_blank")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   View Resume
@@ -330,10 +362,7 @@ console.log(candidateData , "ca")
             </CardContent>
           </Card>
 
-          <UpcomingInterview
-            candidateId={candidateId!}
-            candidateName={candidateData.full_name}
-          />
+          <UpcomingInterview candidateId={candidateId!} candidateName={candidateData.full_name} />
 
           {/* Session Configuration */}
           <Card className="border-border/50 bg-card">
@@ -347,18 +376,19 @@ console.log(candidateData , "ca")
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-
               {/* Session Type Toggle */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">Session Type</p>
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  Session Type
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => handleSessionTypeChange('dsa')}
+                    onClick={() => handleSessionTypeChange("dsa")}
                     className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      sessionType === 'dsa'
-                        ? 'border-accent bg-accent/10 text-accent'
-                        : 'border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground'
+                      sessionType === "dsa"
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground"
                     }`}
                   >
                     <Code2 className="w-5 h-5 shrink-0" />
@@ -370,11 +400,11 @@ console.log(candidateData , "ca")
 
                   <button
                     type="button"
-                    onClick={() => handleSessionTypeChange('framework')}
+                    onClick={() => handleSessionTypeChange("framework")}
                     className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      sessionType === 'framework'
-                        ? 'border-accent bg-accent/10 text-accent'
-                        : 'border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground'
+                      sessionType === "framework"
+                        ? "border-accent bg-accent/10 text-accent"
+                        : "border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground"
                     }`}
                   >
                     <Layers className="w-5 h-5 shrink-0" />
@@ -387,14 +417,17 @@ console.log(candidateData , "ca")
               </div>
 
               {/* DSA Options */}
-              {sessionType === 'dsa' && (
+              {sessionType === "dsa" && (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
                     Programming Language
                   </p>
                   <Select
                     value={dsaLanguage}
-                    onValueChange={v => { setDsaLanguage(v as DSALanguage); setDispatched(false); }}
+                    onValueChange={(v) => {
+                      setDsaLanguage(v as DSALanguage);
+                      setDispatched(false);
+                    }}
                   >
                     <SelectTrigger className="bg-secondary/50">
                       <SelectValue placeholder="Select language..." />
@@ -410,7 +443,7 @@ console.log(candidateData , "ca")
               )}
 
               {/* Framework Options */}
-              {sessionType === 'framework' && (
+              {sessionType === "framework" && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase text-muted-foreground">
@@ -418,7 +451,10 @@ console.log(candidateData , "ca")
                     </p>
                     <Select
                       value={framework}
-                      onValueChange={v => { setFramework(v as Framework); setDispatched(false); }}
+                      onValueChange={(v) => {
+                        setFramework(v as Framework);
+                        setDispatched(false);
+                      }}
                     >
                       <SelectTrigger className="bg-secondary/50">
                         <SelectValue placeholder="Select framework..." />
@@ -436,7 +472,10 @@ console.log(candidateData , "ca")
                     </p>
                     <Select
                       value={level}
-                      onValueChange={v => { setLevel(v as CandidateLevel); setDispatched(false); }}
+                      onValueChange={(v) => {
+                        setLevel(v as CandidateLevel);
+                        setDispatched(false);
+                      }}
                     >
                       <SelectTrigger className="bg-secondary/50">
                         <SelectValue placeholder="Select level..." />
@@ -458,17 +497,19 @@ console.log(candidateData , "ca")
                   disabled={!canDispatch || isDispatching}
                   className="flex items-center gap-2"
                 >
-                  {isDispatching
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <Send className="w-4 h-4" />}
-                  {isDispatching ? 'Dispatching...' : 'Dispatch to Candidate'}
+                  {isDispatching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  {isDispatching ? "Dispatching..." : "Dispatch to Candidate"}
                 </Button>
 
-                {!canDispatch && sessionType !== '' && (
+                {!canDispatch && sessionType !== "" && (
                   <p className="text-xs text-muted-foreground">
-                    {sessionType === 'dsa'
-                      ? 'Select a language to dispatch'
-                      : 'Select both framework and level to dispatch'}
+                    {sessionType === "dsa"
+                      ? "Select a language to dispatch"
+                      : "Select both framework and level to dispatch"}
                   </p>
                 )}
 
@@ -478,34 +519,32 @@ console.log(candidateData , "ca")
 
                 {dispatched && canDispatch && (
                   <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    {sessionType === 'dsa'
+                    {sessionType === "dsa"
                       ? `✓ Dispatched — DSA / ${dsaLanguage}`
                       : `✓ Dispatched — ${framework} / ${level}`}
                   </Badge>
                 )}
               </div>
-
             </CardContent>
           </Card>
         </div>
-      
 
-      <EmailModal
-        candidateId={candidateId!}
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        candidateName={candidateData.full_name}
-        candidateEmail={candidateData.email}
-      />
+        <EmailModal
+          candidateId={candidateId!}
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          candidateName={candidateData.full_name}
+          candidateEmail={candidateData.email}
+        />
 
-      <ScheduleInterviewModal
-        isOpen={showScheduleDialog}
-        onClose={() => setShowScheduleDialog(false)}
-        candidateName={candidateData.full_name}
-        candidateId={candidateId!}
-        onSchedule={() => {}}
-      />
-    </div>
+        <ScheduleInterviewModal
+          isOpen={showScheduleDialog}
+          onClose={() => setShowScheduleDialog(false)}
+          candidateName={candidateData.full_name}
+          candidateId={candidateId!}
+          onSchedule={() => {}}
+        />
+      </div>
     </div>
   );
 }
