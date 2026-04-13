@@ -19,17 +19,15 @@ import (
 )
 
 func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email" binding:"required,email"`
-		Password string `json:"password" binding:"required,min=8"`
-		FullName string `json:"full_name"`
-	}
+	var req models.CreateCandidateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid payload. 'type' and 'payload' are required.",
+			"details": err.Error(),
+		})
 		return
 	}
-
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 
 	if len(req.Password) > 72 {
@@ -264,12 +262,8 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 
 	var req struct {
-		FullName              *string `json:"full_name"`
-		IsActive              *bool   `json:"is_active"`
-		Password              *string `json:"password"`
-		CurrentStageQualified *bool   `json:"current_stage_qualified"`
-		InterviewCompleted    *bool   `json:"interview_completed"`
-		ResumeUrl             *string `json:"resume_url"`
+		FullName *string `json:"full_name"`
+		IsActive *bool   `json:"is_active"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -289,36 +283,6 @@ func (h *AdminHandlers) UpdateCandidate(c *gin.Context) {
 	if req.IsActive != nil {
 		updates = append(updates, fmt.Sprintf("is_active = $%d", argID))
 		args = append(args, *req.IsActive)
-		argID++
-	}
-	if req.Password != nil {
-		if len(*req.Password) < 8 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
-			return
-		}
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
-			return
-		}
-		updates = append(updates, fmt.Sprintf("password_hash = $%d", argID))
-		args = append(args, string(hashedPassword))
-		argID++
-	}
-
-	if req.CurrentStageQualified != nil {
-		updates = append(updates, fmt.Sprintf("current_stage_qualified = $%d", argID))
-		args = append(args, *req.CurrentStageQualified)
-		argID++
-	}
-	if req.InterviewCompleted != nil {
-		updates = append(updates, fmt.Sprintf("interview_completed = $%d", argID))
-		args = append(args, *req.InterviewCompleted)
-		argID++
-	}
-	if req.ResumeUrl != nil {
-		updates = append(updates, fmt.Sprintf("resume_url = $%d", argID))
-		args = append(args, *req.ResumeUrl)
 		argID++
 	}
 
@@ -376,9 +340,7 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 
 	candidateID := c.Param("id")
 
-	var req struct {
-		NewPassword string `json:"new_password" binding:"required,min=8"`
-	}
+	var req models.AdminUpdatePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -391,7 +353,6 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// Fetch candidate details for the email
 	var candidateEmail, fullName string
 	var isActive bool
 	err := h.DB.QueryRowContext(ctx, `
@@ -410,7 +371,7 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "candidate account is deactivated"})
 		return
 	}
-
+	// TODO - Move to Utility
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		log.Printf("UpdateCandidatePassword: failed to hash password: %v", err)
@@ -427,7 +388,6 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 		return
 	}
 
-	// Send email — same pattern as CreateCandidate
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
 		log.Printf("UpdateCandidatePassword: failed to decode encryption key: %v", err)

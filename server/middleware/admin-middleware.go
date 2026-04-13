@@ -36,7 +36,6 @@ type AdminClaims struct {
 func AdminAuthMiddleware(cfg *config.Config, db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// ── 1. Static super-admin token ──────────────────────────────────────
 		adminToken := c.GetHeader("X-Admin-Token")
 		if adminToken != "" && cfg.AdminAuthToken != "" && adminToken == cfg.AdminAuthToken {
 			setSuperAdminContext(c)
@@ -44,7 +43,6 @@ func AdminAuthMiddleware(cfg *config.Config, db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// ── 2. Email + password headers (convenience for Postman / scripts) ──
 		adminEmail := c.GetHeader("X-Admin-Email")
 		adminPassword := c.GetHeader("X-Admin-Password")
 		if adminEmail != "" && adminPassword != "" {
@@ -54,7 +52,6 @@ func AdminAuthMiddleware(cfg *config.Config, db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// ── 3. JWT Bearer token ───────────────────────────────────────────────
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: missing credentials"})
@@ -106,8 +103,6 @@ func IssueAdminJWT(cfg *config.Config, adminID, email, role, fullName string) (s
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(cfg.JWTSecret))
 }
-
-// ── helpers ──────────────────────────────────────────────────────────────────
 
 func authenticateAdminByCredentials(c *gin.Context, db *sql.DB, email, password string) bool {
 	var adminID, passwordHash, role, fullName string

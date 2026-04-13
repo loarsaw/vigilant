@@ -1,32 +1,29 @@
-import { CheckCircle, Loader2, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useNavigate } from "react-router-dom"
-import { useInterview } from '@/hooks/use-session'
-import { useAuth } from '@/hooks/use-auth'
+import { CheckCircle, Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useInterview } from "@/hooks/use-session";
+import { useAuth } from "@/hooks/use-auth";
 
 interface SuccessProps {
-  workspace: string
-  username: string
-  onProceed: () => void
+  workspace: string;
+  username: string;
+  onProceed: () => void;
 }
 
-
 export default function Success({ workspace, username, onProceed }: SuccessProps) {
-  const router = useNavigate()
-  const {user} = useAuth()
-  const {  isStarting, startError } = useInterview()
+  const router = useNavigate();
+  const { user } = useAuth();
+  const { isStarting, startError } = useInterview();
 
   const handleProceed = async () => {
     try {
-if(!user?.onboarding_complete){
-  router("/onboarding")
-}else{
-
-  router("/dashboard")
-}
-    } catch (err) {
-    }
-  }
+      if (!user?.onboarding_complete) {
+        router("/onboarding");
+      } else {
+        router("/dashboard");
+      }
+    } catch (err) {}
+  };
 
   return (
     <div className="w-full animate-fade-in">
@@ -38,11 +35,10 @@ if(!user?.onboarding_complete){
         </div>
 
         <div>
-          <h2 className="text-4xl font-bold text-white mb-3 text-balance">
-            Welcome, {username}
-          </h2>
+          <h2 className="text-4xl font-bold text-white mb-3 text-balance">Welcome, {username}</h2>
           <p className="text-lg text-slate-300 font-light">
-            You have successfully logged in to <span className="font-semibold text-blue-400">{workspace}</span>
+            You have successfully logged in to{" "}
+            <span className="font-semibold text-blue-400">{workspace}</span>
           </p>
         </div>
 
@@ -70,10 +66,10 @@ if(!user?.onboarding_complete){
               Starting session...
             </span>
           ) : (
-            'Ready To Join'
+            "Ready To Join"
           )}
         </Button>
       </div>
     </div>
-  )
+  );
 }

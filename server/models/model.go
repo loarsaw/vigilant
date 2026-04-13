@@ -491,3 +491,42 @@ type CreateGoogleCredentialRequest struct {
 	SubjectEmail        string   `json:"subject_email,omitempty"`
 	IsDefault           bool     `json:"is_default,omitempty"`
 }
+
+type CompleteOnboardingRequest struct {
+	PhoneNumber     string   `json:"phone_number" validate:"required,min=10"`
+	GithubID        string   `json:"github_id" validate:"required"`
+	ResumeLink      string   `json:"resume_link" validate:"required,url"`
+	Skills          []string `json:"skills" validate:"required,gt=0"`
+	ExperienceYears int      `json:"experience_years" validate:"min=0,max=50"`
+}
+
+type SendCustomEmailRequest struct {
+	ToEmail       string `json:"to_email" binding:"required,email"`
+	CandidateName string `json:"candidate_name" binding:"required"`
+	Subject       string `json:"subject" binding:"required"`
+	Message       string `json:"message" binding:"required"`
+}
+
+type CandidatePushRequest struct {
+	Type    string `json:"type" binding:"required"`
+	Payload any    `json:"payload" binding:"required"`
+}
+
+type AdminUpdatePasswordRequest struct {
+	NewPassword string `json:"new_password" binding:"required,min=8,max=72"`
+}
+
+type CreateCandidateRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8"`
+	FullName string `json:"full_name"`
+}
+
+type UpdateCandidateRequest struct {
+	FullName              string `json:"full_name"`
+	IsActive              bool   `json:"is_active"`
+	Password              string `json:"password"`
+	CurrentStageQualified bool   `json:"current_stage_qualified"`
+	InterviewCompleted    bool   `json:"interview_completed"`
+	ResumeUrl             string `json:"resume_url"`
+}

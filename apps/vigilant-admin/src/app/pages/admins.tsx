@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 import {
   Search,
@@ -18,17 +18,17 @@ import {
   Power,
   Trash2,
   KeyRound,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { Input } from '@/components/ui/input';
+import { Input } from "@/components/ui/input";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 
-import { Card } from '@/components/ui/card';
+import { Card } from "@/components/ui/card";
 
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 import {
   Select,
@@ -36,17 +36,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAdmins } from '@/hooks/use-admin';
-import { AddAdminDialog } from '@/components/admin/add-admin';
-import { ResetPasswordDialog } from '@/components/admin/reset-password';
+} from "@/components/ui/dropdown-menu";
+import { useAdmins } from "@/hooks/use-admin";
+import { AddAdminDialog } from "@/components/admin/add-admin";
+import { ResetPasswordDialog } from "@/components/admin/reset-password";
 
 export function AdminList() {
   const {
@@ -66,42 +66,36 @@ export function AdminList() {
     isResettingPassword,
   } = useAdmins();
 
-  const [filterRole, setFilterRole] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetTargetId, setResetTargetId] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    full_name: '',
-    role: 'hr' as 'hr' | 'interviewer',
-    department: '',
-    designation: '',
-    phone_number: '',
+    email: "",
+    password: "",
+    full_name: "",
+    role: "hr" as "hr" | "interviewer",
+    department: "",
+    designation: "",
+    phone_number: "",
   });
 
   const handleAddAdmin = () => {
-    if (
-      !formData.email ||
-      !formData.password ||
-      !formData.full_name ||
-      !formData.role
-    )
-      return;
+    if (!formData.email || !formData.password || !formData.full_name || !formData.role) return;
     addAdmin(formData, {
       onSuccess: () => {
         setFormData({
-          email: '',
-          password: '',
-          full_name: '',
-          role: 'hr',
-          department: '',
-          designation: '',
-          phone_number: '',
+          email: "",
+          password: "",
+          full_name: "",
+          role: "hr",
+          department: "",
+          designation: "",
+          phone_number: "",
         });
         setShowAddDialog(false);
       },
@@ -109,7 +103,7 @@ export function AdminList() {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this admin?')) {
+    if (window.confirm("Are you sure you want to delete this admin?")) {
       deleteAdmin(id);
     }
   };
@@ -121,29 +115,25 @@ export function AdminList() {
       {
         onSuccess: () => {
           setShowResetDialog(false);
-          setNewPassword('');
+          setNewPassword("");
           setResetTargetId(null);
         },
-      }
+      },
     );
   };
 
   const getRoleBadge = (role: string) =>
-    role === 'hr'
-      ? 'bg-purple-400/10 text-purple-400 border-purple-400/20'
-      : 'bg-blue-400/10 text-blue-400 border-blue-400/20';
+    role === "hr"
+      ? "bg-purple-400/10 text-purple-400 border-purple-400/20"
+      : "bg-blue-400/10 text-blue-400 border-blue-400/20";
 
   const getRoleIcon = (role: string) =>
-    role === 'hr' ? (
-      <Users className="h-3 w-3" />
-    ) : (
-      <Shield className="h-3 w-3" />
-    );
+    role === "hr" ? <Users className="h-3 w-3" /> : <Shield className="h-3 w-3" />;
 
-  const filteredAdmins = admins.filter(admin => {
-    if (filterRole !== 'all' && admin.role !== filterRole) return false;
-    if (filterStatus === 'active' && !admin.is_active) return false;
-    if (filterStatus === 'inactive' && admin.is_active) return false;
+  const filteredAdmins = admins.filter((admin) => {
+    if (filterRole !== "all" && admin.role !== filterRole) return false;
+    if (filterStatus === "active" && !admin.is_active) return false;
+    if (filterStatus === "inactive" && admin.is_active) return false;
     if (search) {
       const q = search.toLowerCase();
       return (
@@ -161,7 +151,7 @@ export function AdminList() {
   const AdminCard = ({ admin }: { admin: (typeof admins)[0] }) => (
     <Card
       className={`bg-[#1a1f2e] border-gray-800 hover:border-cyan-400/30 transition-all p-6 cursor-pointer group ${
-        !admin.is_active ? 'opacity-60' : ''
+        !admin.is_active ? "opacity-60" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-4">
@@ -169,14 +159,14 @@ export function AdminList() {
           <div className="flex items-center gap-4 mb-4">
             <div
               className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                admin.is_active ? 'bg-cyan-400/10' : 'bg-gray-700/30'
+                admin.is_active ? "bg-cyan-400/10" : "bg-gray-700/30"
               }`}
             >
               <span className="text-cyan-400 font-bold text-lg">
                 {admin.full_name
-                  .split(' ')
-                  .map(n => n[0])
-                  .join('')}
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")}
               </span>
             </div>
             <div className="flex-1 min-w-0">
@@ -226,14 +216,11 @@ export function AdminList() {
             <Badge className={`${getRoleBadge(admin.role)} border`}>
               <span className="flex items-center gap-1">
                 {getRoleIcon(admin.role)}
-                {admin.role === 'hr' ? 'HR' : 'Interviewer'}
+                {admin.role === "hr" ? "HR" : "Interviewer"}
               </span>
             </Badge>
             {!admin.is_active && (
-              <Badge
-                variant="outline"
-                className="border-red-400/20 text-red-400 text-[10px]"
-              >
+              <Badge variant="outline" className="border-red-400/20 text-red-400 text-[10px]">
                 Inactive
               </Badge>
             )}
@@ -260,7 +247,7 @@ export function AdminList() {
                 className="text-gray-300 hover:text-white hover:bg-gray-800 cursor-pointer"
               >
                 <Power className="h-4 w-4 mr-2" />
-                {admin.is_active ? 'Deactivate' : 'Activate'}
+                {admin.is_active ? "Deactivate" : "Activate"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -321,7 +308,7 @@ export function AdminList() {
             <Input
               placeholder="Search by name, email, or department..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-10 bg-[#0f1419] border-gray-700 text-white"
             />
           </div>
@@ -354,18 +341,17 @@ export function AdminList() {
         <TabsList className="bg-[#1a1f2e] border border-gray-800">
           <TabsTrigger value="all">All ({filteredAdmins.length})</TabsTrigger>
           <TabsTrigger value="hr">
-            HR ({filteredAdmins.filter(a => a.role === 'hr').length})
+            HR ({filteredAdmins.filter((a) => a.role === "hr").length})
           </TabsTrigger>
           <TabsTrigger value="interviewers">
-            Interviewers (
-            {filteredAdmins.filter(a => a.role === 'interviewer').length})
+            Interviewers ({filteredAdmins.filter((a) => a.role === "interviewer").length})
           </TabsTrigger>
         </TabsList>
 
-        {(['all', 'hr', 'interviewers'] as const).map(tab => {
-          const list = filteredAdmins.filter(a => {
-            if (tab === 'hr') return a.role === 'hr';
-            if (tab === 'interviewers') return a.role === 'interviewer';
+        {(["all", "hr", "interviewers"] as const).map((tab) => {
+          const list = filteredAdmins.filter((a) => {
+            if (tab === "hr") return a.role === "hr";
+            if (tab === "interviewers") return a.role === "interviewer";
             return true;
           });
 
@@ -374,18 +360,14 @@ export function AdminList() {
               {isLoading ? (
                 <div className="flex items-center justify-center p-8">
                   <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
-                  <span className="ml-2 text-gray-400">
-                    Loading admin users...
-                  </span>
+                  <span className="ml-2 text-gray-400">Loading admin users...</span>
                 </div>
               ) : list.length === 0 ? (
                 <Card className="bg-[#1a1f2e] border-gray-800 p-8 text-center">
-                  <p className="text-gray-400">
-                    No admin users match your criteria
-                  </p>
+                  <p className="text-gray-400">No admin users match your criteria</p>
                 </Card>
               ) : (
-                list.map(admin => <AdminCard key={admin.id} admin={admin} />)
+                list.map((admin) => <AdminCard key={admin.id} admin={admin} />)
               )}
             </TabsContent>
           );
@@ -401,7 +383,7 @@ export function AdminList() {
 
       <ResetPasswordDialog
         adminId={resetTargetId}
-        onOpenChange={open => !open && setResetTargetId(null)}
+        onOpenChange={(open) => !open && setResetTargetId(null)}
         onReset={resetPassword}
         isLoading={isResettingPassword}
       />

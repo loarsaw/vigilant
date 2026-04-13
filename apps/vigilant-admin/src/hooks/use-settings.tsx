@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 export interface SESConfigPayload {
   aws_region: string;
@@ -14,7 +14,6 @@ export interface SESConfigResponse {
   aws_access_key_id: string;
   ses_from_email: string;
   ses_login_url: string;
- 
 }
 
 export interface GoogleCredentialPayload {
@@ -38,16 +37,18 @@ export interface GoogleCredentialResponse {
   created_at: string;
 }
 async function fetchEmailConfig(): Promise<SESConfigResponse> {
-  const response = await apiClient.get<SESConfigResponse>('/email-config');
+  const response = await apiClient.get<SESConfigResponse>("/email-config");
   return response.data;
 }
 
 async function saveEmailConfig(payload: SESConfigPayload): Promise<void> {
-  await apiClient.post('/email-config', payload);
+  await apiClient.post("/email-config", payload);
 }
 
-async function saveGoogleCredential(payload: GoogleCredentialPayload): Promise<GoogleCredentialResponse> {
-  const response = await apiClient.post<GoogleCredentialResponse>('/credentials/google', payload);
+async function saveGoogleCredential(
+  payload: GoogleCredentialPayload,
+): Promise<GoogleCredentialResponse> {
+  const response = await apiClient.post<GoogleCredentialResponse>("/credentials/google", payload);
   return response.data;
 }
 
@@ -60,44 +61,45 @@ export function useSettings() {
     isError: isEmailError,
     error: emailFetchError,
   } = useQuery<SESConfigResponse, Error>({
-    queryKey: ['settings', 'email-config'],
+    queryKey: ["settings", "email-config"],
     queryFn: fetchEmailConfig,
     staleTime: 1000 * 60 * 5,
-    retry: false, 
+    retry: false,
   });
 
-  
   const saveEmailMutation = useMutation<void, Error, SESConfigPayload>({
     mutationFn: saveEmailConfig,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings', 'email-config'] });
+      queryClient.invalidateQueries({ queryKey: ["settings", "email-config"] });
     },
   });
 
-  
-  const saveGoogleCredentialMutation = useMutation<GoogleCredentialResponse, Error, GoogleCredentialPayload>({
+  const saveGoogleCredentialMutation = useMutation<
+    GoogleCredentialResponse,
+    Error,
+    GoogleCredentialPayload
+  >({
     mutationFn: saveGoogleCredential,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['settings', 'google-credential'] });
+      queryClient.invalidateQueries({
+        queryKey: ["settings", "google-credential"],
+      });
     },
   });
 
   return {
-    
     emailConfig,
     isEmailConfigured: !!emailConfig,
     isLoadingEmail,
     isEmailError,
     emailFetchError: emailFetchError?.message ?? null,
 
-    
     saveEmailConfig: saveEmailMutation.mutate,
     saveEmailConfigAsync: saveEmailMutation.mutateAsync,
     isSavingEmail: saveEmailMutation.isPending,
     saveEmailError: saveEmailMutation.error?.message ?? null,
     saveEmailSuccess: saveEmailMutation.isSuccess,
 
-    
     saveGoogleCredential: saveGoogleCredentialMutation.mutate,
     saveGoogleCredentialAsync: saveGoogleCredentialMutation.mutateAsync,
     isSavingGoogle: saveGoogleCredentialMutation.isPending,

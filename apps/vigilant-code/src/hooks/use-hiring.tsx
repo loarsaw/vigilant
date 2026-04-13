@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 export interface HiringPosition {
   id: string;
@@ -15,12 +14,19 @@ export interface HiringPosition {
   number_of_openings: number;
   job_description: string;
   requirements: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   is_active: boolean;
   created_at: string;
   updated_at: string;
   application_id?: string;
-  application_status?: 'applied' | 'screening' | 'interviewing' | 'offered' | 'hired' | 'rejected' | 'withdrawn';
+  application_status?:
+    | "applied"
+    | "screening"
+    | "interviewing"
+    | "offered"
+    | "hired"
+    | "rejected"
+    | "withdrawn";
   applied_at?: string;
   interview?: {
     scheduled_at: string;
@@ -55,14 +61,16 @@ export interface JobApplication {
   id: string;
   candidate_id: string;
   position_id: string;
-  status: 'applied' | 'screening' | 'interviewing' | 'offered' | 'hired' | 'rejected' | 'withdrawn';
+  status: "applied" | "screening" | "interviewing" | "offered" | "hired" | "rejected" | "withdrawn";
   applied_at: string;
   updated_at: string;
   cover_letter?: string;
 }
 
-const fetchPositions = async (filters: PositionFilters = {}): Promise<PaginatedPositionResponse> => {
-  const response = await apiClient.get<PaginatedPositionResponse>('/positions', {
+const fetchPositions = async (
+  filters: PositionFilters = {},
+): Promise<PaginatedPositionResponse> => {
+  const response = await apiClient.get<PaginatedPositionResponse>("/positions", {
     params: filters,
   });
   return response.data;
@@ -77,14 +85,14 @@ const applyForPosition = async ({
 }): Promise<{ data: JobApplication }> => {
   const response = await apiClient.post<{ data: JobApplication }>(
     `/positions/${positionId}/apply`,
-    payload
+    payload,
   );
   return response.data;
 };
 
 export function useHiringPositions(filters: PositionFilters = {}) {
   const queryClient = useQueryClient();
-  const queryKey = ['positions', filters];
+  const queryKey = ["positions", filters];
 
   const {
     data: response,
@@ -95,7 +103,7 @@ export function useHiringPositions(filters: PositionFilters = {}) {
   } = useQuery<PaginatedPositionResponse, Error>({
     queryKey,
     queryFn: () => fetchPositions(filters),
-    staleTime: 1000 * 60 * 5, 
+    staleTime: 1000 * 60 * 5,
   });
 
   const {
@@ -106,13 +114,13 @@ export function useHiringPositions(filters: PositionFilters = {}) {
     error: applyError,
     reset: resetApply,
   } = useMutation<
-    { data: JobApplication }, 
-    Error, 
+    { data: JobApplication },
+    Error,
     { positionId: string; payload: CreateJobApplicationPayload }
   >({
     mutationFn: applyForPosition,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['positions'] });
+      queryClient.invalidateQueries({ queryKey: ["positions"] });
     },
   });
 

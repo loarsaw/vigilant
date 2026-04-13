@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface AddCandidateDialogProps {
   open: boolean;
@@ -12,19 +12,24 @@ interface AddCandidateDialogProps {
   isLoading: boolean;
 }
 
-export function AddCandidateDialog({ open, onOpenChange, onAdd, isLoading }: AddCandidateDialogProps) {
+export function AddCandidateDialog({
+  open,
+  onOpenChange,
+  onAdd,
+  isLoading,
+}: AddCandidateDialogProps) {
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
+    full_name: "",
+    email: "",
+    password: "",
   });
 
   const handleSubmit = () => {
     if (!formData.full_name || !formData.email || !formData.password) return;
-    
+
     onAdd(formData, {
       onSuccess: () => {
-        setFormData({ full_name: '', email: '', password: '' });
+        setFormData({ full_name: "", email: "", password: "" });
         onOpenChange(false);
       },
     });
@@ -42,7 +47,7 @@ export function AddCandidateDialog({ open, onOpenChange, onAdd, isLoading }: Add
             <Input
               placeholder="John Doe"
               value={formData.full_name}
-              onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               className="bg-[#0f1419] border-gray-700 mt-1"
             />
           </div>
@@ -52,7 +57,7 @@ export function AddCandidateDialog({ open, onOpenChange, onAdd, isLoading }: Add
               type="email"
               placeholder="john@example.com"
               value={formData.email}
-              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="bg-[#0f1419] border-gray-700 mt-1"
             />
           </div>
@@ -62,7 +67,7 @@ export function AddCandidateDialog({ open, onOpenChange, onAdd, isLoading }: Add
               type="password"
               placeholder="••••••••"
               value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="bg-[#0f1419] border-gray-700 mt-1"
             />
           </div>
@@ -72,7 +77,7 @@ export function AddCandidateDialog({ open, onOpenChange, onAdd, isLoading }: Add
               onClick={handleSubmit}
               disabled={isLoading || !formData.full_name || !formData.email}
             >
-              {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Create Candidate'}
+              {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Create Candidate"}
             </Button>
             <Button
               variant="outline"

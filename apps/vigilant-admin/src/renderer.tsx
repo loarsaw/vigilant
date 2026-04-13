@@ -1,21 +1,19 @@
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import Login from './app/pages/login';
-import { Dashboard } from './app/pages/dashboard';
-import { HashRouter, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SidebarLayout } from './app/layout/app-layout';
-import { Settings } from './app/pages/settings';
-import { CandidatesList } from './app/pages/candidates';
-import { HiringPositions } from './app/pages/hiring';
-import { CandidateDetail } from './app/pages/candidate-detailts';
-import { JobApplicationsList } from './app/pages/applications';
-import { JobApplicationDetails } from './app/pages/job-applicant-details';
-import { AdminList } from './app/pages/admins';
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import Login from "./app/pages/login";
+import { Dashboard } from "./app/pages/dashboard";
+import { HashRouter, Route, Routes } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { SidebarLayout } from "./app/layout/app-layout";
+import { Settings } from "./app/pages/settings";
+import { CandidatesList } from "./app/pages/candidates";
+import { HiringPositions } from "./app/pages/hiring";
+import { CandidateDetail } from "./app/pages/candidate-detailts";
+import { JobApplicationsList } from "./app/pages/applications";
+import { JobApplicationDetails } from "./app/pages/job-applicant-details";
+import { AdminList } from "./app/pages/admins";
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
 const queryClient = new QueryClient({});
 
@@ -41,5 +39,5 @@ root.render(
         </Route>
       </Routes>
     </HashRouter>
-  </QueryClientProvider>
+  </QueryClientProvider>,
 );

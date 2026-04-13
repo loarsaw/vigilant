@@ -78,6 +78,7 @@
     "node-addon-api": "^8.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hook-form": "^7.72.1",
     "react-router-dom": "^6.28.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",

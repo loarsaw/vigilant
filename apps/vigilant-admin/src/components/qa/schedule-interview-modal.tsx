@@ -1,26 +1,26 @@
-import { useState } from 'react'
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { useState } from "react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Calendar as CalendarComponent } from '@/components/ui/calendar'
-import { useInterview } from '@/hooks/use-interview'
+} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useInterview } from "@/hooks/use-interview";
 
 interface ScheduleModalProps {
-  isOpen: boolean
-  onClose: () => void
-  candidateId: string
-  candidateName: string
-  onSchedule: (details: any) => void
+  isOpen: boolean;
+  onClose: () => void;
+  candidateId: string;
+  candidateName: string;
+  onSchedule: (details: any) => void;
 }
 
 export function ScheduleInterviewModal({
@@ -28,55 +28,60 @@ export function ScheduleInterviewModal({
   onClose,
   candidateId,
   candidateName,
-  onSchedule
+  onSchedule,
 }: ScheduleModalProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
-  const [time, setTime] = useState('')
-  const [duration, setDuration] = useState('60')
-  const [interviewerEmail, setInterviewerEmail] = useState('')
-  const [interviewType, setInterviewType] = useState('')
-  const [interviewURL, setInterviewURL] = useState('')
-  const [timezone, setTimezone] = useState('UTC')
-  const [selectedApplicationId, setSelectedApplicationId] = useState('')
-  const [notes, setNotes] = useState('')
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [time, setTime] = useState("");
+  const [duration, setDuration] = useState("60");
+  const [interviewerEmail, setInterviewerEmail] = useState("");
+  const [interviewType, setInterviewType] = useState("");
+  const [interviewURL, setInterviewURL] = useState("");
+  const [timezone, setTimezone] = useState("UTC");
+  const [selectedApplicationId, setSelectedApplicationId] = useState("");
+  const [notes, setNotes] = useState("");
 
   const { applicationOptions, isLoading, scheduleInterviewAsync, isScheduling } =
-    useInterview(candidateId)
+    useInterview(candidateId);
 
   const selectedApplication = applicationOptions.find(
-    (a) => a.application_id === selectedApplicationId
-  )
-
-
+    (a) => a.application_id === selectedApplicationId,
+  );
 
   const handleConfirm = async () => {
-    if (!selectedDate || !time || !selectedApplicationId || !interviewerEmail || !interviewURL || !interviewType) {
-     alert('Please fill in all required fields')
-      return
+    if (
+      !selectedDate ||
+      !time ||
+      !selectedApplicationId ||
+      !interviewerEmail ||
+      !interviewURL ||
+      !interviewType
+    ) {
+      alert("Please fill in all required fields");
+      return;
     }
 
     // Combine date + time into RFC3339
-    const [hours, minutes] = time.split(':')
-    const scheduledAt = new Date(selectedDate)
-    scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0)
+    const [hours, minutes] = time.split(":");
+    const scheduledAt = new Date(selectedDate);
+    scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     try {
       await scheduleInterviewAsync({
         candidate_id: candidateId,
         application_id: selectedApplicationId,
         interviewer_email: interviewerEmail,
-        position: selectedApplication?.position ?? '',
+        position: selectedApplication?.position ?? "",
         interview_type: interviewType,
         scheduled_at: scheduledAt.toISOString(),
         scheduled_duration: parseInt(duration),
         interview_url: interviewURL,
         timezone,
-      })
-      onClose()
+      });
+      onClose();
     } catch (err: any) {
-      alert(err?.message ?? 'Failed to schedule interview')
+      alert(err?.message ?? "Failed to schedule interview");
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -99,7 +104,6 @@ export function ScheduleInterviewModal({
 
           {/* Details Side */}
           <div className="space-y-4">
-
             {/* Application Select */}
             <div>
               <Label className="text-gray-300">Application / Position</Label>
@@ -109,11 +113,7 @@ export function ScheduleInterviewModal({
                 disabled={isLoading}
               >
                 <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
-                  <SelectValue
-                    placeholder={
-                      isLoading ? 'Loading...' : 'Select position'
-                    }
-                  />
+                  <SelectValue placeholder={isLoading ? "Loading..." : "Select position"} />
                 </SelectTrigger>
                 <SelectContent>
                   {applicationOptions.map((app) => (
@@ -225,7 +225,7 @@ export function ScheduleInterviewModal({
                 ) : (
                   <CalendarIcon className="h-4 w-4 mr-2" />
                 )}
-                {isScheduling ? 'Scheduling...' : 'Confirm Schedule'}
+                {isScheduling ? "Scheduling..." : "Confirm Schedule"}
               </Button>
               <Button
                 variant="outline"
@@ -240,5 +240,5 @@ export function ScheduleInterviewModal({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

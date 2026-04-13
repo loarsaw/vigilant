@@ -1,41 +1,29 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface WorkspaceEntryProps {
   onSubmit: (workspace: string) => void;
 }
 
+type FormData = {
+  workspace: string;
+};
+
 export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    defaultValues: {
+      workspace: "",
+    },
+  });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value);
-    setError('');
-  };
-
-  const handleSubmit = () => {
-    if (!value.trim()) {
-      setError('Please enter your workspace');
-      return;
-    }
-
-    const workspaceRegex = /^[a-zA-Z0-9._-]+$/;
-    if (!workspaceRegex.test(value)) {
-      setError(
-        'Invalid workspace format. Use letters, numbers, dots, hyphens, or underscores.'
-      );
-      return;
-    }
-
-    onSubmit(value);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSubmit();
-    }
+  const onInternalSubmit = (data: FormData) => {
+    onSubmit(data.workspace);
   };
 
   return (
@@ -56,41 +44,46 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
           />
         </div>
 
-        <h2 className="text-5xl font-bold text-white mb-3 text-balance">
-          Welcome back
-        </h2>
+        <h2 className="text-5xl font-bold text-white mb-3 text-balance">Welcome back</h2>
 
-        <p className="text-lg text-slate-300 font-light">
-          Enter your workspace to continue
-        </p>
+        <p className="text-lg text-slate-300 font-light">Enter your workspace to continue</p>
       </div>
 
-      <div className="space-y-6">
+      <form onSubmit={handleSubmit(onInternalSubmit)} className="space-y-6">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-200">
+          <Label htmlFor="workspace" className="block text-sm font-medium text-slate-200">
             Workspace
-          </label>
+          </Label>
 
           <div className="relative">
             <Input
+              id="workspace"
               type="text"
               placeholder="com.abc.entry"
-              value={value}
-              onChange={handleChange}
-              onKeyPress={handleKeyPress}
-              className="px-6 py-3 text-lg border-2 border-slate-700 bg-slate-900 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/30 transition-all duration-200"
+              {...register("workspace", {
+                required: "Please enter your workspace",
+                pattern: {
+                  value: /^[a-z0-9]+\.[a-z0-9]+\.[a-z0-9]+$/i,
+                  message: "Format must be domain.subdomain.entry (e.g., com.asd.asdasd)",
+                },
+              })}
+              className={`px-6 py-3 text-lg border-2 bg-slate-900 text-white placeholder:text-slate-500 rounded-xl focus:outline-none focus:ring-4 transition-all duration-200 ${
+                errors.workspace
+                  ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/20"
+                  : "border-slate-700 focus:border-blue-500 focus:ring-blue-500/30"
+              }`}
             />
           </div>
 
-          {error && (
+          {errors.workspace && (
             <p className="text-sm text-red-500 font-medium animate-shake">
-              {error}
+              {errors.workspace.message}
             </p>
           )}
         </div>
 
         <Button
-          onClick={handleSubmit}
+          type="submit"
           className="w-full py-3 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95"
         >
           Continue
@@ -99,7 +92,7 @@ export default function WorkspaceEntry({ onSubmit }: WorkspaceEntryProps) {
         <p className="text-xs text-slate-400 text-center mt-4">
           Your workspace identifier (e.g., company.team.entry)
         </p>
-      </div>
+      </form>
     </div>
   );
 }

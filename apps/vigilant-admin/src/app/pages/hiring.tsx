@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   Search,
   Plus,
@@ -11,62 +11,53 @@ import {
   Loader2,
   MapPin,
   Filter,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   useHiringPositions,
   type HiringPosition,
   type CreatePositionPayload,
-} from '@/hooks/use-hiring';
+} from "@/hooks/use-hiring";
 
 const EMPTY_FORM: CreatePositionPayload = {
-  position_title: '',
-  department: '',
-  location: '',
-  employment_type: 'full-time',
-  experience_required: '',
+  position_title: "",
+  department: "",
+  location: "",
+  employment_type: "full-time",
+  experience_required: "",
   salary_range_min: 0,
   salary_range_max: 0,
-  salary_range_text: '',
+  salary_range_text: "",
   number_of_openings: 1,
-  job_description: '',
-  requirements: '',
+  job_description: "",
+  requirements: "",
 };
 
 export function HiringPositions() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatus] = useState<'all' | 'active' | 'inactive'>(
-    'all'
-  );
-  const [department, setDepartment] = useState('');
-  const [location, setLocation] = useState('');
-  const [isActiveFilter, setIsActiveFilter] = useState<
-    'all' | 'true' | 'false'
-  >('all');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatus] = useState<"all" | "active" | "inactive">("all");
+  const [department, setDepartment] = useState("");
+  const [location, setLocation] = useState("");
+  const [isActiveFilter, setIsActiveFilter] = useState<"all" | "true" | "false">("all");
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
@@ -86,18 +77,16 @@ export function HiringPositions() {
     isDeleting,
   } = useHiringPositions({
     search: search || undefined,
-    status: statusFilter === 'all' ? undefined : statusFilter,
+    status: statusFilter === "all" ? undefined : statusFilter,
     department: department || undefined,
     location: location || undefined,
-    is_active: isActiveFilter === 'all' ? undefined : isActiveFilter === 'true',
+    is_active: isActiveFilter === "all" ? undefined : isActiveFilter === "true",
     page,
     limit,
   });
 
   const [showDialog, setShowDialog] = useState(false);
-  const [editingPosition, setEditingPosition] = useState<HiringPosition | null>(
-    null
-  );
+  const [editingPosition, setEditingPosition] = useState<HiringPosition | null>(null);
   const [formData, setFormData] = useState<CreatePositionPayload>(EMPTY_FORM);
 
   const openAdd = () => {
@@ -130,50 +119,42 @@ export function HiringPositions() {
   };
 
   const handleSubmit = () => {
-    if (!formData.position_title || !formData.department || !formData.location)
-      return;
+    if (!formData.position_title || !formData.department || !formData.location) return;
 
     if (editingPosition) {
-      updatePosition(
-        { id: editingPosition.id, payload: formData },
-        { onSuccess: closeDialog }
-      );
+      updatePosition({ id: editingPosition.id, payload: formData }, { onSuccess: closeDialog });
     } else {
       createPosition(formData, { onSuccess: closeDialog });
     }
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this position?')) {
+    if (window.confirm("Are you sure you want to delete this position?")) {
       deletePosition(id);
     }
   };
 
   const resetFilters = () => {
-    setSearch('');
-    setStatus('all');
-    setDepartment('');
-    setLocation('');
-    setIsActiveFilter('all');
+    setSearch("");
+    setStatus("all");
+    setDepartment("");
+    setLocation("");
+    setIsActiveFilter("all");
     setPage(1);
   };
 
   const hasActiveFilters =
-    search ||
-    statusFilter !== 'all' ||
-    department ||
-    location ||
-    isActiveFilter !== 'all';
+    search || statusFilter !== "all" || department || location || isActiveFilter !== "all";
 
   // ── Badge helpers ────────────────────────────────────────────────────────
   const getTypeBadge = (type: string) => {
     const map: Record<string, string> = {
-      'full-time': 'bg-green-400/10  text-green-400  border-green-400/20',
-      'part-time': 'bg-blue-400/10   text-blue-400   border-blue-400/20',
-      contract: 'bg-purple-400/10 text-purple-400 border-purple-400/20',
-      internship: 'bg-orange-400/10 text-orange-400 border-orange-400/20',
+      "full-time": "bg-green-400/10  text-green-400  border-green-400/20",
+      "part-time": "bg-blue-400/10   text-blue-400   border-blue-400/20",
+      contract: "bg-purple-400/10 text-purple-400 border-purple-400/20",
+      internship: "bg-orange-400/10 text-orange-400 border-orange-400/20",
     };
-    return map[type] ?? map['full-time'];
+    return map[type] ?? map["full-time"];
   };
 
   const isMutating = isCreating || isUpdating || isToggling || isDeleting;
@@ -183,14 +164,9 @@ export function HiringPositions() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-white">Hiring Positions</h2>
-          <p className="text-gray-400 mt-1">
-            Manage open positions and job listings
-          </p>
+          <p className="text-gray-400 mt-1">Manage open positions and job listings</p>
         </div>
-        <Button
-          className="bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
-          onClick={openAdd}
-        >
+        <Button className="bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]" onClick={openAdd}>
           <Plus className="h-4 w-4 mr-2" />
           Add Position
         </Button>
@@ -198,7 +174,7 @@ export function HiringPositions() {
 
       {isFetchError && (
         <div className="p-4 bg-red-400/10 border border-red-400/20 rounded text-red-400 text-sm">
-          {fetchErrorMessage ?? 'Failed to load positions.'}
+          {fetchErrorMessage ?? "Failed to load positions."}
         </div>
       )}
 
@@ -209,9 +185,7 @@ export function HiringPositions() {
               <Briefcase className="h-6 w-6 text-cyan-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
-                {pagination.total}
-              </p>
+              <p className="text-2xl font-bold text-white">{pagination.total}</p>
               <p className="text-sm text-gray-400">Total Positions</p>
             </div>
           </div>
@@ -223,10 +197,7 @@ export function HiringPositions() {
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {positions.reduce(
-                  (s, p) => s + (p.is_active ? p.number_of_openings : 0),
-                  0
-                )}
+                {positions.reduce((s, p) => s + (p.is_active ? p.number_of_openings : 0), 0)}
               </p>
               <p className="text-sm text-gray-400">Active Openings</p>
             </div>
@@ -238,9 +209,7 @@ export function HiringPositions() {
               <Users className="h-6 w-6 text-purple-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
-                {pagination.totalPages}
-              </p>
+              <p className="text-2xl font-bold text-white">{pagination.totalPages}</p>
               <p className="text-sm text-gray-400">Total Pages</p>
             </div>
           </div>
@@ -255,7 +224,7 @@ export function HiringPositions() {
             <Input
               placeholder="Search by title or description…"
               value={search}
-              onChange={e => {
+              onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
@@ -265,7 +234,7 @@ export function HiringPositions() {
 
           <Select
             value={statusFilter}
-            onValueChange={v => {
+            onValueChange={(v) => {
               setStatus(v as any);
               setPage(1);
             }}
@@ -283,7 +252,7 @@ export function HiringPositions() {
 
           <Select
             value={isActiveFilter}
-            onValueChange={v => {
+            onValueChange={(v) => {
               setIsActiveFilter(v as any);
               setPage(1);
             }}
@@ -304,7 +273,7 @@ export function HiringPositions() {
             <Input
               placeholder="Department…"
               value={department}
-              onChange={e => {
+              onChange={(e) => {
                 setDepartment(e.target.value);
                 setPage(1);
               }}
@@ -317,7 +286,7 @@ export function HiringPositions() {
             <Input
               placeholder="Location…"
               value={location}
-              onChange={e => {
+              onChange={(e) => {
                 setLocation(e.target.value);
                 setPage(1);
               }}
@@ -348,20 +317,17 @@ export function HiringPositions() {
           <Card className="bg-[#1a1f2e] border-gray-800 p-10 text-center">
             <p className="text-gray-400">No positions found</p>
             {hasActiveFilters && (
-              <button
-                onClick={resetFilters}
-                className="text-cyan-400 text-sm mt-2 hover:underline"
-              >
+              <button onClick={resetFilters} className="text-cyan-400 text-sm mt-2 hover:underline">
                 Clear filters
               </button>
             )}
           </Card>
         ) : (
-          positions.map(position => (
+          positions.map((position) => (
             <Card
               key={position.id}
               className={`bg-[#1a1f2e] border-gray-800 p-6 transition-all ${
-                !position.is_active ? 'opacity-60' : 'hover:border-cyan-400/30'
+                !position.is_active ? "opacity-60" : "hover:border-cyan-400/30"
               }`}
             >
               <div className="flex items-start justify-between gap-4">
@@ -375,9 +341,7 @@ export function HiringPositions() {
                       <h3 className="text-xl font-semibold text-white">
                         {position.position_title}
                       </h3>
-                      <p className="text-gray-400 text-sm">
-                        {position.department}
-                      </p>
+                      <p className="text-gray-400 text-sm">{position.department}</p>
                     </div>
                   </div>
 
@@ -390,23 +354,19 @@ export function HiringPositions() {
                       <span>{position.experience_required}</span>
                       <span>·</span>
                       <span className="text-cyan-400">
-                        {position.number_of_openings}{' '}
-                        {position.number_of_openings === 1
-                          ? 'opening'
-                          : 'openings'}
+                        {position.number_of_openings}{" "}
+                        {position.number_of_openings === 1 ? "opening" : "openings"}
                       </span>
                     </div>
 
-                    <p className="text-gray-300 text-sm line-clamp-2">
-                      {position.job_description}
-                    </p>
+                    <p className="text-gray-300 text-sm line-clamp-2">{position.job_description}</p>
 
                     {position.requirements && (
                       <div className="flex flex-wrap gap-2">
                         {position.requirements
-                          .split(',')
+                          .split(",")
                           .slice(0, 6)
-                          .map(r => (
+                          .map((r) => (
                             <span
                               key={r.trim()}
                               className="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-300"
@@ -414,9 +374,9 @@ export function HiringPositions() {
                               {r.trim()}
                             </span>
                           ))}
-                        {position.requirements.split(',').length > 6 && (
+                        {position.requirements.split(",").length > 6 && (
                           <span className="text-xs text-gray-500 px-2 py-1">
-                            +{position.requirements.split(',').length - 6} more
+                            +{position.requirements.split(",").length - 6} more
                           </span>
                         )}
                       </div>
@@ -429,8 +389,7 @@ export function HiringPositions() {
                     )}
 
                     <p className="text-xs text-gray-500">
-                      Created{' '}
-                      {new Date(position.created_at).toLocaleDateString()}
+                      Created {new Date(position.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
@@ -444,8 +403,8 @@ export function HiringPositions() {
                     <Badge
                       className={
                         position.is_active
-                          ? 'bg-green-400/10 text-green-400 border-green-400/20'
-                          : 'bg-gray-400/10 text-gray-400 border-gray-400/20'
+                          ? "bg-green-400/10 text-green-400 border-green-400/20"
+                          : "bg-gray-400/10 text-gray-400 border-gray-400/20"
                       }
                     >
                       {position.status}
@@ -479,7 +438,7 @@ export function HiringPositions() {
                         className="text-gray-300 hover:text-white hover:bg-gray-800 cursor-pointer"
                       >
                         <Power className="h-4 w-4 mr-2" />
-                        {position.is_active ? 'Disable' : 'Enable'}
+                        {position.is_active ? "Disable" : "Enable"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDelete(position.id)}
@@ -500,15 +459,14 @@ export function HiringPositions() {
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between p-4 bg-[#1a1f2e] border border-gray-800 rounded-lg">
           <p className="text-sm text-gray-400">
-            Page {pagination.currentPage} of {pagination.totalPages} ·{' '}
-            {pagination.total} total
+            Page {pagination.currentPage} of {pagination.totalPages} · {pagination.total} total
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               className="border-gray-700"
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1 || isLoadingPositions}
             >
               Previous
@@ -517,7 +475,7 @@ export function HiringPositions() {
               variant="outline"
               size="sm"
               className="border-gray-700"
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage((p) => p + 1)}
               disabled={page === pagination.totalPages || isLoadingPositions}
             >
               Next
@@ -526,13 +484,10 @@ export function HiringPositions() {
         </div>
       )}
 
-     
       <Dialog open={showDialog} onOpenChange={closeDialog}>
         <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editingPosition ? 'Edit Position' : 'Add New Position'}
-            </DialogTitle>
+            <DialogTitle>{editingPosition ? "Edit Position" : "Add New Position"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
@@ -541,9 +496,7 @@ export function HiringPositions() {
               <Input
                 placeholder="Backend Engineer"
                 value={formData.position_title}
-                onChange={e =>
-                  setFormData({ ...formData, position_title: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, position_title: e.target.value })}
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -554,9 +507,7 @@ export function HiringPositions() {
                 <Input
                   placeholder="Engineering"
                   value={formData.department}
-                  onChange={e =>
-                    setFormData({ ...formData, department: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   className="bg-[#0f1419] border-gray-700 mt-1"
                 />
               </div>
@@ -565,9 +516,7 @@ export function HiringPositions() {
                 <Input
                   placeholder="Remote"
                   value={formData.location}
-                  onChange={e =>
-                    setFormData({ ...formData, location: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   className="bg-[#0f1419] border-gray-700 mt-1"
                 />
               </div>
@@ -578,7 +527,7 @@ export function HiringPositions() {
                 <Label>Employment Type *</Label>
                 <select
                   value={formData.employment_type}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       employment_type: e.target.value,
@@ -597,7 +546,7 @@ export function HiringPositions() {
                 <Input
                   placeholder="3-5 years"
                   value={formData.experience_required}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       experience_required: e.target.value,
@@ -614,8 +563,8 @@ export function HiringPositions() {
                 <Input
                   type="number"
                   placeholder="120000"
-                  value={formData.salary_range_min || ''}
-                  onChange={e =>
+                  value={formData.salary_range_min || ""}
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       salary_range_min: Number(e.target.value),
@@ -629,8 +578,8 @@ export function HiringPositions() {
                 <Input
                   type="number"
                   placeholder="160000"
-                  value={formData.salary_range_max || ''}
-                  onChange={e =>
+                  value={formData.salary_range_max || ""}
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       salary_range_max: Number(e.target.value),
@@ -644,7 +593,7 @@ export function HiringPositions() {
                 <Input
                   placeholder="$120k – $160k"
                   value={formData.salary_range_text}
-                  onChange={e =>
+                  onChange={(e) =>
                     setFormData({
                       ...formData,
                       salary_range_text: e.target.value,
@@ -661,7 +610,7 @@ export function HiringPositions() {
                 type="number"
                 min="1"
                 value={formData.number_of_openings}
-                onChange={e =>
+                onChange={(e) =>
                   setFormData({
                     ...formData,
                     number_of_openings: parseInt(e.target.value) || 1,
@@ -676,9 +625,7 @@ export function HiringPositions() {
               <Textarea
                 placeholder="Describe the role and responsibilities…"
                 value={formData.job_description}
-                onChange={e =>
-                  setFormData({ ...formData, job_description: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, job_description: e.target.value })}
                 className="bg-[#0f1419] border-gray-700 mt-1 min-h-24"
               />
             </div>
@@ -688,9 +635,7 @@ export function HiringPositions() {
               <Textarea
                 placeholder="React, TypeScript, Node.js, AWS"
                 value={formData.requirements}
-                onChange={e =>
-                  setFormData({ ...formData, requirements: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -712,9 +657,9 @@ export function HiringPositions() {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…
                   </>
                 ) : editingPosition ? (
-                  'Update Position'
+                  "Update Position"
                 ) : (
-                  'Add Position'
+                  "Add Position"
                 )}
               </Button>
               <Button

@@ -1,19 +1,24 @@
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ResetPasswordDialogProps {
   adminId: string | null;
   onOpenChange: (open: boolean) => void;
-  onReset: (params: { id: string, payload: any }, options: any) => void;
+  onReset: (params: { id: string; payload: any }, options: any) => void;
   isLoading: boolean;
 }
 
-export function ResetPasswordDialog({ adminId, onOpenChange, onReset, isLoading }: ResetPasswordDialogProps) {
-  const [newPassword, setNewPassword] = useState('');
+export function ResetPasswordDialog({
+  adminId,
+  onOpenChange,
+  onReset,
+  isLoading,
+}: ResetPasswordDialogProps) {
+  const [newPassword, setNewPassword] = useState("");
 
   const handleReset = () => {
     if (!adminId) return;
@@ -21,10 +26,10 @@ export function ResetPasswordDialog({ adminId, onOpenChange, onReset, isLoading 
       { id: adminId, payload: { new_password: newPassword } },
       {
         onSuccess: () => {
-          setNewPassword('');
+          setNewPassword("");
           onOpenChange(false);
         },
-      }
+      },
     );
   };
 
@@ -40,7 +45,7 @@ export function ResetPasswordDialog({ adminId, onOpenChange, onReset, isLoading 
             <Input
               type="password"
               value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
+              onChange={(e) => setNewPassword(e.target.value)}
               className="bg-[#0f1419] border-gray-700 mt-1"
             />
           </div>
@@ -50,7 +55,7 @@ export function ResetPasswordDialog({ adminId, onOpenChange, onReset, isLoading 
               onClick={handleReset}
               disabled={isLoading || newPassword.length < 8}
             >
-              {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : 'Reset Password'}
+              {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Reset Password"}
             </Button>
           </div>
         </div>

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"vigilant/models"
 	"vigilant/sse"
 
 	"github.com/gin-gonic/gin"
@@ -49,19 +50,19 @@ func (h *AdminHandlers) SSEEvents(c *gin.Context) {
 func (h *AdminHandlers) PushToCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 
-	var body struct {
-		Type    string `json:"type"`
-		Payload any    `json:"payload"`
-	}
+	var req models.CandidatePushRequest
 
-	if err := c.ShouldBindJSON(&body); err != nil || body.Type == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid payload. 'type' and 'payload' are required.",
+			"details": err.Error(),
+		})
 		return
 	}
 
 	sse.Global.BroadcastCandidate(candidateID, gin.H{
-		"type":    body.Type,
-		"payload": body.Payload,
+		"type":    req.Type,
+		"payload": req.Payload,
 	})
 
 	c.JSON(http.StatusOK, gin.H{"ok": true})

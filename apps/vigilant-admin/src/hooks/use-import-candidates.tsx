@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 export interface ImportCandidate {
   full_name: string;
@@ -20,10 +20,10 @@ export interface ImportResult {
 
 const importCandidatesCSV = async (file: File): Promise<ImportResult> => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
-  const response = await apiClient.post('/csv-upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  const response = await apiClient.post("/csv-upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return response.data;
 };
@@ -34,7 +34,7 @@ export function useImportCandidates() {
   const { mutate, mutateAsync, isPending, isSuccess, isError, data, error, reset } = useMutation({
     mutationFn: importCandidatesCSV,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
 

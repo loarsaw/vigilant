@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"vigilant/email"
+	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -262,12 +263,7 @@ func (h *AdminHandlers) SendInterviewInvite(c *gin.Context) {
 }
 
 func (h *AdminHandlers) SendCustomEmail(c *gin.Context) {
-	var req struct {
-		ToEmail       string `json:"to_email" binding:"required,email"`
-		CandidateName string `json:"candidate_name" binding:"required"`
-		Subject       string `json:"subject" binding:"required"`
-		Message       string `json:"message" binding:"required"`
-	}
+	var req models.SendCustomEmailRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -320,17 +316,15 @@ func (h *AdminHandlers) SendCustomEmail(c *gin.Context) {
 }
 
 func (h *AdminHandlers) SendCandidateCredentialsEmail(c *gin.Context) {
-	var req struct {
-		CandidateName string `json:"candidate_name" binding:"required"`
-		Email         string `json:"email" binding:"required,email"`
-		Password      string `json:"password" binding:"required"`
-	}
+	var req models.CreateCandidateRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "validation_failed",
+			"details": err.Error(),
+		})
 		return
 	}
-
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "server misconfiguration"})
@@ -347,7 +341,7 @@ func (h *AdminHandlers) SendCandidateCredentialsEmail(c *gin.Context) {
 	}
 
 	bodyHTML, err := email.Render(email.TemplateCandidateCredentials, email.CandidateCredentialsData{
-		CandidateName: req.CandidateName,
+		CandidateName: req.FullName,
 		Email:         req.Email,
 		Password:      req.Password,
 		LoginURL:      sesCfg.SESLoginURL,
@@ -359,7 +353,7 @@ func (h *AdminHandlers) SendCandidateCredentialsEmail(c *gin.Context) {
 
 	jobID, err := email.Enqueue(c.Request.Context(), h.DB, email.EmailJob{
 		ToEmail:     req.Email,
-		ToName:      req.CandidateName,
+		ToName:      req.FullName,
 		FromEmail:   sesCfg.SESFromEmail,
 		Subject:     "Your Account Credentials",
 		BodyHTML:    bodyHTML,

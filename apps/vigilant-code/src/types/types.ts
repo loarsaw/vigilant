@@ -1,8 +1,8 @@
-export type FrameworkId = 'react' | 'vue' | 'vanilla' | 'svelte' | 'nextjs' | 'github';
+export type FrameworkId = "react" | "vue" | "vanilla" | "svelte" | "nextjs" | "github";
 
-export type SandpackTemplateType = 'react' | 'vue' | 'vanilla' | 'svelte' | 'nextjs';
+export type SandpackTemplateType = "react" | "vue" | "vanilla" | "svelte" | "nextjs";
 
-export type PanelId = 'preview' | 'code' | 'console' | 'files';
+export type PanelId = "preview" | "code" | "console" | "files";
 
 export interface Panel {
   id: PanelId;
@@ -34,4 +34,4 @@ export interface ActiveFramework {
   fw?: FrameworkConfig;
 }
 
-export type AppView = 'browse' | 'sandbox';
+export type AppView = "browse" | "sandbox";

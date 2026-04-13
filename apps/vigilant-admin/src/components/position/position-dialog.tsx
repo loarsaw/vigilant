@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import type { HiringPosition, CreatePositionPayload } from '@/hooks/use-hiring';
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import type { HiringPosition, CreatePositionPayload } from "@/hooks/use-hiring";
 
 interface PositionDialogProps {
   open: boolean;
@@ -16,25 +16,25 @@ interface PositionDialogProps {
 }
 
 const EMPTY_FORM: CreatePositionPayload = {
-  position_title: '',
-  department: '',
-  location: '',
-  employment_type: 'full-time',
-  experience_required: '',
+  position_title: "",
+  department: "",
+  location: "",
+  employment_type: "full-time",
+  experience_required: "",
   salary_range_min: 0,
   salary_range_max: 0,
-  salary_range_text: '',
+  salary_range_text: "",
   number_of_openings: 1,
-  job_description: '',
-  requirements: '',
+  job_description: "",
+  requirements: "",
 };
 
-export function PositionDialog({ 
-  open, 
-  onOpenChange, 
-  editingPosition, 
-  onSave, 
-  isLoading 
+export function PositionDialog({
+  open,
+  onOpenChange,
+  editingPosition,
+  onSave,
+  isLoading,
 }: PositionDialogProps) {
   const [formData, setFormData] = useState<CreatePositionPayload>(EMPTY_FORM);
 
@@ -65,9 +65,7 @@ export function PositionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {editingPosition ? 'Edit Position' : 'Add New Position'}
-          </DialogTitle>
+          <DialogTitle>{editingPosition ? "Edit Position" : "Add New Position"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
@@ -76,7 +74,7 @@ export function PositionDialog({
             <Input
               placeholder="Backend Engineer"
               value={formData.position_title}
-              onChange={e => setFormData({ ...formData, position_title: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, position_title: e.target.value })}
               className="bg-[#0f1419] border-gray-700 mt-1"
             />
           </div>
@@ -87,7 +85,7 @@ export function PositionDialog({
               <Input
                 placeholder="Engineering"
                 value={formData.department}
-                onChange={e => setFormData({ ...formData, department: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -96,7 +94,7 @@ export function PositionDialog({
               <Input
                 placeholder="Remote"
                 value={formData.location}
-                onChange={e => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -107,7 +105,7 @@ export function PositionDialog({
               <Label>Employment Type *</Label>
               <select
                 value={formData.employment_type}
-                onChange={e => setFormData({ ...formData, employment_type: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, employment_type: e.target.value })}
                 className="w-full mt-1 px-4 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
               >
                 <option value="full-time">Full-time</option>
@@ -121,7 +119,12 @@ export function PositionDialog({
               <Input
                 placeholder="3-5 years"
                 value={formData.experience_required}
-                onChange={e => setFormData({ ...formData, experience_required: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    experience_required: e.target.value,
+                  })
+                }
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -132,8 +135,13 @@ export function PositionDialog({
               <Label>Min Salary ($)</Label>
               <Input
                 type="number"
-                value={formData.salary_range_min || ''}
-                onChange={e => setFormData({ ...formData, salary_range_min: Number(e.target.value) })}
+                value={formData.salary_range_min || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    salary_range_min: Number(e.target.value),
+                  })
+                }
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -141,8 +149,13 @@ export function PositionDialog({
               <Label>Max Salary ($)</Label>
               <Input
                 type="number"
-                value={formData.salary_range_max || ''}
-                onChange={e => setFormData({ ...formData, salary_range_max: Number(e.target.value) })}
+                value={formData.salary_range_max || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    salary_range_max: Number(e.target.value),
+                  })
+                }
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -151,7 +164,12 @@ export function PositionDialog({
               <Input
                 placeholder="$120k – $160k"
                 value={formData.salary_range_text}
-                onChange={e => setFormData({ ...formData, salary_range_text: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    salary_range_text: e.target.value,
+                  })
+                }
                 className="bg-[#0f1419] border-gray-700 mt-1"
               />
             </div>
@@ -162,7 +180,7 @@ export function PositionDialog({
             <Textarea
               placeholder="Describe the role..."
               value={formData.job_description}
-              onChange={e => setFormData({ ...formData, job_description: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, job_description: e.target.value })}
               className="bg-[#0f1419] border-gray-700 mt-1 min-h-24"
             />
           </div>
@@ -172,7 +190,7 @@ export function PositionDialog({
             <Textarea
               placeholder="React, TypeScript..."
               value={formData.requirements}
-              onChange={e => setFormData({ ...formData, requirements: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
               className="bg-[#0f1419] border-gray-700 mt-1"
             />
           </div>
@@ -186,9 +204,9 @@ export function PositionDialog({
               {isLoading ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : editingPosition ? (
-                'Update Position'
+                "Update Position"
               ) : (
-                'Add Position'
+                "Add Position"
               )}
             </Button>
             <Button

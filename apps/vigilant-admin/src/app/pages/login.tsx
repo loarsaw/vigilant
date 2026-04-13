@@ -1,42 +1,30 @@
 // src/pages/LoginPage.tsx
 
-import React, { useEffect } from 'react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
-import { useAdminAuth } from '@/hooks/use-auth';
+import React, { useEffect } from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from "react-router-dom";
+import { useAdminAuth } from "@/hooks/use-auth";
 export default function LoginPage() {
   const [isDev, setIsDev] = useState(false);
   const navigate = useNavigate();
 
-  const {
-    login,
-    loginWithToken,
-    isLoggingIn,
-    isLoggingInWithToken,
-    loginError,
-    tokenLoginError,
-  } = useAdminAuth();
+  const { login, loginWithToken, isLoggingIn, isLoggingInWithToken, loginError, tokenLoginError } =
+    useAdminAuth();
 
   const [emailData, setEmailData] = useState({
-    workspaceName: '',
-    email: '',
-    password: '',
+    workspaceName: "",
+    email: "",
+    password: "",
   });
 
   const [tokenData, setTokenData] = useState({
-    workspaceName: '',
-    authToken: '',
+    workspaceName: "",
+    authToken: "",
   });
 
   async function checkIfDev() {
@@ -50,8 +38,7 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailData.workspaceName || !emailData.email || !emailData.password)
-      return;
+    if (!emailData.workspaceName || !emailData.email || !emailData.password) return;
 
     try {
       await login({
@@ -62,11 +49,11 @@ export default function LoginPage() {
         },
       });
 
-      setEmailData({ workspaceName: '', email: '', password: '' });
+      setEmailData({ workspaceName: "", email: "", password: "" });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
     }
   };
 
@@ -82,11 +69,11 @@ export default function LoginPage() {
         },
       });
 
-      setTokenData({ workspaceName: '', authToken: '' });
+      setTokenData({ workspaceName: "", authToken: "" });
 
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Token login failed:', error);
+      console.error("Token login failed:", error);
     }
   };
 
@@ -103,12 +90,8 @@ export default function LoginPage() {
               />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">
-            Vigilant Admin
-          </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Employer Dashboard
-          </CardDescription>
+          <CardTitle className="text-3xl font-bold text-primary">Vigilant Admin</CardTitle>
+          <CardDescription className="text-muted-foreground">Employer Dashboard</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -126,7 +109,7 @@ export default function LoginPage() {
                     id="employer-workspace"
                     placeholder="com.abc.server"
                     value={emailData.workspaceName}
-                    onChange={e =>
+                    onChange={(e) =>
                       setEmailData({
                         ...emailData,
                         workspaceName: e.target.value,
@@ -144,9 +127,7 @@ export default function LoginPage() {
                     type="email"
                     placeholder="your.email@company.com"
                     value={emailData.email}
-                    onChange={e =>
-                      setEmailData({ ...emailData, email: e.target.value })
-                    }
+                    onChange={(e) => setEmailData({ ...emailData, email: e.target.value })}
                     className="bg-secondary/50 border-border"
                     disabled={isLoggingIn}
                     required
@@ -159,9 +140,7 @@ export default function LoginPage() {
                     type="password"
                     placeholder="Enter your password"
                     value={emailData.password}
-                    onChange={e =>
-                      setEmailData({ ...emailData, password: e.target.value })
-                    }
+                    onChange={(e) => setEmailData({ ...emailData, password: e.target.value })}
                     className="bg-secondary/50 border-border"
                     disabled={isLoggingIn}
                     required
@@ -173,17 +152,13 @@ export default function LoginPage() {
                     <p className="text-sm text-destructive">
                       {loginError instanceof Error
                         ? loginError.message
-                        : 'Login failed. Please check your credentials and try again.'}
+                        : "Login failed. Please check your credentials and try again."}
                     </p>
                   </div>
                 )}
 
-                <Button
-                  type="submit"
-                  className="w-full font-semibold mt-6"
-                  disabled={isLoggingIn}
-                >
-                  {isLoggingIn ? 'Logging in...' : 'Login'}
+                <Button type="submit" className="w-full font-semibold mt-6" disabled={isLoggingIn}>
+                  {isLoggingIn ? "Logging in..." : "Login"}
                 </Button>
               </form>
             </TabsContent>
@@ -196,7 +171,7 @@ export default function LoginPage() {
                     id="token-workspace"
                     placeholder="com.abc.server"
                     value={tokenData.workspaceName}
-                    onChange={e =>
+                    onChange={(e) =>
                       setTokenData({
                         ...tokenData,
                         workspaceName: e.target.value,
@@ -214,9 +189,7 @@ export default function LoginPage() {
                     type="password"
                     placeholder="Paste your auth token"
                     value={tokenData.authToken}
-                    onChange={e =>
-                      setTokenData({ ...tokenData, authToken: e.target.value })
-                    }
+                    onChange={(e) => setTokenData({ ...tokenData, authToken: e.target.value })}
                     className="bg-secondary/50 border-border"
                     disabled={isLoggingInWithToken}
                     required
@@ -228,7 +201,7 @@ export default function LoginPage() {
                     <p className="text-sm text-destructive">
                       {tokenLoginError instanceof Error
                         ? tokenLoginError.message
-                        : 'Login failed. Please check your token and try again.'}
+                        : "Login failed. Please check your token and try again."}
                     </p>
                   </div>
                 )}
@@ -238,7 +211,7 @@ export default function LoginPage() {
                   className="w-full font-semibold mt-6"
                   disabled={isLoggingInWithToken}
                 >
-                  {isLoggingInWithToken ? 'Logging in...' : 'Login with Token'}
+                  {isLoggingInWithToken ? "Logging in..." : "Login with Token"}
                 </Button>
               </form>
             </TabsContent>

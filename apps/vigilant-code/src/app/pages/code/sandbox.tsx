@@ -1,50 +1,44 @@
-import { useState, useCallback, useEffect } from 'react';
-import { BrowseView } from '@/components/browse-view';
-import { SandboxView } from '@/components/sandbox-view';
-import { FRAMEWORKS } from '@/data/frameworks';
-import {
-  ActiveFramework,
-  AppView,
-  PanelId,
-} from '@/types/types';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useCallback, useEffect } from "react";
+import { BrowseView } from "@/components/browse-view";
+import { SandboxView } from "@/components/sandbox-view";
+import { FRAMEWORKS } from "@/data/frameworks";
+import { ActiveFramework, AppView, PanelId } from "@/types/types";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function App() {
-  const [view, setView] = useState<AppView>('sandbox');
-  const [activeFramework, setActiveFramework] =
-    useState<ActiveFramework | null>(null);
+  const [view, setView] = useState<AppView>("sandbox");
+  const [activeFramework, setActiveFramework] = useState<ActiveFramework | null>(null);
   const [showGitHub, setShowGitHub] = useState(false);
-const {id} = useParams<{id:string}>()
- 
-useEffect(()=>{
-if (id){
+  const { id } = useParams<{ id: string }>();
 
-  setActiveFramework({
-    id,
-    defaultPanel: "preview",
-    files: null,
-    template: null,
-  });
-}
-} , [id])
+  useEffect(() => {
+    if (id) {
+      setActiveFramework({
+        id,
+        defaultPanel: "preview",
+        files: null,
+        template: null,
+      });
+    }
+  }, [id]);
 
-const handleOpen = useCallback((id: string, panel: PanelId = 'preview') => {
-    console.log(id , "id")
+  const handleOpen = useCallback((id: string, panel: PanelId = "preview") => {
+    console.log(id, "id");
     setActiveFramework({
       id,
       defaultPanel: panel,
       files: null,
       template: null,
     });
-    setView('sandbox');
+    setView("sandbox");
   }, []);
 
   const handleBack = useCallback(() => {
-    setView('browse');
+    setView("browse");
     setActiveFramework(null);
   }, []);
 
-  if (view === 'sandbox' && activeFramework) {
+  if (view === "sandbox" && activeFramework) {
     const fw = activeFramework.fw ?? FRAMEWORKS[activeFramework.id];
 
     return (

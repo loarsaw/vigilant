@@ -1,6 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiClient } from '@/lib/axios';
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 export interface HiringPosition {
   id: string;
@@ -15,7 +14,7 @@ export interface HiringPosition {
   number_of_openings: number;
   job_description: string;
   requirements: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -33,7 +32,7 @@ export interface PaginatedPositionResponse {
 
 export interface PositionFilters {
   search?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
   department?: string;
   location?: string;
   is_active?: boolean;
@@ -56,29 +55,28 @@ export interface CreatePositionPayload {
 }
 
 export type UpdatePositionPayload = Partial<CreatePositionPayload> & {
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
 };
-
 
 const fetchPositions = async (filters: PositionFilters): Promise<PaginatedPositionResponse> => {
   const params = new URLSearchParams();
 
-  if (filters.search)                  params.set('search', filters.search);
-  if (filters.status)                  params.set('status', filters.status);
-  if (filters.department)              params.set('department', filters.department);
-  if (filters.location)                params.set('location', filters.location);
-  if (filters.is_active !== undefined) params.set('is_active', String(filters.is_active));
-  if (filters.page)                    params.set('page', String(filters.page));
-  if (filters.limit)                   params.set('limit', String(filters.limit));
+  if (filters.search) params.set("search", filters.search);
+  if (filters.status) params.set("status", filters.status);
+  if (filters.department) params.set("department", filters.department);
+  if (filters.location) params.set("location", filters.location);
+  if (filters.is_active !== undefined) params.set("is_active", String(filters.is_active));
+  if (filters.page) params.set("page", String(filters.page));
+  if (filters.limit) params.set("limit", String(filters.limit));
 
   const response = await apiClient.get<PaginatedPositionResponse>(
-    `/positions?${params.toString()}`
+    `/positions?${params.toString()}`,
   );
   return response.data;
 };
 
 const createPosition = async (payload: CreatePositionPayload): Promise<HiringPosition> => {
-  const response = await apiClient.post<HiringPosition>('/positions', payload);
+  const response = await apiClient.post<HiringPosition>("/positions", payload);
   return response.data;
 };
 
@@ -102,10 +100,9 @@ const deletePosition = async (id: string): Promise<void> => {
   await apiClient.delete(`/positions/${id}`);
 };
 
-
 export function useHiringPositions(filters: PositionFilters = {}) {
   const queryClient = useQueryClient();
-  const queryKey = ['admin', 'positions', filters] as const;
+  const queryKey = ["admin", "positions", filters] as const;
 
   const {
     data: response,
@@ -123,7 +120,7 @@ export function useHiringPositions(filters: PositionFilters = {}) {
   const createMutation = useMutation<HiringPosition, Error, CreatePositionPayload>({
     mutationFn: createPosition,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'positions'] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "positions"] });
     },
   });
 
@@ -134,31 +131,31 @@ export function useHiringPositions(filters: PositionFilters = {}) {
   >({
     mutationFn: updatePosition,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'positions'] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "positions"] });
     },
   });
 
   const toggleMutation = useMutation<HiringPosition, Error, string>({
     mutationFn: togglePositionActive,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'positions'] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "positions"] });
     },
   });
 
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: deletePosition,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'positions'] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "positions"] });
     },
   });
 
   return {
     positions: response?.data ?? [],
     pagination: {
-      total:       response?.total       ?? 0,
-      totalPages:  response?.total_pages ?? 0,
-      currentPage: response?.page        ?? 1,
-      limit:       response?.limit       ?? 10,
+      total: response?.total ?? 0,
+      totalPages: response?.total_pages ?? 0,
+      currentPage: response?.page ?? 1,
+      limit: response?.limit ?? 10,
     },
 
     isLoadingPositions,
@@ -167,28 +164,28 @@ export function useHiringPositions(filters: PositionFilters = {}) {
     fetchErrorMessage: fetchError?.message ?? null,
     refetchPositions,
 
-    createPosition:      createMutation.mutate,
+    createPosition: createMutation.mutate,
     createPositionAsync: createMutation.mutateAsync,
-    isCreating:          createMutation.isPending,
-    isCreateSuccess:     createMutation.isSuccess,
-    createErrorMessage:  createMutation.error?.message ?? null,
-    resetCreate:         createMutation.reset,
+    isCreating: createMutation.isPending,
+    isCreateSuccess: createMutation.isSuccess,
+    createErrorMessage: createMutation.error?.message ?? null,
+    resetCreate: createMutation.reset,
 
-    updatePosition:      updateMutation.mutate,
+    updatePosition: updateMutation.mutate,
     updatePositionAsync: updateMutation.mutateAsync,
-    isUpdating:          updateMutation.isPending,
-    isUpdateSuccess:     updateMutation.isSuccess,
-    updateErrorMessage:  updateMutation.error?.message ?? null,
-    resetUpdate:         updateMutation.reset,
+    isUpdating: updateMutation.isPending,
+    isUpdateSuccess: updateMutation.isSuccess,
+    updateErrorMessage: updateMutation.error?.message ?? null,
+    resetUpdate: updateMutation.reset,
 
-    togglePositionActive:      toggleMutation.mutate,
+    togglePositionActive: toggleMutation.mutate,
     togglePositionActiveAsync: toggleMutation.mutateAsync,
-    isToggling:                toggleMutation.isPending,
-    toggleErrorMessage:        toggleMutation.error?.message ?? null,
+    isToggling: toggleMutation.isPending,
+    toggleErrorMessage: toggleMutation.error?.message ?? null,
 
-    deletePosition:      deleteMutation.mutate,
+    deletePosition: deleteMutation.mutate,
     deletePositionAsync: deleteMutation.mutateAsync,
-    isDeleting:          deleteMutation.isPending,
-    deleteErrorMessage:  deleteMutation.error?.message ?? null,
+    isDeleting: deleteMutation.isPending,
+    deleteErrorMessage: deleteMutation.error?.message ?? null,
   };
 }

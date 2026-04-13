@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { TEMPLATE_MANIFEST } from '@/data/template-manifest';
-import { SandpackTemplateType } from '@/types/types';
+import { useState, useEffect } from "react";
+import { TEMPLATE_MANIFEST } from "@/data/template-manifest";
+import { SandpackTemplateType } from "@/types/types";
 
 export interface LoadedTemplate {
   files: Record<string, string>;
@@ -16,9 +16,7 @@ interface UseTemplateLoaderResult {
 const cache = new Map<string, LoadedTemplate>();
 
 export function useTemplateLoader(frameworkId: string): UseTemplateLoaderResult {
-  const [data, setData] = useState<LoadedTemplate | null>(
-    () => cache.get(frameworkId) ?? null
-  );
+  const [data, setData] = useState<LoadedTemplate | null>(() => cache.get(frameworkId) ?? null);
   const [loading, setLoading] = useState(!cache.has(frameworkId));
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +48,7 @@ export function useTemplateLoader(frameworkId: string): UseTemplateLoaderResult 
             if (!res.ok) throw new Error(`Failed to fetch ${rawUrl}: ${res.status}`);
             const content = await res.text(); // raw GitHub returns plain text
             return [sandpackPath, content] as [string, string];
-          })
+          }),
         );
 
         const result: LoadedTemplate = {
@@ -66,14 +64,16 @@ export function useTemplateLoader(frameworkId: string): UseTemplateLoaderResult 
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Failed to load template');
+          setError(e instanceof Error ? e.message : "Failed to load template");
           setLoading(false);
         }
       }
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [frameworkId]);
 
   return { data, loading, error };

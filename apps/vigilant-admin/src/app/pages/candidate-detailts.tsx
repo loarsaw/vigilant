@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
   Mail,
@@ -11,29 +11,41 @@ import {
   XCircle,
   Clock,
   User,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-import { useCandidate } from '@/hooks/use-candidates';
-import { Interview, useInterview } from '@/hooks/use-interview';
-import { UpcomingInterview } from '@/components/upcoming-interview';
-import { EmailModal } from '@/components/qa/email-modal';
-import { ScheduleInterviewModal } from '@/components/qa/schedule-interview-modal';
-import { pushToCandidate } from '@/lib/axios';
-import { CandidateLevel, Framework } from '@/types/types';
+import { useCandidate } from "@/hooks/use-candidates";
+import { Interview, useInterview } from "@/hooks/use-interview";
+import { UpcomingInterview } from "@/components/upcoming-interview";
+import { EmailModal } from "@/components/qa/email-modal";
+import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
+import { pushToCandidate } from "@/lib/axios";
+import { CandidateLevel, Framework } from "@/types/types";
 
-type SessionType = 'dsa' | 'framework' | '';
+type SessionType = "dsa" | "framework" | "";
 
-type DSALanguage = 'C' | 'C++' | 'Python' | 'Java';
+type DSALanguage = "C" | "C++" | "Python" | "Java";
 
-const getStatusBadge = (status: Interview['status']) => {
+const getStatusBadge = (status: Interview["status"]) => {
   const statusConfig = {
-    scheduled: { color: 'bg-blue-400/10 text-blue-400 border-blue-400/20', label: 'Scheduled' },
-    'in-progress': { color: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20', label: 'In Progress' },
-    completed: { color: 'bg-green-400/10 text-green-400 border-green-400/20', label: 'Completed' },
-    cancelled: { color: 'bg-red-400/10 text-red-400 border-red-400/20', label: 'Cancelled' },
+    scheduled: {
+      color: "bg-blue-400/10 text-blue-400 border-blue-400/20",
+      label: "Scheduled",
+    },
+    "in-progress": {
+      color: "bg-yellow-400/10 text-yellow-400 border-yellow-400/20",
+      label: "In Progress",
+    },
+    completed: {
+      color: "bg-green-400/10 text-green-400 border-green-400/20",
+      label: "Completed",
+    },
+    cancelled: {
+      color: "bg-red-400/10 text-red-400 border-red-400/20",
+      label: "Cancelled",
+    },
   };
   return statusConfig[status] || statusConfig.scheduled;
 };
@@ -46,74 +58,71 @@ export function CandidateDetail() {
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
 
-  const { interviews, isLoading: isLoadingInterviews } =
-    useInterview(candidateId);
+  const { interviews, isLoading: isLoadingInterviews } = useInterview(candidateId);
 
-  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | ''>('');
-  const [sessionType, setSessionType] = useState<SessionType>('');
+  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | "">("");
+  const [sessionType, setSessionType] = useState<SessionType>("");
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [ratingMode, setRatingMode] = useState(false);
   const [interviewRatings, setInterviewRatings] = useState({});
   const [emailFormData, setEmailFormData] = useState({
-    to: '',
-    subject: '',
-    body: '',
+    to: "",
+    subject: "",
+    body: "",
   });
 
-  const [level, setLevel] = useState<CandidateLevel | ''>('');
-  const [framework, setFramework] = useState<Framework | ''>('');
+  const [level, setLevel] = useState<CandidateLevel | "">("");
+  const [framework, setFramework] = useState<Framework | "">("");
 
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatched, setDispatched] = useState(false);
 
   const canDispatch =
-    sessionType === 'framework'
-      ? level !== '' && framework !== ''
-      : sessionType === 'dsa'
-        ? dsaLanguage !== ''
+    sessionType === "framework"
+      ? level !== "" && framework !== ""
+      : sessionType === "dsa"
+        ? dsaLanguage !== ""
         : false;
 
   const handleSessionTypeChange = (value: SessionType) => {
     setSessionType(value);
     setDispatched(false);
-    setLevel('');
-    setFramework('');
-    setDsaLanguage('');
+    setLevel("");
+    setFramework("");
+    setDsaLanguage("");
   };
 
   const handleDispatch = async () => {
     if (!canDispatch || !candidateId) return;
     setIsDispatching(true);
     try {
-      if (sessionType === 'framework') {
-        await pushToCandidate(candidateId, 'session_config', {
-          type: 'framework',
+      if (sessionType === "framework") {
+        await pushToCandidate(candidateId, "session_config", {
+          type: "framework",
           framework,
           level,
         });
-      } else if (sessionType === 'dsa') {
-        await pushToCandidate(candidateId, 'session_config', {
-          type: 'dsa',
+      } else if (sessionType === "dsa") {
+        await pushToCandidate(candidateId, "session_config", {
+          type: "dsa",
           language: dsaLanguage,
         });
       }
       setDispatched(true);
     } catch (err) {
-      console.error('Failed to dispatch:', err);
+      console.error("Failed to dispatch:", err);
     } finally {
       setIsDispatching(false);
     }
   };
 
-  const interviewHistory = interviews.filter((i: Interview) => i.status === 'completed');
+  const interviewHistory = interviews.filter((i: Interview) => i.status === "completed");
 
   useEffect(() => {
     if (candidateData) {
-      setEmailFormData(prev => ({
+      setEmailFormData((prev) => ({
         ...prev,
         to: candidateData.email,
       }));
@@ -145,11 +154,11 @@ export function CandidateDetail() {
   }
 
   const skillsArray = candidateData.skills
-    ? candidateData.skills.split(',').map(s => s.trim())
+    ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
 
   const handleRatingChange = (interviewId: string, rating: number) => {
-    setInterviewRatings(prev => ({
+    setInterviewRatings((prev) => ({
       ...prev,
       [interviewId]: rating,
     }));
@@ -160,17 +169,17 @@ export function CandidateDetail() {
   };
 
   const handleSendEmail = () => {
-    console.log('Sending email:', emailFormData);
+    console.log("Sending email:", emailFormData);
     setShowEmailModal(false);
     setEmailFormData({
-      to: candidateData?.email || '',
-      subject: '',
-      body: '',
+      to: candidateData?.email || "",
+      subject: "",
+      body: "",
     });
   };
 
   const handleScheduleInterview = () => {
-    console.log('Schedule interview:', {
+    console.log("Schedule interview:", {
       candidate: candidateData.full_name,
       date: selectedDate,
     });
@@ -178,7 +187,7 @@ export function CandidateDetail() {
   };
 
   console.log(candidateData, "candidate data");
-  
+
   return (
     <div className="space-y-6 p-5">
       <div className="flex items-center justify-between">
@@ -186,15 +195,13 @@ export function CandidateDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/candidates')}
+            onClick={() => navigate("/candidates")}
             className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="text-3xl font-bold text-white">
-              {candidateData.full_name}
-            </h2>
+            <h2 className="text-3xl font-bold text-white">{candidateData.full_name}</h2>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-gray-400">{candidateData.email}</p>
               {isOnline && (
@@ -207,10 +214,7 @@ export function CandidateDetail() {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-          >
+          <Button variant="outline" className="border-red-500/50 text-red-400 hover:bg-red-500/10">
             <XCircle className="h-4 w-4 mr-2" />
             Reject
           </Button>
@@ -234,22 +238,18 @@ export function CandidateDetail() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-gray-400 text-sm">Name</p>
-                  <p className="text-white mt-1 font-medium">
-                    {candidateData.full_name}
-                  </p>
+                  <p className="text-white mt-1 font-medium">{candidateData.full_name}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Email</p>
-                  <p className="text-white mt-1">
-                    {candidateData.email}
-                  </p>
+                  <p className="text-white mt-1">{candidateData.email}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Experience</p>
                   <p className="text-white mt-1">
                     {candidateData.experience_years
                       ? `${candidateData.experience_years} years`
-                      : 'Not specified'}
+                      : "Not specified"}
                   </p>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export function CandidateDetail() {
                 <p className="text-gray-400 text-sm mb-2">Skills</p>
                 <div className="flex flex-wrap gap-2">
                   {skillsArray.length > 0 ? (
-                    skillsArray.map(skill => (
+                    skillsArray.map((skill) => (
                       <span
                         key={skill}
                         className="bg-gray-800 px-3 py-1 rounded-full text-gray-300 text-sm"
@@ -267,17 +267,13 @@ export function CandidateDetail() {
                       </span>
                     ))
                   ) : (
-                    <span className="text-gray-500 text-sm">
-                      No skills listed
-                    </span>
+                    <span className="text-gray-500 text-sm">No skills listed</span>
                   )}
                 </div>
               </div>
 
               <div>
-                <p className="text-gray-400 text-sm mb-2">
-                  Contact Information
-                </p>
+                <p className="text-gray-400 text-sm mb-2">Contact Information</p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-gray-300">
                     <Mail className="h-4 w-4 text-gray-400" />
@@ -325,16 +321,13 @@ export function CandidateDetail() {
               <div className="pt-2 border-t border-gray-800">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-400 text-sm">Account Status</span>
-                  <Badge
-                    variant={candidateData.is_active ? 'default' : 'secondary'}
-                  >
-                    {candidateData.is_active ? 'Active' : 'Inactive'}
+                  <Badge variant={candidateData.is_active ? "default" : "secondary"}>
+                    {candidateData.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 {candidateData.last_login && (
                   <p className="text-gray-500 text-xs mt-1">
-                    Last login:{' '}
-                    {new Date(candidateData.last_login).toLocaleString()}
+                    Last login: {new Date(candidateData.last_login).toLocaleString()}
                   </p>
                 )}
               </div>
@@ -350,13 +343,9 @@ export function CandidateDetail() {
             </CardHeader>
             <CardContent>
               {isLoadingInterviews ? (
-                <div className="text-gray-400 text-center py-4">
-                  Loading interviews...
-                </div>
+                <div className="text-gray-400 text-center py-4">Loading interviews...</div>
               ) : interviews.length === 0 ? (
-                <div className="text-gray-400 text-center py-8">
-                  No interviews scheduled yet
-                </div>
+                <div className="text-gray-400 text-center py-8">No interviews scheduled yet</div>
               ) : (
                 <div className="space-y-3">
                   {interviews.map((interview: Interview) => {
@@ -369,12 +358,8 @@ export function CandidateDetail() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-white font-medium">
-                                {interview.interview_type}
-                              </h4>
-                              <Badge className={statusInfo.color}>
-                                {statusInfo.label}
-                              </Badge>
+                              <h4 className="text-white font-medium">{interview.interview_type}</h4>
+                              <Badge className={statusInfo.color}>{statusInfo.label}</Badge>
                             </div>
                             <div className="space-y-1">
                               <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -430,9 +415,7 @@ export function CandidateDetail() {
                 <Button
                   variant="outline"
                   className="w-full border-gray-700 text-gray-300"
-                  onClick={() =>
-                    window.open(candidateData.resume_url, '_blank')
-                  }
+                  onClick={() => window.open(candidateData.resume_url, "_blank")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   View Resume
@@ -441,10 +424,7 @@ export function CandidateDetail() {
             </CardContent>
           </Card>
 
-          <UpcomingInterview
-            candidateId={candidateId}
-            candidateName={candidateData.full_name}
-          />
+          <UpcomingInterview candidateId={candidateId} candidateName={candidateData.full_name} />
         </div>
       </div>
 
@@ -461,7 +441,7 @@ export function CandidateDetail() {
         onClose={() => setShowScheduleDialog(false)}
         candidateName={candidateData.full_name}
         candidateId={candidateId}
-        onSchedule={details => {}}
+        onSchedule={(details) => {}}
       />
     </div>
   );

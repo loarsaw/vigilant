@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Search,
   Filter,
@@ -13,30 +13,25 @@ import {
   Clock,
   AlertCircle,
   XCircle,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useCandidates } from '@/hooks/use-candidates';
-import { useImportCandidates } from '@/hooks/use-import-candidates';
-import { AddCandidateDialog } from '@/components/candidate/add-candidate';
-import { ImportCandidatesDialog } from '@/components/candidate/import-candidate';
+} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useCandidates } from "@/hooks/use-candidates";
+import { useImportCandidates } from "@/hooks/use-import-candidates";
+import { AddCandidateDialog } from "@/components/candidate/add-candidate";
+import { ImportCandidatesDialog } from "@/components/candidate/import-candidate";
 
 export function CandidatesList() {
   const {
@@ -64,20 +59,20 @@ export function CandidatesList() {
     reset: resetImport,
   } = useImportCandidates();
 
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
+    full_name: "",
+    email: "",
+    password: "",
   });
 
   const handleAddCandidate = () => {
     if (formData.full_name && formData.email && formData.password) {
       addCandidate(formData, {
         onSuccess: () => {
-          setFormData({ full_name: '', email: '', password: '' });
+          setFormData({ full_name: "", email: "", password: "" });
           setShowAddDialog(false);
         },
       });
@@ -91,16 +86,16 @@ export function CandidatesList() {
 
   const getStatusBadge = (onboardingComplete: boolean) => {
     if (onboardingComplete) {
-      return 'bg-green-400/10 text-green-400 border-green-400/20';
+      return "bg-green-400/10 text-green-400 border-green-400/20";
     }
-    return 'bg-orange-400/10 text-orange-400 border-orange-400/20';
+    return "bg-orange-400/10 text-orange-400 border-orange-400/20";
   };
 
-  const filteredCandidates = candidates.filter(c => {
-    if (filterStatus === 'all') return true;
-    if (filterStatus === 'onboarded') return c.onboarding_complete;
-    if (filterStatus === 'pending') return !c.onboarding_complete;
-    if (filterStatus === 'active') return c.is_active;
+  const filteredCandidates = candidates.filter((c) => {
+    if (filterStatus === "all") return true;
+    if (filterStatus === "onboarded") return c.onboarding_complete;
+    if (filterStatus === "pending") return !c.onboarding_complete;
+    if (filterStatus === "active") return c.is_active;
     return true;
   });
 
@@ -112,9 +107,7 @@ export function CandidatesList() {
           <p className="text-gray-400 mt-1">
             Total of {total} candidates tracked
             {activeUserCount > 0 && (
-              <span className="text-cyan-400 ml-2">
-                • {activeUserCount} online
-              </span>
+              <span className="text-cyan-400 ml-2">• {activeUserCount} online</span>
             )}
           </p>
         </div>
@@ -154,7 +147,7 @@ export function CandidatesList() {
             <Input
               placeholder="Search by name, email, or skills..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-10 bg-[#0f1419] border-gray-700 text-white"
             />
           </div>
@@ -191,7 +184,7 @@ export function CandidatesList() {
               <p className="text-gray-400">No candidates match your criteria</p>
             </Card>
           ) : (
-            filteredCandidates.map(candidate => {
+            filteredCandidates.map((candidate) => {
               const isPending = !candidate.onboarding_complete;
               const cardContent = (
                 <Card className="bg-[#1a1f2e] border-gray-800 hover:border-cyan-400/30 transition-all p-6 cursor-pointer group">
@@ -202,15 +195,15 @@ export function CandidatesList() {
                         <div
                           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                             candidate.is_online
-                              ? 'bg-green-400/20 ring-2 ring-green-400/50'
-                              : 'bg-cyan-400/10'
+                              ? "bg-green-400/20 ring-2 ring-green-400/50"
+                              : "bg-cyan-400/10"
                           }`}
                         >
                           <span className="text-cyan-400 font-bold text-lg">
                             {candidate.full_name
-                              .split(' ')
-                              .map(n => n[0])
-                              .join('')}
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
                           </span>
                         </div>
 
@@ -225,9 +218,7 @@ export function CandidatesList() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-gray-400 text-sm">
-                            {candidate.email}
-                          </p>
+                          <p className="text-gray-400 text-sm">{candidate.email}</p>
                         </div>
                       </div>
 
@@ -237,7 +228,7 @@ export function CandidatesList() {
                           <span className="flex items-center gap-1">
                             <span className="text-cyan-400 font-medium">
                               {candidate.experience_years}
-                            </span>{' '}
+                            </span>{" "}
                             yrs exp
                           </span>
                           <span>•</span>
@@ -245,7 +236,7 @@ export function CandidatesList() {
                             {candidate.github_url && (
                               <a
                                 href={candidate.github_url}
-                                onClick={e => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
                                 target="_blank"
                                 rel="noreferrer"
                               >
@@ -255,7 +246,7 @@ export function CandidatesList() {
                             {candidate.resume_url && (
                               <a
                                 href={candidate.resume_url}
-                                onClick={e => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
                                 target="_blank"
                                 rel="noreferrer"
                               >
@@ -268,7 +259,7 @@ export function CandidatesList() {
                         {/* Skills */}
                         {candidate.skills && (
                           <div className="flex flex-wrap gap-2">
-                            {candidate.skills.split(',').map(skill => (
+                            {candidate.skills.split(",").map((skill) => (
                               <span
                                 key={skill.trim()}
                                 className="text-xs bg-gray-800/40 border border-gray-700/50 px-2.5 py-1 rounded text-gray-300"
@@ -283,9 +274,7 @@ export function CandidatesList() {
 
                     {/* Status Section */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                      <Badge
-                        className={`${getStatusBadge(candidate.onboarding_complete)} border`}
-                      >
+                      <Badge className={`${getStatusBadge(candidate.onboarding_complete)} border`}>
                         {candidate.onboarding_complete ? (
                           <span className="flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3" /> Onboarded
@@ -307,8 +296,7 @@ export function CandidatesList() {
                       )}
 
                       <span className="text-[11px] text-gray-500 mt-2">
-                        Added{' '}
-                        {new Date(candidate.created_at).toLocaleDateString()}
+                        Added {new Date(candidate.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
