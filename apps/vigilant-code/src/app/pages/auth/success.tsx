@@ -44,7 +44,8 @@ export default function Success({ workspace, username, onProceed }: SuccessProps
 
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
           <p className="text-slate-300 text-sm leading-relaxed">
-            You are now authenticated and can access your workspace resources and data securely.
+            You are now authenticated when you decied to join the the lobby all the running process
+            data will be communicated to the workspace admin for transparency of interview
           </p>
         </div>
 

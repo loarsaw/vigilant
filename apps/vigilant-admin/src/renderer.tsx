@@ -12,6 +12,8 @@ import { CandidateDetail } from "./app/pages/candidate-detailts";
 import { JobApplicationsList } from "./app/pages/applications";
 import { JobApplicationDetails } from "./app/pages/job-applicant-details";
 import { AdminList } from "./app/pages/admins";
+import { InterviewDetail } from "./app/pages/interview-details";
+import { InterviewList } from "./app/pages/interviews";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
@@ -25,6 +27,7 @@ root.render(
         <Route element={<SidebarLayout />}>
           <Route path="/dashboard" Component={Dashboard} />
           <Route path="/candidates" Component={CandidatesList} />
+          <Route path="/candidates/:candidateId" Component={CandidateDetail} />
           <Route path="/applications" Component={JobApplicationsList} />
           <Route path="/team" Component={AdminList} />
           <Route
@@ -32,9 +35,9 @@ root.render(
             Component={JobApplicationDetails}
           />
           Upcoming Interviews
-          <Route path="/interviews" Component={JobApplicationsList} />
+          <Route path="/interviews" Component={InterviewList} />
+          <Route path="/interviews/:candidateId/:sessionId" Component={InterviewDetail} />
           <Route path="/hiring" Component={HiringPositions} />
-          <Route path="/candidates/:candidateId" Component={CandidateDetail} />
           <Route path="/settings" Component={Settings} />
         </Route>
       </Routes>

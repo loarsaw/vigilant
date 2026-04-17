@@ -1,62 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-export interface HiringPosition {
-  id: string;
-  position_title: string;
-  department: string;
-  location: string;
-  employment_type: string;
-  experience_required: string;
-  salary_range_min: number;
-  salary_range_max: number;
-  salary_range_text: string;
-  number_of_openings: number;
-  job_description: string;
-  requirements: string;
-  status: "active" | "inactive";
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-  updated_by?: string;
-}
-
-export interface PaginatedPositionResponse {
-  data: HiringPosition[];
-  limit: number;
-  page: number;
-  total: number;
-  total_pages: number;
-}
-
-export interface PositionFilters {
-  search?: string;
-  status?: "active" | "inactive";
-  department?: string;
-  location?: string;
-  is_active?: boolean;
-  page?: number;
-  limit?: number;
-}
-
-export interface CreatePositionPayload {
-  position_title: string;
-  department: string;
-  location: string;
-  employment_type: string;
-  experience_required: string;
-  salary_range_min: number;
-  salary_range_max: number;
-  salary_range_text: string;
-  number_of_openings: number;
-  job_description: string;
-  requirements: string;
-}
-
-export type UpdatePositionPayload = Partial<CreatePositionPayload> & {
-  status?: "active" | "inactive";
-};
+import {
+  CreatePositionPayload,
+  HiringPosition,
+  PaginatedPositionResponse,
+  PositionFilters,
+  UpdatePositionPayload,
+} from "./types";
 
 const fetchPositions = async (filters: PositionFilters): Promise<PaginatedPositionResponse> => {
   const params = new URLSearchParams();

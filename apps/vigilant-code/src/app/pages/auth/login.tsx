@@ -3,7 +3,6 @@ import WorkspaceEntry from "./workspace";
 import Credentials from "./creds";
 import Success from "./success";
 import { useAuth } from "@/hooks/use-auth";
-import { useNavigate } from "react-router-dom";
 
 export default function LoginPage() {
   const { login, isLoggingIn, loginError, resetLogin, logout, setupPoller, setSessionMeta, user } =

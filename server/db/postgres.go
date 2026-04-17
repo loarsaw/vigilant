@@ -634,6 +634,31 @@ func RunMigrations(db *sql.DB) error {
 			BEFORE UPDATE ON google_credentials
 			FOR EACH ROW
 			EXECUTE FUNCTION update_google_credentials_updated_at()`,
+
+		// ========================================
+		// MIGRATION 24: Interview Evaluation
+		// ========================================
+
+		`CREATE TABLE IF NOT EXISTS interview_feedback (
+		id SERIAL PRIMARY KEY,
+		interview_session_id INTEGER NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
+		interviewer_id UUID NOT NULL REFERENCES administrators(id) ON DELETE SET NULL,
+		technical_skills_score SMALLINT CHECK (technical_skills_score BETWEEN 0 AND 100),
+		communication_score SMALLINT CHECK (communication_score BETWEEN 0 AND 100),
+		problem_solving_score SMALLINT CHECK (problem_solving_score BETWEEN 0 AND 100),
+		cultural_fit_score SMALLINT CHECK (cultural_fit_score BETWEEN 0 AND 100),
+		overall_score NUMERIC(5, 2) GENERATED ALWAYS AS (
+			(technical_skills_score + communication_score + problem_solving_score + cultural_fit_score) / 4.0
+		) STORED,
+		comments TEXT,
+		recommendation VARCHAR(50),
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(interview_session_id, interviewer_id)
+	);`,
+
+		`CREATE INDEX IF NOT EXISTS idx_feedback_session ON interview_feedback(interview_session_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_feedback_interviewer ON interview_feedback(interviewer_id);`,
 	}
 
 	for i, migration := range migrations {

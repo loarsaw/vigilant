@@ -15,100 +15,64 @@ import {
   Code2,
   Layers,
   Terminal,
+  Clock,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useCandidate } from "@/hooks/use-candidates";
-import { Interview, useInterview } from "@/hooks/use-interview";
+import { useInterview } from "@/hooks/use-interview";
 import { useJobApplications } from "@/hooks/use-job-applications";
 import { UpcomingInterview } from "@/components/upcoming-interview";
 import { EmailModal } from "@/components/qa/email-modal";
 import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
-import { pushToCandidate } from "@/lib/axios";
-import { CandidateLevel, Framework } from "@/types/types";
-
-type SessionType = "dsa" | "framework" | "";
-type DSALanguage = "C" | "C++" | "Python" | "Java";
+import { useJobApplicationStatus } from "@/hooks/use-job-application-status";
+import { useApplicationInterviewFeedback } from "@/hooks/use-application-interview-session";
+import { InterviewHistory } from "@/components/interview-history";
 
 export function JobApplicationDetails() {
   const { candidateId, applicationId } = useParams();
+  const { status, applicationID } = useJobApplicationStatus(applicationId);
+  console.log(status, applicationID, "application id");
   const navigate = useNavigate();
-
+  const ses = useApplicationInterviewFeedback(applicationID);
+  console.log(ses, "ses");
   const { data, isLoading, isError, error } = useCandidate(candidateId);
-  const { interviews } = useInterview(candidateId);
+  const { sessions } = useInterview(candidateId);
   const { approveApplication, rejectApplication, isApprovingOrRejecting } = useJobApplications();
-
+  console.log(sessions, "sees");
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
-  const interviewHistory = interviews.filter((i: Interview) => i.status === "completed");
-  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | "">("");
-  const [sessionType, setSessionType] = useState<SessionType>("");
-  const [level, setLevel] = useState<CandidateLevel | "">("");
-  const [framework, setFramework] = useState<Framework | "">("");
+  const interviewHistory = sessions
+    .filter((session) => session.status === "completed")
+    .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
+
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [isDispatching, setIsDispatching] = useState(false);
-  const [dispatched, setDispatched] = useState(false);
-  const [emailFormData, setEmailFormData] = useState({
-    to: "",
-    subject: "",
-    body: "",
-  });
 
-  useEffect(() => {
-    if (candidateData) {
-      setEmailFormData((prev) => ({ ...prev, to: candidateData.email }));
-    }
-  }, [candidateData]);
-
-  const canDispatch =
-    sessionType === "framework"
-      ? level !== "" && framework !== ""
-      : sessionType === "dsa"
-        ? dsaLanguage !== ""
-        : false;
-
-  const handleSessionTypeChange = (value: SessionType) => {
-    setSessionType(value);
-    setDispatched(false);
-    setLevel("");
-    setFramework("");
-    setDsaLanguage("");
+  const formatInterviewType = (type: string) => {
+    return type
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
-  const handleDispatch = async () => {
-    if (!canDispatch || !candidateId) return;
-    setIsDispatching(true);
-    try {
-      if (sessionType === "framework") {
-        await pushToCandidate(candidateId, "session_config", {
-          type: "framework",
-          framework,
-          level,
-        });
-      } else if (sessionType === "dsa") {
-        await pushToCandidate(candidateId, "session_config", {
-          type: "dsa",
-          language: dsaLanguage,
-        });
-      }
-      setDispatched(true);
-    } catch (err) {
-      console.error("Failed to dispatch:", err);
-    } finally {
-      setIsDispatching(false);
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return "bg-green-500/10 text-green-400 border-green-500/20";
+      case "scheduled":
+        return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+      case "in-progress":
+        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+      case "cancelled":
+        return "bg-red-500/10 text-red-400 border-red-500/20";
+      default:
+        return "bg-gray-500/10 text-gray-400 border-gray-500/20";
     }
   };
 
-  // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -140,7 +104,6 @@ export function JobApplicationDetails() {
   console.log(candidateData, "ca");
   return (
     <div className="space-y-6 p-5">
-      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -166,36 +129,54 @@ export function JobApplicationDetails() {
         </div>
 
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-            disabled={isApprovingOrRejecting}
-            onClick={() => rejectApplication(applicationId!)}
-          >
-            {isApprovingOrRejecting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <XCircle className="h-4 w-4 mr-2" />
-            )}
-            Reject
-          </Button>
-          <Button
-            className="bg-green-500 hover:bg-green-600 text-white"
-            disabled={isApprovingOrRejecting}
-            onClick={() => approveApplication(applicationId!)}
-          >
-            {isApprovingOrRejecting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <CheckCircle className="h-4 w-4 mr-2" />
-            )}
-            Approve
-          </Button>
+          {status == "applied" || status == "interviewing" || status == "screening" ? (
+            <>
+              <Button
+                variant="outline"
+                className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                disabled={isApprovingOrRejecting}
+                onClick={() => rejectApplication(applicationId!)}
+              >
+                {isApprovingOrRejecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-2" />
+                )}
+                Reject
+              </Button>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white"
+                disabled={isApprovingOrRejecting}
+                onClick={() => approveApplication(applicationId!)}
+              >
+                {isApprovingOrRejecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Approve
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white"
+                disabled={true}
+                // onClick={() => approveApplication(applicationId!)}
+              >
+                {isApprovingOrRejecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Hired
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Left Column ── */}
         <div className="lg:col-span-2 space-y-6">
           <Card className="bg-[#1a1f2e] border-gray-800">
             <CardHeader>
@@ -265,6 +246,7 @@ export function JobApplicationDetails() {
                   <div className="space-y-2">
                     {candidateData.github_url && (
                       <a
+                        href={candidateData.github_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
@@ -305,28 +287,10 @@ export function JobApplicationDetails() {
             </CardContent>
           </Card>
 
-          {/* System Diagnostics */}
-          <Card className="bg-[#1a1f2e] border-gray-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Terminal className="h-5 w-5 text-cyan-400" />
-                System Diagnostics
-              </CardTitle>
-              <CardDescription>Real-time telemetry from candidate client</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center p-8 border-2 border-dashed border-border rounded-lg">
-                <p className="text-muted-foreground italic text-sm text-center">
-                  Waiting for candidate to connect to session...
-                  <br />
-                  (Telemetry will appear once session is initialized)
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Interview History */}
+          {applicationID && <InterviewHistory applicationID={applicationID} />}
         </div>
 
-        {/* ── Right Column ── */}
         <div className="space-y-6">
           {/* Quick Actions */}
           <Card className="bg-[#1a1f2e] border-gray-800">
@@ -363,170 +327,6 @@ export function JobApplicationDetails() {
           </Card>
 
           <UpcomingInterview candidateId={candidateId!} candidateName={candidateData.full_name} />
-
-          {/* Session Configuration */}
-          <Card className="border-border/50 bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-primary">
-                <Zap className="w-5 h-5" />
-                Session Configuration
-              </CardTitle>
-              <CardDescription>
-                Choose a session type, configure options, then dispatch to candidate
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Session Type Toggle */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">
-                  Session Type
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleSessionTypeChange("dsa")}
-                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      sessionType === "dsa"
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground"
-                    }`}
-                  >
-                    <Code2 className="w-5 h-5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold">DSA</p>
-                      <p className="text-xs opacity-70">Data Structures & Algorithms</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSessionTypeChange("framework")}
-                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      sessionType === "framework"
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground"
-                    }`}
-                  >
-                    <Layers className="w-5 h-5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold">Framework</p>
-                      <p className="text-xs opacity-70">React / Next.js assessment</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* DSA Options */}
-              {sessionType === "dsa" && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Programming Language
-                  </p>
-                  <Select
-                    value={dsaLanguage}
-                    onValueChange={(v) => {
-                      setDsaLanguage(v as DSALanguage);
-                      setDispatched(false);
-                    }}
-                  >
-                    <SelectTrigger className="bg-secondary/50">
-                      <SelectValue placeholder="Select language..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="C">C</SelectItem>
-                      <SelectItem value="C++">C++</SelectItem>
-                      <SelectItem value="Python">Python</SelectItem>
-                      <SelectItem value="Java">Java</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Framework Options */}
-              {sessionType === "framework" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Target Framework
-                    </p>
-                    <Select
-                      value={framework}
-                      onValueChange={(v) => {
-                        setFramework(v as Framework);
-                        setDispatched(false);
-                      }}
-                    >
-                      <SelectTrigger className="bg-secondary/50">
-                        <SelectValue placeholder="Select framework..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="React">React</SelectItem>
-                        <SelectItem value="Nextjs">Next.js</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Difficulty Level
-                    </p>
-                    <Select
-                      value={level}
-                      onValueChange={(v) => {
-                        setLevel(v as CandidateLevel);
-                        setDispatched(false);
-                      }}
-                    >
-                      <SelectTrigger className="bg-secondary/50">
-                        <SelectValue placeholder="Select level..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Intern">Intern</SelectItem>
-                        <SelectItem value="Junior">Junior</SelectItem>
-                        <SelectItem value="Senior">Senior</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Dispatch Row */}
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  onClick={handleDispatch}
-                  disabled={!canDispatch || isDispatching}
-                  className="flex items-center gap-2"
-                >
-                  {isDispatching ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  {isDispatching ? "Dispatching..." : "Dispatch to Candidate"}
-                </Button>
-
-                {!canDispatch && sessionType !== "" && (
-                  <p className="text-xs text-muted-foreground">
-                    {sessionType === "dsa"
-                      ? "Select a language to dispatch"
-                      : "Select both framework and level to dispatch"}
-                  </p>
-                )}
-
-                {!sessionType && (
-                  <p className="text-xs text-muted-foreground">Select a session type to begin</p>
-                )}
-
-                {dispatched && canDispatch && (
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    {sessionType === "dsa"
-                      ? `✓ Dispatched — DSA / ${dsaLanguage}`
-                      : `✓ Dispatched — ${framework} / ${level}`}
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <EmailModal

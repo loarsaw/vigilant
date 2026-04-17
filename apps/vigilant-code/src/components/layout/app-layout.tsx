@@ -1,9 +1,17 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { useInterview } from "@/hooks/use-session";
+import { useEffect } from "react";
 
 export default function AppLayout() {
   const { isAuthenticated, isLoadingUser } = useAuth();
+  const { startReporting } = useInterview();
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      startReporting();
+    }
+  }, [isAuthenticated]);
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">

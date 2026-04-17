@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Briefcase, Clock, DollarSign, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface JobCardProps {
   id: string;
@@ -10,13 +11,19 @@ interface JobCardProps {
   location: string;
   employment_type: string;
   experience_required: string;
-  salary_range_text: string;
+  salary_range_min: string;
+  salary_range_max: string;
   number_of_openings: number;
   job_description: string;
   requirements: string;
   isApplied?: boolean;
   interviewDate?: string;
   interviewTime?: string;
+  interview: {
+    scheduled_at: Date;
+    interview_url: string;
+    status: string;
+  };
   onApply?: (jobId: string) => void;
 }
 
@@ -26,17 +33,29 @@ export default function JobCard({
   department,
   location,
   employment_type,
-  experience_required,
-  salary_range_text,
+  salary_range_min,
+  salary_range_max,
   number_of_openings,
   job_description,
-  requirements,
   isApplied = false,
   interviewDate,
   interviewTime,
+  interview,
   onApply,
 }: JobCardProps) {
   const router = useNavigate();
+  const [date, setDate] = useState<string>();
+  const [time, setTime] = useState<string>();
+  useEffect(() => {
+    // console.log(interview);
+    if (interview && interview.scheduled_at) {
+      // console.log(interview);
+      console.log(new Date(interview?.scheduled_at)?.toLocaleDateString(), "interview");
+      setDate(new Date(interview?.scheduled_at)?.toLocaleDateString());
+      setTime(new Date(interview.scheduled_at)?.toLocaleTimeString());
+    }
+  }, [interview]);
+  console.log(date, "date", time);
   return (
     <div className="bg-gradient-to-br from-slate-800/50 to-blue-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 aspect-square flex flex-col justify-between">
       <div className="flex flex-col justify-between h-full">
@@ -66,7 +85,9 @@ export default function JobCard({
             </div>
             <div className="flex items-center gap-2">
               <DollarSign className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-              <span className="text-slate-300 truncate">{salary_range_text}</span>
+              <span className="text-slate-300 truncate">
+                {salary_range_min} - {salary_range_max}
+              </span>
             </div>
           </div>
         </div>
@@ -83,11 +104,11 @@ export default function JobCard({
               <p className="text-xs font-semibold text-emerald-400">Interview Scheduled</p>
               <div className="flex items-center gap-2">
                 <Calendar className="w-3 h-3 text-emerald-400" />
-                <span className="text-xs text-slate-300">{interviewDate || "Date TBA"}</span>
+                <span className="text-xs text-slate-300">{date || "Date TBA"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-3 h-3 text-emerald-400" />
-                <span className="text-xs text-slate-300">{interviewTime || "Time TBA"}</span>
+                <span className="text-xs text-slate-300">{time || "Time TBA"}</span>
               </div>
             </div>
 

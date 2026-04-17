@@ -1,71 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-export interface HiringPosition {
-  id: string;
-  position_title: string;
-  department: string;
-  location: string;
-  employment_type: string;
-  experience_required: string;
-  salary_range_min: number | null;
-  salary_range_max: number | null;
-  salary_range_text: string;
-  number_of_openings: number;
-  job_description: string;
-  requirements: string;
-  status: "active" | "inactive";
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  application_id?: string;
-  application_status?:
-    | "applied"
-    | "screening"
-    | "interviewing"
-    | "offered"
-    | "hired"
-    | "rejected"
-    | "withdrawn";
-  applied_at?: string;
-  interview?: {
-    scheduled_at: string;
-    interview_url: string;
-    status: string;
-  };
-}
-
-export interface PaginatedPositionResponse {
-  data: HiringPosition[];
-  limit: number;
-  page: number;
-  total: number;
-  total_pages: number;
-}
-
-export interface PositionFilters {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  department?: string;
-  location?: string;
-  is_active?: boolean;
-}
-
-export interface CreateJobApplicationPayload {
-  cover_letter?: string;
-}
-
-export interface JobApplication {
-  id: string;
-  candidate_id: string;
-  position_id: string;
-  status: "applied" | "screening" | "interviewing" | "offered" | "hired" | "rejected" | "withdrawn";
-  applied_at: string;
-  updated_at: string;
-  cover_letter?: string;
-}
+import {
+  CreateJobApplicationPayload,
+  JobApplication,
+  PaginatedPositionResponse,
+  PositionFilters,
+} from "./types";
+import { useEffect } from "react";
 
 const fetchPositions = async (
   filters: PositionFilters = {},
@@ -105,6 +46,14 @@ export function useHiringPositions(filters: PositionFilters = {}) {
     queryFn: () => fetchPositions(filters),
     staleTime: 1000 * 60 * 5,
   });
+  const scheduledInterview = response?.data.find((p) => p.interview?.session_id)?.interview ?? null;
+
+  // Use useEffect to safely write to query cache as a side effect
+  useEffect(() => {
+    if (scheduledInterview) {
+      queryClient.setQueryData(["interview", "session"], scheduledInterview);
+    }
+  }, [scheduledInterview, queryClient]);
 
   const {
     mutate: applyMutate,

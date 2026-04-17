@@ -19,17 +19,11 @@ import {
   Trash2,
   KeyRound,
 } from "lucide-react";
-
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
-
 import { Badge } from "@/components/ui/badge";
-
 import { Card } from "@/components/ui/card";
-
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
 import {
   Select,
   SelectContent,
@@ -37,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,56 +63,12 @@ export function AdminList() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetTargetId, setResetTargetId] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    full_name: "",
-    role: "hr" as "hr" | "interviewer",
-    department: "",
-    designation: "",
-    phone_number: "",
-  });
-
-  const handleAddAdmin = () => {
-    if (!formData.email || !formData.password || !formData.full_name || !formData.role) return;
-    addAdmin(formData, {
-      onSuccess: () => {
-        setFormData({
-          email: "",
-          password: "",
-          full_name: "",
-          role: "hr",
-          department: "",
-          designation: "",
-          phone_number: "",
-        });
-        setShowAddDialog(false);
-      },
-    });
-  };
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this admin?")) {
       deleteAdmin(id);
     }
-  };
-
-  const handleResetPassword = () => {
-    if (!resetTargetId || newPassword.length < 8) return;
-    resetPassword(
-      { id: resetTargetId, payload: { new_password: newPassword } },
-      {
-        onSuccess: () => {
-          setShowResetDialog(false);
-          setNewPassword("");
-          setResetTargetId(null);
-        },
-      },
-    );
   };
 
   const getRoleBadge = (role: string) =>
@@ -252,7 +201,6 @@ export function AdminList() {
               <DropdownMenuItem
                 onClick={() => {
                   setResetTargetId(admin.id);
-                  setShowResetDialog(true);
                 }}
                 className="text-gray-300 hover:text-white hover:bg-gray-800 cursor-pointer"
               >

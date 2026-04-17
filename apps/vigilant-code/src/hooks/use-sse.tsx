@@ -1,12 +1,6 @@
 import { createSSEConnection } from "@/lib/axios";
 import { useEffect, useRef } from "react";
-
-interface UseSSEOptions<T> {
-  path?: string;
-  type: string;
-  handler: (payload: T) => void;
-  enabled?: boolean;
-}
+import { UseSSEOptions } from "./types";
 
 export function useSSE<T = unknown>({
   path = "/events",

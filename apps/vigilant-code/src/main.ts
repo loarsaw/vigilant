@@ -56,8 +56,6 @@ ipcMain.handle("get-all-processes", async () => {
       throw new Error("Native addon not loaded");
     }
     const processes = nativeAddon.getProcesses();
-    // const values = findApps(processes);
-    // console.log(values, "values");
     return { success: true, data: processes };
   } catch (error: any) {
     console.error("Error getting processes:", error);

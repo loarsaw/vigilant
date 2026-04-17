@@ -36,3 +36,5 @@ logs/
 *.test
 *.out
 coverage.txt
+
+apps/vigilant

@@ -1,32 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, setBaseURL, setAuthToken } from "@/lib/axios";
+import { AdminUser, LoginCredentials, LoginResponse, TokenCredentials } from "./types";
 
-interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-interface TokenCredentials {
-  token: string;
-}
-
-interface AdminUser {
-  id: string;
-  email: string;
-  full_name: string;
-  role: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface LoginResponse {
-  id: string;
-  email: string;
-  full_name: string;
-  role: string;
-  token: string;
-}
 
 const adminAuthApi = {
   login: async (workspace: string, credentials: LoginCredentials): Promise<LoginResponse> => {
@@ -57,7 +32,7 @@ const adminAuthApi = {
   },
 
   logout: async (): Promise<void> => {
-    await apiClient.post("/logout");
+    await apiClient.post("/auth/logout");
     localStorage.clear();
   },
 

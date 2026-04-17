@@ -1,7 +1,7 @@
 {
   "name": "vigilant-admin",
   "productName": "vigilant-admin",
-  "version": "1.0.0-beta",
+  "version": "0.0.0",
   "description": "Vigilant candidate monitoring client",
   "main": ".vite/build/main.js",
   "scripts": {

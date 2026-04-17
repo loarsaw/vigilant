@@ -59,7 +59,11 @@ export default function LoginPage() {
 
   const handleTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tokenData.workspaceName || !tokenData.authToken) return;
+
+    if (!tokenData.workspaceName || !tokenData.authToken) {
+      console.error("Workspace name and token are required");
+      return;
+    }
 
     try {
       await loginWithToken({
@@ -70,10 +74,10 @@ export default function LoginPage() {
       });
 
       setTokenData({ workspaceName: "", authToken: "" });
-
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Token login failed:", error);
+      setTokenData({ ...tokenData, authToken: "" });
     }
   };
 

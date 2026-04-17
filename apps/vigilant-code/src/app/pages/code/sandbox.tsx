@@ -8,7 +8,6 @@ import { useNavigate, useParams } from "react-router-dom";
 export default function App() {
   const [view, setView] = useState<AppView>("sandbox");
   const [activeFramework, setActiveFramework] = useState<ActiveFramework | null>(null);
-  const [showGitHub, setShowGitHub] = useState(false);
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
@@ -55,7 +54,7 @@ export default function App() {
 
   return (
     <>
-      <BrowseView onOpen={handleOpen} onGitHub={() => setShowGitHub(true)} />
+      <BrowseView onOpen={handleOpen} />
     </>
   );
 }

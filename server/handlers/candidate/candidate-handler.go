@@ -130,57 +130,7 @@ func (h *Handlers) CreateProcessReport(c *gin.Context) {
 		"alerts":     alertCount,
 	})
 }
-func (h *Handlers) GetProcessReports(c *gin.Context) {
-	sessionID := c.Param("session_id")
 
-	query := `
-		SELECT id, session_id, reported_at, processes, alert_count, high_memory_alerts, unknown_electron_alerts
-		FROM process_reports
-		WHERE session_id = $1
-		ORDER BY reported_at DESC
-	`
-
-	rows, err := h.DB.Query(query, sessionID)
-	if err != nil {
-		log.Printf("Error querying process reports: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve reports"})
-		return
-	}
-	defer rows.Close()
-
-	reports := []gin.H{}
-
-	for rows.Next() {
-		var id int64
-		var sessID string
-		var reportedAt time.Time
-		var processesJSON []byte
-		var alertCount, highMemAlerts, electronAlerts int
-
-		if err := rows.Scan(&id, &sessID, &reportedAt, &processesJSON, &alertCount, &highMemAlerts, &electronAlerts); err != nil {
-			log.Printf("Error scanning row: %v", err)
-			continue
-		}
-
-		var processes []models.Process
-		if err := json.Unmarshal(processesJSON, &processes); err != nil {
-			log.Printf("Error unmarshaling processes: %v", err)
-			continue
-		}
-
-		reports = append(reports, gin.H{
-			"id":                      id,
-			"session_id":              sessID,
-			"timestamp":               reportedAt,
-			"processes":               processes,
-			"alert_count":             alertCount,
-			"high_memory_alerts":      highMemAlerts,
-			"unknown_electron_alerts": electronAlerts,
-		})
-	}
-
-	c.JSON(http.StatusOK, reports)
-}
 func (h *Handlers) ListSessions(c *gin.Context) {
 	query := `
 		SELECT s.id, s.session_id, s.candidate_email, s.candidate_name, s.started_at, s.ended_at,
@@ -522,6 +472,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			ja.applied_at   AS applied_at,
 
 			-- interview session info (only if exists)
+			is2.session_id     AS interview_session_id,
 			is2.scheduled_at   AS interview_scheduled_at,
 			is2.interview_url  AS interview_url,
 			is2.status         AS interview_status
@@ -530,7 +481,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 		LEFT JOIN job_applications ja
 			ON ja.position_id = hp.id AND ja.candidate_id = %s
 		LEFT JOIN LATERAL (
-			SELECT scheduled_at, interview_url, status
+			SELECT session_id, scheduled_at, interview_url, status
 			FROM interview_sessions
 			WHERE application_id = ja.id
 			ORDER BY created_at DESC
@@ -550,6 +501,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 	defer rows.Close()
 
 	type InterviewInfo struct {
+		SessionID    string    `json:"session_id"`
 		ScheduledAt  time.Time `json:"scheduled_at"`
 		InterviewURL string    `json:"interview_url"`
 		Status       string    `json:"status"`
@@ -572,6 +524,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 		var applicationID, applicationStatus sql.NullString
 		var appliedAt sql.NullTime
 
+		var interviewSessionID sql.NullString
 		var interviewScheduledAt sql.NullTime
 		var interviewURL, interviewStatus sql.NullString
 
@@ -583,7 +536,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			&pos.Status, &pos.CreatedAt, &pos.UpdatedAt,
 			&createdBy, &updatedBy, &pos.IsActive,
 			&applicationID, &applicationStatus, &appliedAt,
-			&interviewScheduledAt, &interviewURL, &interviewStatus,
+			&interviewSessionID, &interviewScheduledAt, &interviewURL, &interviewStatus,
 		); err != nil {
 			log.Printf("Error scanning position: %v", err)
 			continue
@@ -609,8 +562,9 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			}
 		}
 
-		if interviewScheduledAt.Valid {
+		if interviewScheduledAt.Valid && interviewSessionID.Valid {
 			entry.Interview = &InterviewInfo{
+				SessionID:    interviewSessionID.String,
 				ScheduledAt:  interviewScheduledAt.Time,
 				InterviewURL: interviewURL.String,
 				Status:       interviewStatus.String,

@@ -530,3 +530,61 @@ type UpdateCandidateRequest struct {
 	InterviewCompleted    bool   `json:"interview_completed"`
 	ResumeUrl             string `json:"resume_url"`
 }
+
+type CreateInterviewFeedbackRequest struct {
+	InterviewSessionID   string `json:"interview_session_id" binding:"required"`
+	TechnicalSkillsScore int    `json:"technical_skills_score" binding:"required,gte=0,lte=100"`
+	CommunicationScore   int    `json:"communication_score" binding:"required,gte=0,lte=100"`
+	ProblemSolvingScore  int    `json:"problem_solving_score" binding:"required,gte=0,lte=100"`
+	CulturalFitScore     int    `json:"cultural_fit_score" binding:"required,gte=0,lte=100"`
+	Comments             string `json:"comments" binding:"required"`
+	Recommendation       string `json:"recommendation" binding:"required,oneof=hire consider reject"`
+}
+
+type InterviewFeedback struct {
+	ID                   int       `json:"id" db:"id"`
+	InterviewSessionID   int       `json:"interview_session_id" db:"interview_session_id"`
+	InterviewerID        string    `json:"interviewer_id" db:"interviewer_id"`
+	TechnicalSkillsScore int       `json:"technical_skills_score" db:"technical_skills_score"`
+	CommunicationScore   int       `json:"communication_score" db:"communication_score"`
+	ProblemSolvingScore  int       `json:"problem_solving_score" db:"problem_solving_score"`
+	CulturalFitScore     int       `json:"cultural_fit_score" db:"cultural_fit_score"`
+	OverallScore         float64   `json:"overall_score" db:"overall_score"`
+	Comments             string    `json:"comments" db:"comments"`
+	Recommendation       string    `json:"recommendation" db:"recommendation"`
+	CreatedAt            time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at" db:"updated_at"`
+}
+
+type Feedback struct {
+	ID                   int64    `json:"id"`
+	InterviewerID        *string  `json:"interviewer_id"`
+	TechnicalSkillsScore *int     `json:"technical_skills_score"`
+	CommunicationScore   *int     `json:"communication_score"`
+	ProblemSolvingScore  *int     `json:"problem_solving_score"`
+	CulturalFitScore     *int     `json:"cultural_fit_score"`
+	OverallScore         *float64 `json:"overall_score"`
+	Comments             *string  `json:"comments"`
+	Recommendation       *string  `json:"recommendation"`
+	CreatedAt            string   `json:"created_at"`
+}
+
+type Session struct {
+	ID                int64     `json:"id"`
+	SessionID         string    `json:"session_id"`
+	CandidateID       string    `json:"candidate_id"`
+	ApplicationID     *string   `json:"application_id"`
+	InterviewerID     *string   `json:"interviewer_id"`
+	Position          string    `json:"position"`
+	InterviewType     string    `json:"interview_type"`
+	InterviewURL      string    `json:"interview_url"`
+	ScheduledAt       time.Time `json:"scheduled_at"`
+	ScheduledDuration int       `json:"scheduled_duration"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	StartedAt         *string   `json:"started_at"`
+	EndedAt           *string   `json:"ended_at"`
+	Metadata          string    `json:"metadata"`
+	IsUpcoming        bool      `json:"is_upcoming"`
+	Feedback          *Feedback `json:"feedback"`
+}

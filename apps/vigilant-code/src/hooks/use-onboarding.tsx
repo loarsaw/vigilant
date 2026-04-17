@@ -1,13 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-interface OnboardingPayload {
-  phone_number: string;
-  github_id: string;
-  resume_link: string;
-  skills: string[];
-  experience_years: number;
-}
+import { OnboardingPayload } from "./types";
 
 const onboardingApi = {
   complete: async (payload: OnboardingPayload): Promise<void> => {

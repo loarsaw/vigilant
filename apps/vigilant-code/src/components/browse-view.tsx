@@ -4,13 +4,11 @@ import { PanelId } from "@/types/types";
 
 interface BrowseViewProps {
   onOpen: (id: string, panel: PanelId) => void;
-  onGitHub: () => void;
 }
 
-export function BrowseView({ onOpen, onGitHub }: BrowseViewProps) {
+export function BrowseView({ onOpen }: BrowseViewProps) {
   return (
     <div style={{ minHeight: "100vh", background: "#080808", color: "#fff" }}>
-      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -45,27 +43,6 @@ export function BrowseView({ onOpen, onGitHub }: BrowseViewProps) {
           <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>
             {Object.keys(FRAMEWORKS).length} environments ready
           </span>
-          <button
-            onClick={onGitHub}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "8px 16px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: "pointer",
-              transition: "all 0.15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.1)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-          >
-            🐙 Import from GitHub
-          </button>
         </div>
       </div>
 
@@ -132,7 +109,6 @@ export function BrowseView({ onOpen, onGitHub }: BrowseViewProps) {
         }}
       >
         <span>Powered by Sandpack + CodeSandbox</span>
-        <span>Env: Production · Region: us-east-1</span>
       </div>
     </div>
   );

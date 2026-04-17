@@ -1,48 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
 import { useEffect, useState } from "react";
-
-export interface Candidate {
-  id: string;
-  email: string;
-  full_name: string;
-  phone_number?: string;
-  resume_url?: string;
-  github_url?: string;
-  skills?: string;
-  experience_years?: number;
-  is_online?: boolean;
-  is_active: boolean;
-  onboarding_complete: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PaginatedResponse {
-  data: Candidate[];
-  total: number;
-  page: number;
-  limit: number;
-  total_pages: number;
-}
-
-interface CandidateQueryParams {
-  page: number;
-  limit: number;
-  search: string;
-  filter?: string;
-}
-
-export interface UpdateCandidatePayload {
-  full_name?: string;
-  is_active?: boolean;
-  password?: string;
-}
-
-interface ActiveUsersResponse {
-  active_users: string[];
-  count: number;
-}
+import { ActiveUsersResponse, Candidate, CandidateQueryParams, PaginatedResponse } from "./types";
 
 // --- API Functions ---
 const fetchCandidates = async (params: CandidateQueryParams): Promise<PaginatedResponse> => {

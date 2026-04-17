@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useInterview } from "@/hooks/use-interview";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -39,20 +41,55 @@ export function ScheduleInterviewModal({
   const [timezone, setTimezone] = useState("UTC");
   const [selectedApplicationId, setSelectedApplicationId] = useState("");
   const [notes, setNotes] = useState("");
+  const [interviewerId, setInterviewerId] = useState("");
+  // Disabled Search
+  const [interviewerSearch, setInterviewerSearch] = useState("");
 
-  const { applicationOptions, isLoading, scheduleInterviewAsync, isScheduling } =
+  const { scheduleInterviewAsync, isScheduling, interviewers, isLoadingInterviewers } =
     useInterview(candidateId);
 
+  const filteredInterviewers = interviewers.filter((i) => {
+    const q = interviewerSearch.toLowerCase();
+    return i.full_name.toLowerCase().includes(q) || i.email.toLowerCase().includes(q);
+  });
+
+  // Fetch candidate applications
+  const { data: applicationsData, isLoading } = useQuery({
+    queryKey: ["candidate-applications", candidateId],
+    queryFn: async () => {
+      const response = await apiClient.get(`/candidates/${candidateId}/applications`);
+      return response.data;
+    },
+    enabled: isOpen && !!candidateId,
+  });
+
+  const applicationOptions = applicationsData?.data ?? [];
+
   const selectedApplication = applicationOptions.find(
-    (a) => a.application_id === selectedApplicationId,
+    (a: any) => a.application_id === selectedApplicationId,
   );
+
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedDate(new Date());
+      setTime("");
+      setDuration("60");
+      setInterviewerEmail("");
+      setInterviewType("");
+      setInterviewURL("");
+      setTimezone("UTC");
+      setSelectedApplicationId("");
+      setNotes("");
+    }
+  }, [isOpen]);
 
   const handleConfirm = async () => {
     if (
       !selectedDate ||
       !time ||
       !selectedApplicationId ||
-      !interviewerEmail ||
+      !interviewerId ||
       !interviewURL ||
       !interviewType
     ) {
@@ -60,7 +97,6 @@ export function ScheduleInterviewModal({
       return;
     }
 
-    // Combine date + time into RFC3339
     const [hours, minutes] = time.split(":");
     const scheduledAt = new Date(selectedDate);
     scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -69,8 +105,8 @@ export function ScheduleInterviewModal({
       await scheduleInterviewAsync({
         candidate_id: candidateId,
         application_id: selectedApplicationId,
-        interviewer_email: interviewerEmail,
-        position: selectedApplication?.position ?? "",
+        interviewer_id: interviewerId,
+        position: selectedApplication?.position_title ?? "",
         interview_type: interviewType,
         scheduled_at: scheduledAt.toISOString(),
         scheduled_duration: parseInt(duration),
@@ -116,9 +152,9 @@ export function ScheduleInterviewModal({
                   <SelectValue placeholder={isLoading ? "Loading..." : "Select position"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {applicationOptions.map((app) => (
+                  {applicationOptions.map((app: any) => (
                     <SelectItem key={app.application_id} value={app.application_id}>
-                      {app.position}
+                      {app.position_title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -161,21 +197,34 @@ export function ScheduleInterviewModal({
                 <SelectContent>
                   <SelectItem value="Technical Round">Technical Round</SelectItem>
                   <SelectItem value="Technical Round - System Design">System Design</SelectItem>
-                  <SelectItem value="HR Round">HR Round</SelectItem>
-                  <SelectItem value="Culture Fit">Culture Fit</SelectItem>
+                  {/* Will be included in next version */}
+                  {/* <SelectItem value="HR Round">HR Round</SelectItem> */}
+                  {/* <SelectItem value="Culture Fit">Culture Fit</SelectItem> */}
                   <SelectItem value="Final Round">Final Round</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label className="text-gray-300">Interviewer Email</Label>
-              <Input
-                placeholder="interviewer@company.com"
-                value={interviewerEmail}
-                onChange={(e) => setInterviewerEmail(e.target.value)}
-                className="bg-[#0f1419] border-gray-700 text-white mt-1"
-              />
+              <Label className="text-gray-300">Interviewer</Label>
+              <Select
+                value={interviewerId}
+                onValueChange={setInterviewerId}
+                disabled={isLoadingInterviewers}
+              >
+                <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white">
+                  <SelectValue
+                    placeholder={isLoadingInterviewers ? "Loading..." : "Select interviewer"}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredInterviewers.map((i) => (
+                    <SelectItem key={i.interviewer_id} value={i.interviewer_id}>
+                      {i.full_name} — {i.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

@@ -1,35 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, setBaseURL, presenceSocket, setAuthToken } from "@/lib/axios";
 import { useEffect } from "react";
-
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-interface AuthUser {
-  candidate_id: number;
-  email: string;
-  full_name: string;
-  session_id: number;
-  onboarding_complete: boolean;
-}
-
-interface LoginResponse {
-  candidate_id: number;
-  email: string;
-  expires_at: string;
-  full_name: string;
-  logged_in_at: string;
-  session_id: number;
-  token: string;
-  onboarding_complete: boolean;
-}
-
-interface SetupStatus {
-  assigned: boolean;
-  setupPath?: string;
-}
+import { AuthUser, LoginCredentials, LoginResponse, SetupStatus } from "./types";
 
 const authApi = {
   login: async (workspace: string, credentials: LoginCredentials): Promise<LoginResponse> => {

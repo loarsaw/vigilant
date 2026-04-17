@@ -268,6 +268,8 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 
 	interviewerFilter := ""
 	if adminRole == "interviewer" && adminID != nil {
+		// if adminID != nil {
+
 		baseJoins += `
 		JOIN interview_sessions isess ON ja.id = isess.application_id
 		`
@@ -493,4 +495,31 @@ func (h *AdminHandlers) ListJobApplications(c *gin.Context) {
 
 func (h *AdminHandlers) BulkUpdateJobApplicationStatus(c *gin.Context) {
 
+}
+
+func (h *AdminHandlers) GetJobApplicationStatus(c *gin.Context) {
+	applicationID := c.Param("id")
+
+	var status string
+
+	err := h.DB.QueryRow(`
+        SELECT status
+        FROM job_applications
+        WHERE id = $1::uuid
+    `, applicationID).Scan(&status)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "job application not found"})
+		return
+	}
+	if err != nil {
+		log.Printf("Error fetching job application status: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch application status"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"application_id": applicationID,
+		"status":         status,
+	})
 }

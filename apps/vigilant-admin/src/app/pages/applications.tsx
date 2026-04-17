@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Search,
   Filter,
-  Download,
   Loader2,
   BriefcaseIcon,
   ArrowUpDown,
@@ -22,12 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useJobApplications,
-  type ApplicationStatus,
-  type SortBy,
-  type SortOrder,
-} from "@/hooks/use-job-applications";
+import { useJobApplications } from "@/hooks/use-job-applications";
+import { ApplicationStatus, SortBy, SortOrder } from "@/hooks/types";
 
 export function JobApplicationsList() {
   const [status, setStatus] = useState<ApplicationStatus | "all">("all");
@@ -102,7 +97,7 @@ export function JobApplicationsList() {
   ];
 
   const departments = [...new Set(applications.map((a) => a.department).filter(Boolean))];
-  // console.log(applications , "applications")
+
   return (
     <div className="space-y-6 p-10">
       <div className="flex items-center justify-between">
@@ -114,10 +109,10 @@ export function JobApplicationsList() {
               : `${totalCount} application${totalCount !== 1 ? "s" : ""} total`}
           </p>
         </div>
-        <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+        {/* <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
           <Download className="h-4 w-4 mr-2" />
           Export
-        </Button>
+        </Button> */}
       </div>
 
       {isError && (

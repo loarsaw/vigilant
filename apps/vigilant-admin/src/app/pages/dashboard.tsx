@@ -70,7 +70,7 @@ export const Dashboard = () => {
     suspiciousProcessesToday,
     isLoading,
   } = useDashboard();
-
+  // console.log(upcomingList , "upcoming")
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background to-secondary flex items-center justify-center">
@@ -343,7 +343,7 @@ export const Dashboard = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              // onClick={() => navigate(`/applications/${interview.}`)}
+                              onClick={() => navigate(`/candidates/${interview.candidate_id}`)}
                             >
                               View Details
                             </Button>

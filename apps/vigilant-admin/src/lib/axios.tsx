@@ -64,16 +64,21 @@ export async function pushToCandidate(
 ): Promise<void> {
   await apiClient.post(`/candidates/${candidateId}/push`, { type, payload });
 }
-
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("admin_workspace");
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_user");
-      delete apiClient.defaults.headers.common["Authorization"];
-      window.location.href = "/login";
+      const isLoginRequest =
+        error.config?.url?.includes("/login") || error.config?.url?.includes("/access");
+
+      if (!isLoginRequest) {
+        localStorage.removeItem("admin_workspace");
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user");
+        localStorage.removeItem("super_admin_token");
+        delete apiClient.defaults.headers.common["Authorization"];
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },

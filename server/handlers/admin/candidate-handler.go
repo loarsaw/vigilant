@@ -2,6 +2,7 @@ package admin
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"vigilant/email"
 	"vigilant/models"
 	"vigilant/websocket"
@@ -432,4 +434,56 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+}
+
+func (h *AdminHandlers) GetProcessReports(c *gin.Context) {
+	sessionID := c.Param("session_id")
+
+	query := `
+		SELECT id, session_id, reported_at, processes, alert_count, high_memory_alerts, unknown_electron_alerts
+		FROM process_reports
+		WHERE session_id = $1
+		ORDER BY reported_at DESC
+	`
+
+	rows, err := h.DB.Query(query, sessionID)
+	if err != nil {
+		log.Printf("Error querying process reports: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve reports"})
+		return
+	}
+	defer rows.Close()
+
+	reports := []gin.H{}
+
+	for rows.Next() {
+		var id int64
+		var sessID string
+		var reportedAt time.Time
+		var processesJSON []byte
+		var alertCount, highMemAlerts, electronAlerts int
+
+		if err := rows.Scan(&id, &sessID, &reportedAt, &processesJSON, &alertCount, &highMemAlerts, &electronAlerts); err != nil {
+			log.Printf("Error scanning row: %v", err)
+			continue
+		}
+
+		var processes []models.Process
+		if err := json.Unmarshal(processesJSON, &processes); err != nil {
+			log.Printf("Error unmarshaling processes: %v", err)
+			continue
+		}
+
+		reports = append(reports, gin.H{
+			"id":                      id,
+			"session_id":              sessID,
+			"timestamp":               reportedAt,
+			"processes":               processes,
+			"alert_count":             alertCount,
+			"high_memory_alerts":      highMemAlerts,
+			"unknown_electron_alerts": electronAlerts,
+		})
+	}
+
+	c.JSON(http.StatusOK, reports)
 }

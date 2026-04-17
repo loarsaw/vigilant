@@ -49,6 +49,8 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	adminLoginGroup.Use(middleware.RateLimitMiddleware(middleware.AuthLimiter))
 	{
 		adminLoginGroup.POST("/login", adminH.AdminLogin)
+		adminLoginGroup.POST("/access", adminH.VerifyToken)
+
 	}
 
 	// Admin routes
@@ -118,7 +120,6 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// Misc endpoints
 	g.GET("/dashboard", h.GetDashboardStats)
 	g.GET("/active-users", h.GetActiveUsers)
-	g.POST("/access", h.VerifyToken)
 
 	// SSE for admin with SSE-specific limit
 	sseGroup := g.Group("/")
@@ -135,9 +136,16 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	interviewGroup := g.Group("/")
 	{
 		interviewGroup.POST("/interviews/send-invite", h.SendInterviewInvite)
-		interviewGroup.GET("/interviews", h.ListInterviewSessionsIndividualCandiate)
+		interviewGroup.GET("/interviews", h.ListInterviewSessions)
+		interviewGroup.GET("/interview-sessions/:id/status", h.GetInterviewSessionStatus)
+		interviewGroup.GET("/interview-sessions/:id/details", h.GetCompletedInterviewWithFeedback)
 		interviewGroup.POST("/create-interview", h.CreateInterviewSession)
 		interviewGroup.GET("/interviewers", h.ListInterviewers)
+		interviewGroup.POST("/interview-session/feeback", h.CreateInterviewFeedback)
+		interviewGroup.PATCH("/interview-session/:session_id/start", h.StartInterviewSession)
+		interviewGroup.PATCH("/interview-session/:session_id/end", h.EndInterviewSession)
+		interviewGroup.GET("/process/:session_id", h.GetProcessReports)
+
 	}
 
 	// Judge endpoints
@@ -148,9 +156,10 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	{
 		applicationGroup.GET("", h.ListJobApplications)
 		applicationGroup.GET("/:id", h.GetJobApplication)
+		applicationGroup.GET("/:id/status", h.GetJobApplicationStatus)
+		applicationGroup.GET("/:id/interviews/feedback", h.ListApplicationInterviewFeedback)
 		applicationGroup.PATCH("/:id/status", h.UpdateJobApplicationStatus)
 	}
-
 	// Admin management
 	adminMgmtGroup := g.Group("/admins")
 	{
@@ -169,7 +178,6 @@ func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *
 	g.POST("/process", h.CreateProcessReport)
 	g.POST("/onboarding", h.CompleteOnboarding)
 	g.GET("/interview-session/:candidate_id", h.GetActiveInterview)
-	g.GET("/process/:session_id", h.GetProcessReports)
 	g.GET("/sessions", h.ListSessions)
 	g.POST("/sessions/:session_id/end", h.EndSession)
 

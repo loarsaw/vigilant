@@ -1,7 +1,7 @@
 import { Calendar, Video, Clock, Loader2, CalendarX } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Interview, useInterview } from "@/hooks/use-interview";
+import { useInterview } from "@/hooks/use-interview";
+import { useEffect, useState } from "react";
 
 interface UpcomingInterviewProps {
   candidateId: string;
@@ -9,15 +9,29 @@ interface UpcomingInterviewProps {
 }
 
 export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
-  const { interviews, isLoading } = useInterview(candidateId);
+  const { sessions, isLoading, setSessionFilter } = useInterview(candidateId);
+  const [interviewTitle, setInterviewTitle] = useState("");
 
-  const nextInterview = interviews
-    .filter((i: Interview) => i.status === "scheduled")
-    .sort(
-      (a: Interview, b: Interview) =>
-        new Date(`${a.scheduled_date}T${a.scheduled_time}`).getTime() -
-        new Date(`${b.scheduled_date}T${b.scheduled_time}`).getTime(),
-    )[0];
+  useEffect(() => {
+    setSessionFilter("upcoming");
+  }, []);
+
+  const nextInterview = sessions
+    .filter((session) => session.status === "scheduled" && session.is_upcoming)
+    .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
+
+  useEffect(() => {
+    if (nextInterview?.interview_type) {
+      setInterviewTitle(
+        nextInterview.interview_type
+          .split("_")
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" "),
+      );
+    }
+  }, [nextInterview?.interview_type]);
+
+  console.log(nextInterview, "next interview");
 
   return (
     <Card className="bg-[#1a1f2e] border-gray-800">
@@ -33,29 +47,49 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
         )}
 
         {!isLoading && nextInterview && (
-          <div className="bg-[#0f1419] rounded-lg border border-gray-700 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-white font-medium text-sm">{nextInterview.interview_type}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
-                {nextInterview.status}
-              </span>
+          <>
+            <div className="bg-[#0f1419] rounded-lg border border-gray-700 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-medium text-sm">{interviewTitle}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                  {nextInterview.status}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <Calendar className="h-4 w-4" />
+                {new Date(nextInterview.scheduled_at).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  timeZoneName: "short",
+                })}
+              </div>
+
+              <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <Clock className="h-4 w-4" />
+                {nextInterview.scheduled_duration} min
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 text-gray-400 text-sm">
-              <Calendar className="h-4 w-4" />
-              {new Date(nextInterview.scheduled_date).toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </div>
-
-            <div className="flex items-center gap-2 text-gray-400 text-sm">
-              <Clock className="h-4 w-4" />
-              {nextInterview.scheduled_time}
-            </div>
-          </div>
+            <button
+              onClick={() => {
+                if (window.api) {
+                  console.log(nextInterview?.interview_url, "interview url");
+                  window.api.openExternal(nextInterview.interview_url);
+                } else {
+                  window.open(nextInterview.interview_url, "_blank");
+                }
+              }}
+              className="w-full mt-2 flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium text-sm py-2 px-4 rounded-lg transition-colors"
+            >
+              <Video className="h-4 w-4" />
+              Join Interview
+            </button>
+          </>
         )}
 
         {!isLoading && !nextInterview && (

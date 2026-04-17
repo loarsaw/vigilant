@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { Loader2, CheckCircle } from "lucide-react";
 
@@ -18,11 +18,8 @@ export default function OnboardingForm() {
   const {
     register,
     handleSubmit,
-    control,
     setValue,
     watch,
-    setError,
-    clearErrors,
     formState: { errors },
   } = useForm<OnboardingFormData>({
     defaultValues: {

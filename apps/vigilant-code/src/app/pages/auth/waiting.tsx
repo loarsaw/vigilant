@@ -24,9 +24,7 @@ export default function WaitingSetup() {
   const authUser = queryClient.getQueryData<{ full_name: string }>(["auth", "me"]);
 
   const workspace = sessionMeta?.workspace ?? "";
-  const setupPath = sessionMeta?.setupPath ?? "";
   const username = authUser?.full_name ?? "";
-  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
   const [received, setReceived] = useState(false);
 
   useEffect(() => {
@@ -40,7 +38,6 @@ export default function WaitingSetup() {
   useSSE<SessionConfig>({
     type: "session_config",
     handler: (payload) => {
-      setSessionConfig(payload);
       console.log(payload, "pay");
       if (payload.type == "dsa") {
         setReceived(true);

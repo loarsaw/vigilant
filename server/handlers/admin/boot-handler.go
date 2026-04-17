@@ -39,9 +39,20 @@ func (h *AdminHandlers) loadMailer(c *gin.Context) (*email.Mailer, *email.SESCon
 }
 
 func (h *AdminHandlers) VerifyToken(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success":       true,
-		"message":       "Token is valid",
-		"authenticated": true,
-	})
+	token := h.Cfg.AdminAuthToken
+	adminToken := c.GetHeader("X-Admin-Token")
+
+	if token == adminToken {
+		c.JSON(http.StatusOK, gin.H{
+			"success":       true,
+			"message":       "Token is valid",
+			"authenticated": true,
+		})
+	} else {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"success":       false,
+			"message":       "Token is not valid",
+			"authenticated": false,
+		})
+	}
 }

@@ -32,11 +32,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  useHiringPositions,
-  type HiringPosition,
-  type CreatePositionPayload,
-} from "@/hooks/use-hiring";
+import { useHiringPositions } from "@/hooks/use-hiring";
+import { CreatePositionPayload, HiringPosition } from "@/hooks/types";
 
 const EMPTY_FORM: CreatePositionPayload = {
   position_title: "",

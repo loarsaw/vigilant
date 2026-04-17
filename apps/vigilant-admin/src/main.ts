@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import path from "path";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -24,6 +24,12 @@ const createWindow = () => {
 
   mainWindow.setMenuBarVisibility(false);
 
+
+  ipcMain.on("open-external-link", (event, url) => {
+  if (url) {
+    shell.openExternal(url);
+  }
+});
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);

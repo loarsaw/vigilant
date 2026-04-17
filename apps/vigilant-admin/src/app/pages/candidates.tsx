@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Search,
   Filter,
-  Download,
   UserPlus,
   Upload,
   Loader2,
@@ -12,7 +11,6 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
-  XCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,8 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { useCandidates } from "@/hooks/use-candidates";
 import { useImportCandidates } from "@/hooks/use-import-candidates";
 import { AddCandidateDialog } from "@/components/candidate/add-candidate";
@@ -77,11 +73,6 @@ export function CandidatesList() {
         },
       });
     }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) importCSV(file);
   };
 
   const getStatusBadge = (onboardingComplete: boolean) => {
@@ -187,11 +178,10 @@ export function CandidatesList() {
             filteredCandidates.map((candidate) => {
               const isPending = !candidate.onboarding_complete;
               const cardContent = (
-                <Card className="bg-[#1a1f2e] border-gray-800 hover:border-cyan-400/30 transition-all p-6 cursor-pointer group">
+                <Card className="bg-[#1a1f2e] border-gray-800 mt-3  hover:border-cyan-400/30 transition-all p-6 cursor-pointer group">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-4 mb-4">
-                        {/* Avatar / Presence */}
                         <div
                           className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                             candidate.is_online
@@ -351,15 +341,12 @@ export function CandidatesList() {
         </TabsContent>
       </Tabs>
 
-      {/* Add Dialog */}
       <AddCandidateDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onAdd={addCandidate}
         isLoading={isAdding}
       />
-
-      {/* Import Candidate Dialog */}
 
       <ImportCandidatesDialog
         open={showImportDialog}
