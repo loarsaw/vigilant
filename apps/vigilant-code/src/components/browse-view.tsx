@@ -36,8 +36,7 @@ export function BrowseView({ onOpen }: BrowseViewProps) {
           >
             S
           </div>
-          <span style={{ fontWeight: 700, letterSpacing: 2, fontSize: 13 }}>SANDPACK EXPLORER</span>
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 11 }}>Environment v2.4.0</span>
+         
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>

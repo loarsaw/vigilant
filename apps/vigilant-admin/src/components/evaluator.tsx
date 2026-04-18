@@ -89,7 +89,7 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
   );
 
   return (
-    <div className="bg-[#0f172a] p-8 rounded-xl w-full shadow-2xl border border-gray-800 font-sans">
+    <div className="bg-[#1a1f2e] p-8 rounded-xl w-full shadow-2xl border border-gray-800 font-sans">
       <h2 className="text-xl font-semibold text-white mb-8">Evaluation scores</h2>
 
       <ScoreSlider

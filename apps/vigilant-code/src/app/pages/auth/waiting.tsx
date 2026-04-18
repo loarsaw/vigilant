@@ -15,7 +15,6 @@ interface SessionConfig {
 export default function WaitingSetup() {
   const [dots, setDots] = useState(".");
   const queryClient = useQueryClient();
-  const router = useNavigate();
 
   const sessionMeta = queryClient.getQueryData<{
     workspace: string;
@@ -35,19 +34,19 @@ export default function WaitingSetup() {
     return () => clearInterval(interval);
   }, []);
 
-  useSSE<SessionConfig>({
-    type: "session_config",
-    handler: (payload) => {
-      console.log(payload, "pay");
-      if (payload.type == "dsa") {
-        setReceived(true);
-        router(`/editor/${payload.language}`);
-      } else {
-        setReceived(true);
-        router(`/code/${payload.framework.toLowerCase()}`);
-      }
-    },
-  });
+  // useSSE<SessionConfig>({
+  //   type: "session_config",
+  //   handler: (payload) => {
+  //     console.log(payload, "pay");
+  //     if (payload.type == "dsa") {
+  //       setReceived(true);
+  //       router(`/editor/${payload.language}`);
+  //     } else {
+  //       setReceived(true);
+  //       router(`/code/${payload.framework.toLowerCase()}`);
+  //     }
+  //   },
+  // });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-hidden">
@@ -101,7 +100,7 @@ export default function WaitingSetup() {
                 disabled={true}
                 className="w-full py-3 text-base font-semibold rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-600 hover:to-cyan-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
               >
-                {received ? "Proceed to Dashboard" : "Waiting for session config..."}
+                Waiting for session config...
               </Button>
             </div>
           </div>

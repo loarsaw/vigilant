@@ -1,7 +1,15 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useInterview } from "@/hooks/use-session";
 import { useEffect } from "react";
+import { useSSE } from "@/hooks/use-sse";
+
+interface SessionConfig {
+  framework: string;
+  level: string;
+  language: string;
+  type: "dsa" | "framework";
+}
 
 export default function AppLayout() {
   const { isAuthenticated, isLoadingUser } = useAuth();
@@ -50,5 +58,22 @@ export function ProtectedLayout() {
 
   if (!isAuthenticated) return <Navigate to="/" replace />;
 
+  return <Outlet />;
+}
+
+export function EnvironmentLayout() {
+  const router = useNavigate();
+
+  useSSE<SessionConfig>({
+    type: "session_config",
+    handler: (payload) => {
+      console.log(payload, "pay");
+      if (payload.type == "dsa") {
+        router(`/editor/${payload.language}`);
+      } else {
+        router(`/code/${payload.framework.toLowerCase()}`);
+      }
+    },
+  });
   return <Outlet />;
 }
