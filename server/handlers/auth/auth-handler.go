@@ -136,6 +136,7 @@ func (h *AuthHandlers) Login(c *gin.Context) {
 		"expires_at":          expiresAt,
 	})
 }
+
 func (h *AuthHandlers) Logout(c *gin.Context) {
 	tokenString := c.GetHeader("Authorization")
 	if tokenString == "" {

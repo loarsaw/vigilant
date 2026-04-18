@@ -471,29 +471,6 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_created ON judge_submissions(created_at DESC)`,
 
 		// ========================================
-		// MIGRATION 18: Audit log table
-		// Immutable log of all user actions
-		// ========================================
-		`CREATE TABLE IF NOT EXISTS audit_log (
-			id BIGSERIAL PRIMARY KEY,
-			candidate_id UUID REFERENCES candidates(id) ON DELETE SET NULL,
-			
-			action VARCHAR(100) NOT NULL,
-			entity_type VARCHAR(50),
-			entity_id VARCHAR(255),
-			description TEXT,
-			metadata JSONB,
-			
-			ip_address INET,
-			user_agent TEXT,
-			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_audit_log_candidate ON audit_log(candidate_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action)`,
-		`CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC)`,
-
-		// ========================================
 		// MIGRATION 19: Email configuration table
 		// AWS SES credentials (encrypted before storage)
 		// Single row configuration
@@ -659,6 +636,49 @@ func RunMigrations(db *sql.DB) error {
 
 		`CREATE INDEX IF NOT EXISTS idx_feedback_session ON interview_feedback(interview_session_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_feedback_interviewer ON interview_feedback(interviewer_id);`,
+
+		`CREATE TABLE IF NOT EXISTS admin_sessions (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		admin_id UUID NOT NULL REFERENCES administrators(id) ON DELETE CASCADE,
+		session_token TEXT UNIQUE NOT NULL,
+
+		logged_in_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		logged_out_at TIMESTAMPTZ,
+		last_activity TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+
+		ip_address INET,
+		user_agent TEXT,
+		is_active  BOOLEAN DEFAULT TRUE
+	);`,
+
+		`CREATE INDEX IF NOT EXISTS idx_admin_sessions_admin  ON admin_sessions(admin_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_admin_sessions_token  ON admin_sessions(session_token);`,
+		`CREATE INDEX IF NOT EXISTS idx_admin_sessions_active ON admin_sessions(is_active, logged_in_at DESC);`,
+
+		// ========================================
+		// MIGRATION 18: Audit log table
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS audit_log (
+		id BIGSERIAL PRIMARY KEY,
+
+		candidate_id UUID REFERENCES candidates(id) ON DELETE SET NULL,
+		admin_id     UUID REFERENCES administrators(id) ON DELETE SET NULL,
+
+		action      VARCHAR(100) NOT NULL,
+		entity_type VARCHAR(50),
+		entity_id   VARCHAR(255),
+		description TEXT,
+		metadata    JSONB,
+
+		ip_address INET,
+		user_agent TEXT,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_log_candidate ON audit_log(candidate_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_log_admin     ON audit_log(admin_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_log_action    ON audit_log(action)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_log_entity    ON audit_log(entity_type, entity_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_audit_log_created   ON audit_log(created_at DESC)`,
 	}
 
 	for i, migration := range migrations {

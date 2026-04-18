@@ -50,6 +50,7 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	{
 		adminLoginGroup.POST("/login", adminH.AdminLogin)
 		adminLoginGroup.POST("/access", adminH.VerifyToken)
+		adminLoginGroup.POST("/logout", adminH.AdminLogout)
 
 	}
 
