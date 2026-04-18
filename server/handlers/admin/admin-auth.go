@@ -126,16 +126,6 @@ func (h *AdminHandlers) GetAdminMe(c *gin.Context) {
 }
 
 func (h *AdminHandlers) AdminLogout(c *gin.Context) {
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing authorization token"})
-		return
-	}
-
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-
 	adminID := c.GetString("admin_id")
 	adminRole := c.GetString("admin_role")
 
@@ -143,6 +133,15 @@ func (h *AdminHandlers) AdminLogout(c *gin.Context) {
 		h.logAudit(middleware.SuperAdminUUID, "logout", "admin_session", nil, c.ClientIP(), c.GetHeader("User-Agent"))
 		c.JSON(http.StatusOK, gin.H{"status": "logged out"})
 		return
+	}
+
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing authorization token"})
+		return
+	}
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
 	}
 
 	result, err := h.DB.Exec(`
@@ -163,7 +162,6 @@ func (h *AdminHandlers) AdminLogout(c *gin.Context) {
 	}
 
 	h.logAudit(adminID, "logout", "admin_session", nil, c.ClientIP(), c.GetHeader("User-Agent"))
-
 	c.JSON(http.StatusOK, gin.H{"status": "logged out"})
 }
 

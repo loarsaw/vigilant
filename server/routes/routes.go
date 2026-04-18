@@ -50,7 +50,6 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	{
 		adminLoginGroup.POST("/login", adminH.AdminLogin)
 		adminLoginGroup.POST("/access", adminH.VerifyToken)
-		adminLoginGroup.POST("/logout", adminH.AdminLogout)
 
 	}
 
@@ -58,6 +57,9 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	adminGroup := r.Group("/api/v1/admin")
 	adminGroup.Use(middleware.AdminAuthMiddleware(cfg, db))
 	adminGroup.Use(middleware.RateLimitMiddleware(middleware.AdminLimiter))
+	{
+		adminGroup.POST("/logout", adminH.AdminLogout)
+	}
 	registerAdminRoutes(adminGroup, adminH, judgeH)
 
 	// Candidate API routes
