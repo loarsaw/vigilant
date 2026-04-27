@@ -180,9 +180,13 @@ func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *
 	// Session management
 	g.POST("/process", h.CreateProcessReport)
 	g.POST("/onboarding", h.CompleteOnboarding)
-	g.GET("/interview-session/:candidate_id", h.GetActiveInterview)
+	// g.GET("/interview-session/:candidate_id", h.GetActiveInterview)
+	// g.GET("/interview-today", h.GetTodayInterviews)
+	g.GET("/interviews/:interview_id/session", h.GetInterviewSessionID)
+
 	g.GET("/sessions", h.ListSessions)
 	g.POST("/sessions/:session_id/end", h.EndSession)
+	g.PATCH("/update-me", h.UpdateMe)
 
 	// Position management
 	g.GET("/get-open-positions", h.GetPositionDetails)

@@ -200,13 +200,14 @@ func (h *AuthHandlers) GetMe(c *gin.Context) {
 		return
 	}
 
-	candidateID := candidateIDVal.(int64)
+	candidateID := candidateIDVal.(string)
 
 	query := `
-		SELECT id, email, full_name, created_at, last_login
-		FROM candidates
-		WHERE id = $1 AND is_active = true
-	`
+    SELECT id, email, full_name, created_at, last_login,
+           github_url, phone_number, resume_url, skills, experience_years
+    FROM candidates
+    WHERE id = $1 AND is_active = true
+`
 
 	var candidate models.Candidate
 	err := h.DB.QueryRow(query, candidateID).Scan(
@@ -215,6 +216,11 @@ func (h *AuthHandlers) GetMe(c *gin.Context) {
 		&candidate.FullName,
 		&candidate.CreatedAt,
 		&candidate.LastLogin,
+		&candidate.GithubUrl,
+		&candidate.PhoneNumber,
+		&candidate.ResumeUrl,
+		&candidate.Skills,
+		&candidate.ExperienceYears,
 	)
 
 	if err != nil {

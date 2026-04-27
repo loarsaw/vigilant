@@ -29,8 +29,6 @@ export interface SetupStatus {
   setupPath?: string;
 }
 
-
-
 export interface HiringPosition {
   id: string;
   position_title: string;
@@ -97,8 +95,6 @@ export interface JobApplication {
   cover_letter?: string;
 }
 
-
-
 export interface Language {
   id: string;
   name: string;
@@ -127,8 +123,6 @@ export interface ExecuteRequest {
   code_b64: string;
 }
 
-
-
 export interface OnboardingPayload {
   phone_number: string;
   github_id: string;
@@ -137,15 +131,17 @@ export interface OnboardingPayload {
   experience_years: number;
 }
 
+// export interface CreateInterviewResponse {
+//   id: number;
+//   session_id: string;
+//   candidate_id: string;
+//   candidate_session_id: string;
+//   status: string;
+//   created_at: string;
+// }
 
-
-export interface CreateInterviewResponse {
-  id: number;
+export interface SessionResponse {
   session_id: string;
-  candidate_id: string;
-  candidate_session_id: string;
-  status: string;
-  created_at: string;
 }
 
 export interface SessionAuthUser {
@@ -156,7 +152,7 @@ export interface SessionAuthUser {
 }
 
 export interface ProcessPayload {
- pid: number;
+  pid: number;
   name: string;
   isElectron: boolean;
   isUnknown: boolean;
@@ -169,16 +165,12 @@ export interface ProcessReportPayload {
   processes: ProcessPayload[];
 }
 
-
-
 export interface UseSSEOptions<T> {
   path?: string;
   type: string;
   handler: (payload: T) => void;
   enabled?: boolean;
 }
-
-
 
 export interface LoadedTemplate {
   files: Record<string, string>;
@@ -189,4 +181,57 @@ export interface UseTemplateLoaderResult {
   data: LoadedTemplate | null;
   loading: boolean;
   error: string | null;
+}
+
+export interface CandidateProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  resume_url: string;
+  github_url: string;
+  skills: string;
+  phone_number: string;
+  experience_years: number;
+  is_active: boolean;
+  onboarding_complete: boolean;
+  last_login: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateProfilePayload {
+  full_name?: string;
+  github_url?: string;
+  phone_number?: string;
+  resume_url?: string;
+  skills?: string;
+  experience_years?: number;
+}
+
+export interface InterviewSessionResponse {
+  interview_id: string;
+  session_id: string;
+}
+
+
+
+export interface Process {
+  pid: number;
+  name: string;
+  cmd: string;
+  memory: number;
+  category: string;
+  confidence?: number;
+  username: string;
+  isGuiApp?: boolean;
+  path?: string;
+}
+
+export interface PayloadProcess {
+  pid: number;
+  name: string;
+  isElectron: boolean;
+  isUnknown: boolean;
+  memory: number;
+  commnad: string;
 }

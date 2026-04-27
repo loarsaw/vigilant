@@ -416,7 +416,7 @@ export interface CandidateApplicationsResponse {
 
 export interface CreateInterviewPayload {
   candidate_id: string;
-  application_id: string;
+  position_id: string;        
   interviewer_id: string;
   position: string;
   interview_type: string;
@@ -425,7 +425,6 @@ export interface CreateInterviewPayload {
   interview_url: string;
   timezone: string;
 }
-
 export interface SendCustomEmailPayload {
   to_email: string;
   candidate_name: string;

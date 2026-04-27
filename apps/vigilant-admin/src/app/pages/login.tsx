@@ -222,7 +222,7 @@ export default function LoginPage() {
           </Tabs>
 
           <p className="text-xs text-muted-foreground text-center mt-4">
-            Secure employer portal for candidate management
+             Employer portal for candidate management
           </p>
         </CardContent>
       </Card>

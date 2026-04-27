@@ -48,7 +48,6 @@ export function useHiringPositions(filters: PositionFilters = {}) {
   });
   const scheduledInterview = response?.data.find((p) => p.interview?.session_id)?.interview ?? null;
 
-  // Use useEffect to safely write to query cache as a side effect
   useEffect(() => {
     if (scheduledInterview) {
       queryClient.setQueryData(["interview", "session"], scheduledInterview);

@@ -3,6 +3,7 @@ import path from "path";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 import started from "electron-squirrel-startup";
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
@@ -13,6 +14,73 @@ try {
   nativeAddon = require(path.join(__dirname, "../../build/Release/process_monitor.node"));
 } catch (error) {
   console.error("❌ Failed to load native addon:", error);
+}
+
+const PROTOCOL = "vigilant-code";
+let pendingDeepLink: string | null = null;
+
+if (process.platform === "win32" || process.platform === "linux") {
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient(PROTOCOL);
+  }
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (event, commandLine) => {
+    const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`));
+
+    if (url) {
+      handleDeepLink(url);
+    }
+
+    const windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+      const mainWindow = windows[0];
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  console.log("Opened from URL (open-url):", url);
+
+  const windows = BrowserWindow.getAllWindows();
+  if (windows.length > 0) {
+    handleDeepLink(url);
+  } else {
+    // Window not ready yet, store for later
+    pendingDeepLink = url;
+  }
+});
+
+function handleDeepLink(url: string) {
+  console.log("Handling deep link:", url);
+
+  try {
+    const urlObj = new URL(url);
+    const action = urlObj.hostname;
+    const params = Object.fromEntries(urlObj.searchParams);
+
+    console.log("Action:", action);
+    console.log("Params:", params);
+
+    const windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+      windows[0].webContents.send("deep-link", { action, params, fullUrl: url });
+    }
+  } catch (error) {
+    console.error("Error parsing deep link URL:", error);
+  }
 }
 
 ipcMain.handle("dev:isDev", async (_event) => {
@@ -31,7 +99,6 @@ const createWindow = () => {
 
   mainWindow.setMenuBarVisibility(false);
 
-  // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
@@ -39,10 +106,22 @@ const createWindow = () => {
   }
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
-  if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
-  }
+  // if (!app.isPackaged) {
+  mainWindow.webContents.openDevTools();
+  // }
+
+  // Handle pending deep link or command line args
+  mainWindow.webContents.once("did-finish-load", () => {
+    if (pendingDeepLink) {
+      handleDeepLink(pendingDeepLink);
+      pendingDeepLink = null;
+    } else if (process.platform === "win32" || process.platform === "linux") {
+      const url = process.argv.find((arg) => arg.startsWith(`${PROTOCOL}://`));
+      if (url) {
+        handleDeepLink(url);
+      }
+    }
+  });
 };
 
 // This method will be called when Electron has finished
@@ -62,6 +141,7 @@ ipcMain.handle("get-all-processes", async () => {
     return { success: false, error: error.message };
   }
 });
+
 ipcMain.handle("shutdown-app", () => {
   console.log("Shutting down application...");
   app.quit();
@@ -83,6 +163,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.

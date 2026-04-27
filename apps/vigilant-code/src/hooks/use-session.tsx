@@ -1,40 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
 import {
-  CreateInterviewResponse,
+  InterviewSessionResponse,
+  PayloadProcess,
+  Process,
   ProcessPayload,
   ProcessReportPayload,
-  SessionAuthUser,
 } from "./types";
 import { getProcessMetadata } from "@/lib/utils";
-
-export interface Process {
-  pid: number;
-  name: string;
-  cmd: string;
-  memory: number;
-  category: string;
-  confidence?: number;
-  username: string;
-  isGuiApp?: boolean;
-  path?: string;
-}
-
-export interface PayloadProcess {
-  pid: number;
-  name: string;
-  isElectron: boolean;
-  isUnknown: boolean;
-  memory: number;
-  commnad: string;
-}
-
-async function createInterview(candidateSessionId: string): Promise<CreateInterviewResponse> {
-  const { data } = await apiClient.post<CreateInterviewResponse>("/create-interview", {
-    candidate_session_id: candidateSessionId,
-  });
-  return data;
-}
 
 async function reportProcesses(payload: ProcessReportPayload): Promise<void> {
   await apiClient.post("/process", payload);
@@ -43,29 +16,12 @@ async function reportProcesses(payload: ProcessReportPayload): Promise<void> {
 export function useInterview() {
   const queryClient = useQueryClient();
 
-  const user = queryClient.getQueryData<SessionAuthUser>(["auth", "me"]);
-
-  const {
-    mutateAsync: startInterview,
-    isPending: isStarting,
-    error: startError,
-    data: interviewSession,
-    reset,
-  } = useMutation({
-    mutationFn: () => {
-      if (!user?.session_id) throw new Error("No active session");
-      return createInterview(user.session_id);
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["interview", "session"], data);
-    },
-  });
-
-  const currentSession = queryClient.getQueryData<CreateInterviewResponse>([
+  const currentSession = queryClient.getQueryData<InterviewSessionResponse>([
     "interview",
     "session",
   ]);
-  console.log(currentSession, "current Se");
+
+  console.log(currentSession, "Current Session");
 
   const {
     mutateAsync: sendProcessReport,
@@ -82,7 +38,7 @@ export function useInterview() {
     const interval = setInterval(async () => {
       try {
         const processes = await window.api.getAllProcesses();
-        console.log(processes, "process");
+        // console.log(processes, "process");
 
         const combinedRaw: Process[] = [...processes.data];
         const payloadProcess: PayloadProcess[] = [];
@@ -132,7 +88,6 @@ export function useInterview() {
           });
 
         await sendProcessReport({ processes: payloadProcess });
-        // console.log(uniqueProcesses, "uNi");
       } catch (err) {
         console.error("Process report failed:", err);
       }
@@ -142,12 +97,6 @@ export function useInterview() {
   };
 
   return {
-    startInterview,
-    isStarting,
-    startError,
-    interviewSession: interviewSession ?? currentSession ?? null,
-    reset,
-
     sendProcessReport,
     isSendingReport,
     reportError,

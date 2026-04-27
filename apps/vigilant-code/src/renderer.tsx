@@ -13,28 +13,43 @@ import AppLayout, {
 } from "./components/layout/app-layout";
 import OnboardingForm from "./app/pages/auth/onboarding";
 import Dashboard from "./app/pages/dashboard/dashboard";
+import { Profile } from "./app/pages/auth/profile";
+import { useDeepLink } from "./hooks/use-link";
+import DeepLinkHandler from "./app/pages/auth/link-handler";
+import DeepLinkTester from "./app/pages/auth/test-link";
+
+const AppRoutes = () => {
+  useDeepLink();
+
+  return (
+    <Routes>
+      <Route Component={AppLayout}>
+        <Route Component={AuthLayout}>
+          <Route path="/" Component={DeepLinkTester} />
+        </Route>
+        <Route path="/linkstart" Component={DeepLinkHandler} />
+        <Route Component={ProtectedLayout}>
+          <Route path="/onboarding" Component={OnboardingForm} />
+          <Route path="/dashboard" Component={Dashboard} />
+          <Route path="/profile" Component={Profile} />
+          <Route Component={EnvironmentLayout}>
+            <Route path="/interview/:id" Component={WaitingSetup} />
+            <Route path="/code/:id" Component={Sandbox} />
+            <Route path="/editor/:language" Component={CodeEditor} />
+          </Route>
+        </Route>
+      </Route>
+    </Routes>
+  );
+};
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 const queryClient = new QueryClient({});
+
 root.render(
   <QueryClientProvider client={queryClient}>
     <HashRouter>
-      <Routes>
-        <Route Component={AppLayout}>
-          <Route Component={AuthLayout}>
-            <Route path="/" Component={LoginPage} />
-          </Route>
-          <Route Component={ProtectedLayout}>
-            <Route path="/onboarding" Component={OnboardingForm} />
-            <Route path="/dashboard" Component={Dashboard} />
-            <Route Component={EnvironmentLayout}>
-              <Route path="/wait" Component={WaitingSetup} />
-              <Route path="/code/:id" Component={Sandbox} />
-              <Route path="/editor/:language" Component={CodeEditor} />
-            </Route>
-          </Route>
-        </Route>
-      </Routes>
+      <AppRoutes />
     </HashRouter>
   </QueryClientProvider>,
 );

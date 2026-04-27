@@ -4,12 +4,13 @@ import Credentials from "./creds";
 import Success from "./success";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function LoginPage() {
+export default function AutoLogin() {
   const { login, isLoggingIn, loginError, resetLogin, setupPoller, setSessionMeta, user } =
     useAuth();
   const [step, setStep] = useState<"workspace" | "credentials" | "success" | "waiting">(
     "workspace",
   );
+
   const [workspace, setWorkspace] = useState("");
   const [username, setUsername] = useState("");
 

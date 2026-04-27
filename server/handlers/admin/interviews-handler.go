@@ -22,6 +22,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	var req struct {
 		CandidateID       string    `json:"candidate_id"       binding:"required"`
 		ApplicationID     string    `json:"application_id"`
+		PositionID        string    `json:"position_id"`
 		InterviewerID     string    `json:"interviewer_id"     binding:"required"`
 		Position          string    `json:"position"           binding:"required"`
 		InterviewType     string    `json:"interview_type"     binding:"required"`
@@ -77,6 +78,8 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		return
 	}
 
+	var finalApplicationID interface{}
+
 	if req.ApplicationID != "" {
 		var appExists bool
 		err = h.DB.QueryRowContext(ctx, `
@@ -90,10 +93,26 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
 		}
-		if !appExists {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "application not found or does not belong to candidate"})
+		if appExists {
+			finalApplicationID = req.ApplicationID
+		}
+	}
+
+	if finalApplicationID == nil && req.PositionID != "" {
+		var newAppID string
+		err = h.DB.QueryRowContext(ctx, `
+			INSERT INTO job_applications (candidate_id, position_id, cover_letter)
+			VALUES ($1, $2, '')
+			ON CONFLICT (candidate_id, position_id) DO UPDATE
+				SET updated_at = NOW()
+			RETURNING id
+		`, req.CandidateID, req.PositionID).Scan(&newAppID)
+		if err != nil {
+			log.Printf("CreateInterviewSession: failed to auto-create application: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create application"})
 			return
 		}
+		finalApplicationID = newAppID
 	}
 
 	sessionID := uuid.New().String()
@@ -106,11 +125,6 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build metadata"})
 		return
-	}
-
-	var applicationID interface{}
-	if req.ApplicationID != "" {
-		applicationID = req.ApplicationID
 	}
 
 	var id int64
@@ -127,7 +141,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	`,
 		sessionID,
 		req.CandidateID,
-		applicationID,
+		finalApplicationID,
 		req.InterviewerID,
 		req.Position,
 		req.InterviewType,
@@ -150,13 +164,18 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		return
 	}
 
+	resolvedAppID := ""
+	if finalApplicationID != nil {
+		resolvedAppID = finalApplicationID.(string)
+	}
+
 	log.Printf("Interview session created. ID: %d, candidate: %s, interviewer: %s", id, candidateEmail, interviewerEmail)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"id":                 id,
 		"session_id":         sessionID,
 		"candidate_id":       req.CandidateID,
-		"application_id":     req.ApplicationID,
+		"application_id":     resolvedAppID,
 		"interviewer_id":     req.InterviewerID,
 		"interviewer_email":  interviewerEmail,
 		"candidate_email":    candidateEmail,

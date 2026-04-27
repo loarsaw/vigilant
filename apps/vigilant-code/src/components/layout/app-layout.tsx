@@ -20,6 +20,7 @@ export default function AppLayout() {
       startReporting();
     }
   }, [isAuthenticated]);
+
   if (isLoadingUser) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
@@ -67,7 +68,7 @@ export function EnvironmentLayout() {
   useSSE<SessionConfig>({
     type: "session_config",
     handler: (payload) => {
-      console.log(payload, "pay");
+      // console.log(payload, "pay");
       if (payload.type == "dsa") {
         router(`/editor/${payload.language}`);
       } else {

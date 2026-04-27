@@ -1,21 +1,16 @@
 import { Button } from "@/components/ui/button";
-import { useSSE } from "@/hooks/use-sse";
+import { useInterviewSession } from "@/hooks/use-interview-session";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-interface SessionConfig {
-  framework: string;
-  level: string;
-  language: string;
-  type: "dsa" | "framework";
-}
+import { useParams } from "react-router-dom";
 
 export default function WaitingSetup() {
+  const { id } = useParams();
+  const { sessionId, isLoading } = useInterviewSession(id);
   const [dots, setDots] = useState(".");
   const queryClient = useQueryClient();
-
+  console.log(sessionId, "sessionID");
   const sessionMeta = queryClient.getQueryData<{
     workspace: string;
     setupPath: string;
@@ -24,7 +19,6 @@ export default function WaitingSetup() {
 
   const workspace = sessionMeta?.workspace ?? "";
   const username = authUser?.full_name ?? "";
-  const [received, setReceived] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,20 +27,6 @@ export default function WaitingSetup() {
 
     return () => clearInterval(interval);
   }, []);
-
-  // useSSE<SessionConfig>({
-  //   type: "session_config",
-  //   handler: (payload) => {
-  //     console.log(payload, "pay");
-  //     if (payload.type == "dsa") {
-  //       setReceived(true);
-  //       router(`/editor/${payload.language}`);
-  //     } else {
-  //       setReceived(true);
-  //       router(`/code/${payload.framework.toLowerCase()}`);
-  //     }
-  //   },
-  // });
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-hidden">

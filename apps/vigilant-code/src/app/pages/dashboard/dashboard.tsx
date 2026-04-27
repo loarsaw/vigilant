@@ -30,11 +30,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { Header } from "@/components/header";
 
 export default function Dashboard() {
   const [applyingToId, setApplyingToId] = useState<string | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
-
+  const { isAuthenticated } = useAuth();
+  // console.log(isAuthenticated, "isAuthh");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9;
 
@@ -102,26 +105,7 @@ export default function Dashboard() {
 
       <div className="relative z-10 w-full">
         {/* Header */}
-        <div className="border-b border-slate-700/50 bg-slate-950/30 backdrop-blur-sm sticky top-0 z-20">
-          <div className="max-w-6xl mx-auto px-4 py-6">
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbLink href="/" className="text-slate-300 hover:text-white">
-                    Home
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="text-slate-600" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage className="text-white flex items-center gap-2">
-                    <Briefcase className="w-4 h-4" />
-                    Job Openings
-                  </BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </div>
+        <Header />
 
         {/* Main Content */}
         <div className="max-w-6xl mx-auto px-4 py-12">

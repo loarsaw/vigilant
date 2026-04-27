@@ -16,6 +16,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useInterview } from "@/hooks/use-interview";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
+import { useHiringPositions } from "@/hooks/use-hiring";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -42,9 +43,8 @@ export function ScheduleInterviewModal({
   const [selectedApplicationId, setSelectedApplicationId] = useState("");
   const [notes, setNotes] = useState("");
   const [interviewerId, setInterviewerId] = useState("");
-  // Disabled Search
   const [interviewerSearch, setInterviewerSearch] = useState("");
-
+  const { positions, isLoadingPositions } = useHiringPositions();
   const { scheduleInterviewAsync, isScheduling, interviewers, isLoadingInterviewers } =
     useInterview(candidateId);
 
@@ -53,23 +53,19 @@ export function ScheduleInterviewModal({
     return i.full_name.toLowerCase().includes(q) || i.email.toLowerCase().includes(q);
   });
 
-  // Fetch candidate applications
-  const { data: applicationsData, isLoading } = useQuery({
-    queryKey: ["candidate-applications", candidateId],
-    queryFn: async () => {
-      const response = await apiClient.get(`/candidates/${candidateId}/applications`);
-      return response.data;
-    },
-    enabled: isOpen && !!candidateId,
-  });
+  // const { data: applicationsData, isLoading } = useQuery({
+  //   queryKey: ["candidate-applications", candidateId],
+  //   queryFn: async () => {
+  //     const response = await apiClient.get(`/candidates/${candidateId}/applications`);
+  //     return response.data;
+  //   },
+  //   enabled: isOpen && !!candidateId,
+  // });
 
-  const applicationOptions = applicationsData?.data ?? [];
+  // const applicationOptions = applicationsData?.data ?? [];
 
-  const selectedApplication = applicationOptions.find(
-    (a: any) => a.application_id === selectedApplicationId,
-  );
+  const selectedApplication = positions.find((p) => p.id === selectedApplicationId);
 
-  // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
       setSelectedDate(new Date());
@@ -104,7 +100,7 @@ export function ScheduleInterviewModal({
     try {
       await scheduleInterviewAsync({
         candidate_id: candidateId,
-        application_id: selectedApplicationId,
+        position_id: selectedApplicationId,
         interviewer_id: interviewerId,
         position: selectedApplication?.position_title ?? "",
         interview_type: interviewType,
@@ -113,6 +109,7 @@ export function ScheduleInterviewModal({
         interview_url: interviewURL,
         timezone,
       });
+
       onClose();
     } catch (err: any) {
       alert(err?.message ?? "Failed to schedule interview");
@@ -146,21 +143,22 @@ export function ScheduleInterviewModal({
               <Select
                 value={selectedApplicationId}
                 onValueChange={setSelectedApplicationId}
-                disabled={isLoading}
+                disabled={isLoadingPositions}
               >
                 <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
-                  <SelectValue placeholder={isLoading ? "Loading..." : "Select position"} />
+                  <SelectValue
+                    placeholder={isLoadingPositions ? "Loading..." : "Select position"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {applicationOptions.map((app: any) => (
-                    <SelectItem key={app.application_id} value={app.application_id}>
-                      {app.position_title}
+                  {positions.map((pos) => (
+                    <SelectItem key={pos.id} value={pos.id}>
+                      {pos.position_title}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-gray-300">Time</Label>

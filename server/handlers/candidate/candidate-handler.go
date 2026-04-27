@@ -30,40 +30,183 @@ func (h *Handlers) HealthCheck(c *gin.Context) {
 	})
 }
 
-func (h *Handlers) GetActiveInterview(c *gin.Context) {
-	candidateID := c.Param("candidate_id")
+func (h *Handlers) GetInterviewSessionID(c *gin.Context) {
+	interviewID := c.Param("interview_id")
+	if interviewID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "interview_id is required"})
+		return
+	}
 
-	var session models.InterviewSession
-	var position sql.NullString
-
-	query := `
-        SELECT id, session_id, status, position
-        FROM interview_sessions
-        WHERE candidate_id = $1 AND status IN ('scheduled', 'in_progress')
-        ORDER BY started_at DESC LIMIT 1`
-
-	err := h.DB.QueryRow(query, candidateID).Scan(
-		&session.ID,
-		&session.SessionID,
-		&session.Status,
-		&position,
-	)
+	var sessionID string
+	err := h.DB.QueryRow(`
+		SELECT session_id
+		FROM interview_sessions
+		WHERE id = $1
+	`, interviewID).Scan(&sessionID)
 
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no active interview found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "interview not found"})
 		return
 	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		log.Printf("Error fetching session_id for interview %s: %v", interviewID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve session"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":         session.ID,
-		"session_id": session.SessionID,
-		"status":     session.Status,
-		"position":   position.String,
+		"interview_id": interviewID,
+		"session_id":   sessionID,
 	})
 }
+
+// func (h *Handlers) GetTodayInterviews(c *gin.Context) {
+// 	candidateIDVal, exists := c.Get("candidate_id")
+// 	if !exists {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+// 		return
+// 	}
+// 	candidateID, ok := candidateIDVal.(string)
+// 	if !ok || candidateID == "" {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid candidate id"})
+// 		return
+// 	}
+
+// 	now := time.Now().UTC()
+// 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+// 	endOfDay := startOfDay.Add(24 * time.Hour)
+
+// 	query := `
+// 		SELECT
+// 			hp.id              AS position_id,
+// 			hp.position_title,
+// 			hp.department,
+// 			hp.location,
+
+// 			ja.id              AS application_id,
+// 			ja.status          AS application_status,
+// 			ja.applied_at,
+
+// 			is2.session_id,
+// 			is2.scheduled_at,
+// 			is2.interview_url,
+// 			is2.status         AS interview_status
+// 		FROM interview_sessions is2
+// 		JOIN job_applications ja
+// 			ON ja.id = is2.application_id
+// 		JOIN hiring_positions hp
+// 			ON hp.id = ja.position_id
+// 		WHERE ja.candidate_id = $1
+// 		  AND is2.scheduled_at >= $2
+// 		  AND is2.scheduled_at <  $3
+// 		ORDER BY is2.scheduled_at ASC
+// 	`
+
+// 	rows, err := h.DB.Query(query, candidateID, startOfDay, endOfDay)
+// 	if err != nil {
+// 		log.Printf("Error querying today's interviews: %v", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve interviews"})
+// 		return
+// 	}
+// 	defer rows.Close()
+
+// 	type TodayInterview struct {
+// 		PositionID        string    `json:"position_id"`
+// 		PositionTitle     string    `json:"position_title"`
+// 		Department        string    `json:"department"`
+// 		Location          string    `json:"location"`
+// 		ApplicationID     string    `json:"application_id"`
+// 		ApplicationStatus string    `json:"application_status"`
+// 		AppliedAt         time.Time `json:"applied_at"`
+// 		SessionID         string    `json:"session_id"`
+// 		ScheduledAt       time.Time `json:"scheduled_at"`
+// 		InterviewURL      string    `json:"interview_url"`
+// 		InterviewStatus   string    `json:"interview_status"`
+// 	}
+
+// 	interviews := []TodayInterview{}
+
+// 	for rows.Next() {
+// 		var item TodayInterview
+// 		var department, location sql.NullString
+// 		var interviewURL sql.NullString
+
+// 		if err := rows.Scan(
+// 			&item.PositionID,
+// 			&item.PositionTitle,
+// 			&department,
+// 			&location,
+// 			&item.ApplicationID,
+// 			&item.ApplicationStatus,
+// 			&item.AppliedAt,
+// 			&item.SessionID,
+// 			&item.ScheduledAt,
+// 			&interviewURL,
+// 			&item.InterviewStatus,
+// 		); err != nil {
+// 			log.Printf("Error scanning today's interview row: %v", err)
+// 			continue
+// 		}
+
+// 		if department.Valid {
+// 			item.Department = department.String
+// 		}
+// 		if location.Valid {
+// 			item.Location = location.String
+// 		}
+// 		if interviewURL.Valid {
+// 			item.InterviewURL = interviewURL.String
+// 		}
+
+// 		interviews = append(interviews, item)
+// 	}
+
+// 	if err := rows.Err(); err != nil {
+// 		log.Printf("Error iterating today's interviews: %v", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve interviews"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"data":  interviews,
+// 		"total": len(interviews),
+// 		"date":  startOfDay.Format("2006-01-02"),
+// 	})
+// }
+
+// func (h *Handlers) GetActiveInterview(c *gin.Context) {
+// 	candidateID := c.Param("candidate_id")
+
+// 	var session models.InterviewSession
+// 	var position sql.NullString
+
+// 	query := `
+//         SELECT id, session_id, status, position
+//         FROM interview_sessions
+//         WHERE candidate_id = $1 AND status IN ('scheduled', 'in_progress')
+//         ORDER BY started_at DESC LIMIT 1`
+
+// 	err := h.DB.QueryRow(query, candidateID).Scan(
+// 		&session.ID,
+// 		&session.SessionID,
+// 		&session.Status,
+// 		&position,
+// 	)
+
+// 	if err == sql.ErrNoRows {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "no active interview found"})
+// 		return
+// 	} else if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"id":         session.ID,
+// 		"session_id": session.SessionID,
+// 		"status":     session.Status,
+// 		"position":   position.String,
+// 	})
+// }
 
 func (h *Handlers) CreateProcessReport(c *gin.Context) {
 	var report models.ProcessReport
@@ -466,12 +609,10 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			hp.status, hp.created_at, hp.updated_at,
 			hp.created_by, hp.updated_by, hp.is_active,
 
-			-- application info
 			ja.id           AS application_id,
 			ja.status       AS application_status,
 			ja.applied_at   AS applied_at,
 
-			-- interview session info (only if exists)
 			is2.session_id     AS interview_session_id,
 			is2.scheduled_at   AS interview_scheduled_at,
 			is2.interview_url  AS interview_url,
@@ -692,4 +833,91 @@ func (h *Handlers) JoinInterviewSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "joined session", "session_id": sessionID})
+}
+
+func (h *Handlers) UpdateMe(c *gin.Context) {
+	candidateIDVal, exists := c.Get("candidate_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
+	candidateID := candidateIDVal.(string)
+
+	var req struct {
+		FullName        *string `json:"full_name"`
+		GithubUrl       *string `json:"github_url"`
+		PhoneNumber     *string `json:"phone_number"`
+		ResumeUrl       *string `json:"resume_url"`
+		Skills          *string `json:"skills"`
+		ExperienceYears *int    `json:"experience_years"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	updates := []string{}
+	args := []interface{}{}
+	argID := 1
+
+	if req.FullName != nil {
+		updates = append(updates, fmt.Sprintf("full_name = $%d", argID))
+		args = append(args, *req.FullName)
+		argID++
+	}
+	if req.GithubUrl != nil {
+		updates = append(updates, fmt.Sprintf("github_url = $%d", argID))
+		args = append(args, *req.GithubUrl)
+		argID++
+	}
+	if req.PhoneNumber != nil {
+		updates = append(updates, fmt.Sprintf("phone_number = $%d", argID))
+		args = append(args, *req.PhoneNumber)
+		argID++
+	}
+	if req.ResumeUrl != nil {
+		updates = append(updates, fmt.Sprintf("resume_url = $%d", argID))
+		args = append(args, *req.ResumeUrl)
+		argID++
+	}
+	if req.Skills != nil {
+		updates = append(updates, fmt.Sprintf("skills = $%d", argID))
+		args = append(args, *req.Skills)
+		argID++
+	}
+	if req.ExperienceYears != nil {
+		updates = append(updates, fmt.Sprintf("experience_years = $%d", argID))
+		args = append(args, *req.ExperienceYears)
+		argID++
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no fields to update"})
+		return
+	}
+
+	updates = append(updates, "updated_at = NOW()")
+	args = append(args, candidateID)
+
+	query := fmt.Sprintf(
+		"UPDATE candidates SET %s WHERE id = $%d::uuid AND is_active = true",
+		strings.Join(updates, ", "),
+		argID,
+	)
+
+	result, err := h.DB.Exec(query, args...)
+	if err != nil {
+		log.Printf("Error updating candidate profile: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update profile"})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }

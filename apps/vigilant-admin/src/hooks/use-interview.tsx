@@ -46,7 +46,6 @@ const endInterviewSession = async (sessionId: string): Promise<StartEndInterview
   return response.data;
 };
 
-// New fetch function for session status
 const fetchInterviewSessionStatus = async (
   sessionId: string,
 ): Promise<InterviewSessionStatusResponse> => {
@@ -80,7 +79,6 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     staleTime: 1000 * 60 * 10,
   });
 
-  // New query for session status
   const {
     data: sessionStatusData,
     isLoading: isLoadingSessionStatus,
@@ -180,7 +178,6 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     startSessionError: startSessionMutation.error?.message ?? null,
     endSessionError: endSessionMutation.error?.message ?? null,
 
-    // session status fields
     sessionStatus: sessionStatusData?.status ?? null,
     isLoadingSessionStatus,
     isFetchingSessionStatus,
