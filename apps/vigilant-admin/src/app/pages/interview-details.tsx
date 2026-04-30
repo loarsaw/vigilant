@@ -12,10 +12,11 @@ import {
   Zap,
   Code2,
   Layers,
-  Terminal,
   Play,
   Square,
   AlertTriangle,
+  EqualApproximatelyIcon,
+  JoystickIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,9 +41,7 @@ import { useInterview } from "@/hooks/use-interview";
 import { pushToCandidate } from "@/lib/axios";
 import { CandidateLevel, Framework } from "@/types/types";
 import ScoreEvaluator from "@/components/evaluator";
-import { UpcomingInterview } from "@/components/upcoming-interview";
 import { useInterviewSessionDetails } from "@/hooks/use-interview-history";
-import { useProcessReports } from "@/hooks/use-process-report";
 import { SystemDiagnostics } from "./process-report";
 
 type SessionType = "dsa" | "framework" | "";
@@ -51,38 +50,18 @@ type DSALanguage = "C" | "C++" | "Python" | "Java";
 export function InterviewDetail() {
   const { candidateId, sessionId } = useParams();
   const navigate = useNavigate();
-
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   const {
     startSessionAsync,
     endSessionAsync,
     isStartingSession,
     isEndingSession,
-    startSessionError,
-    endSessionError,
-
+    sessions,
     sessionStatus,
   } = useInterview(candidateId, sessionId);
 
-  const {
-    session,
-    feedback,
-    hasFeedback,
-    isCompleted,
-    overallScore,
-    actualDuration,
-    isLoading: interviewHistoryLoading,
-  } = useInterviewSessionDetails(sessionId);
-
-  console.log(
-    session,
-    feedback,
-    hasFeedback,
-    isCompleted,
-    overallScore,
-    actualDuration,
-    "alslalksl",
-  );
+  // const { session } = useInterviewSessionDetails(sessionId);
+  // console.log(session, "s");
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
 
@@ -92,7 +71,8 @@ export function InterviewDetail() {
   const [framework, setFramework] = useState<Framework | "">("");
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatched, setDispatched] = useState(false);
-
+  const [upcoming, setUpcoming] = useState(false);
+  const [interviewurl, setInterviewUrl] = useState("");
   const [interviewStatus, setInterviewStatus] = useState<string>("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -109,6 +89,33 @@ export function InterviewDetail() {
       setInterviewStatus(sessionStatus);
     }
   }, [sessionStatus]);
+
+  useEffect(() => {
+    // if (session && session?.interview_url && session?.scheduled_at) {
+    //   // const eventDate = new Date(session.scheduled_at);
+    //   // const now = new Date();
+    //   // const bufferTime = new Date(eventDate.getTime());
+    //   // bufferTime.setMinutes(bufferTime.getMinutes() - 30);
+    //   // if (now >= bufferTime && now <= eventDate) {
+    //   //   setUpcoming(true);
+    //   // } else if (now < bufferTime) {
+    //   //   setUpcoming(false);
+    //   // } else {
+    //   //   setUpcoming(false);
+    //   // }
+    // }
+
+    const nextInterview = sessions
+      .filter((session) => session.status === "scheduled" && session.is_upcoming)
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
+
+    console.log(nextInterview, "nextInterview");
+    if (nextInterview && nextInterview?.is_upcoming) {
+      setUpcoming(nextInterview.is_upcoming);
+      setInterviewUrl(nextInterview.interview_url);
+    }
+  }, [sessions]);
+
   const handleSessionTypeChange = (value: SessionType) => {
     setSessionType(value);
     setDispatched(false);
@@ -193,6 +200,7 @@ export function InterviewDetail() {
     ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
 
+  console.log(upcoming, "as");
   return (
     <div className="space-y-6 p-5">
       {/* End Interview Confirmation Modal */}
@@ -280,19 +288,8 @@ export function InterviewDetail() {
             <>
               <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 px-3 py-1.5 text-sm">
                 <span className="h-2 w-2 rounded-full bg-cyan-400 mr-2 animate-pulse inline-block" />
-                In progress
+                Scheduled
               </Badge>
-              <Button
-                onClick={() => {
-                  setSessionError(null);
-                  setShowEndModal(true);
-                }}
-                className="bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-600/30 gap-2"
-                variant="outline"
-              >
-                <Square className="h-4 w-4" />
-                End interview
-              </Button>
             </>
           ) : (
             <Button
@@ -421,7 +418,27 @@ export function InterviewDetail() {
         </div>
 
         <div className="space-y-6">
-          <UpcomingInterview candidateId={candidateId!} candidateName={candidateData.full_name} />
+          <Card className="bg-[#1a1f2e] border-gray-800">
+            <CardHeader>
+              <CardTitle className="text-white">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]">
+                <EqualApproximatelyIcon className="h-4 w-4 mr-2" />
+                Send Login Email
+              </Button>
+
+              <Button
+                onClick={() => {
+                  window.api.openExternal(interviewurl);
+                }}
+                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+              >
+                <JoystickIcon className="h-4 w-4 mr-2" />
+                Join Interview
+              </Button>
+            </CardContent>
+          </Card>
 
           <Card className="border-border/50 bg-card">
             <CardHeader>

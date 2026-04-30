@@ -7,15 +7,23 @@ import (
 )
 
 const (
-	TemplateCandidateCredentials = "candidate_credentials"
-	TemplateInterviewInvite      = "interview_invite"
-	TemplateInterviewReminder    = "interview_reminder"
-	TemplateCustomMessage        = "custom_message"
+	TemplateCandidateCredentials    = "candidate_credentials"
+	TemplateInterviewInvite         = "interview_invite"
+	TemplateInterviewReminder       = "interview_reminder"
+	TemplateInterviewerRemainder    = "interviewer_remainder"
+	TemplateInterviewerNotification = "interviewer_notification"
+	TemplateCustomMessage           = "custom_message"
+	TemplateLoginLink               = "login_link"
 )
 
 type CustomMessageData struct {
 	CandidateName string
 	Message       string
+}
+
+type LoginLinkData struct {
+	CandidateName string
+	LoginURL      string
 }
 
 type CandidateCredentialsData struct {
@@ -43,6 +51,12 @@ type InterviewReminderData struct {
 	MeetLink      string
 }
 
+type InterviewerNotificationData struct {
+	InterviewerName string
+	CandidateName   string
+	InterviewURL    string
+}
+
 var templates = map[string]*template.Template{}
 
 func init() {
@@ -50,6 +64,9 @@ func init() {
 	register(TemplateInterviewInvite, interviewInviteText)
 	register(TemplateInterviewReminder, interviewReminderText)
 	register(TemplateCustomMessage, customMessageText)
+	register(TemplateLoginLink, interviewStartingText)
+	register(TemplateInterviewerRemainder, interviewerNotificationText)
+	register(TemplateInterviewerNotification, interviewerNotificationText)
 }
 
 func register(name, html string) {
@@ -115,3 +132,31 @@ Join here: {{.MeetLink}}
 var customMessageText = `Hi {{.CandidateName}},
 
 {{.Message}}`
+
+var interviewStartingText = `Your Interview is Starting
+
+Hi {{.CandidateName}},
+
+Your interview is about to begin. Click the link below to log in and join:
+
+  {{.LoginURL}}
+
+If you have any issues joining, please contact your interviewer directly.
+
+Good luck!
+— The Vigilant Team`
+
+var interviewerNotificationText = `Interview Session Started
+
+Hi {{.InterviewerName}},
+
+An interview session with {{.CandidateName}} has just started.
+
+Click the link below to access the interview dashboard:
+
+  {{.InterviewURL}}
+
+You can monitor the session, view process logs, and provide feedback from the dashboard.
+
+Best regards,
+— The Vigilant Team`

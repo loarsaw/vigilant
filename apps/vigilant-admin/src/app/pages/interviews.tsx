@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -38,7 +38,7 @@ const getStatusStyle = (s: string) => {
 
 export function InterviewList() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("scheduled");
 
   const {
     sessions,
@@ -56,6 +56,10 @@ export function InterviewList() {
     totalPages: sessionPagination.totalPages,
     page: sessionPagination.page,
   };
+
+  useEffect(() => {
+    setSessionStatus("scheduled");
+  }, []);
 
   const handleStatusChange = (val: string) => {
     setStatusFilter(val);
