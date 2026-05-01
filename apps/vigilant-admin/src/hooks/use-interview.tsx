@@ -10,6 +10,8 @@ import {
   InterviewSessionsResponse,
   InterviewSessionStatusResponse,
   StartEndInterviewResponse,
+  SendEmailPayload,
+  SendEmailResponse,
 } from "./types";
 
 const fetchInterviewSessions = async (
@@ -50,6 +52,14 @@ const fetchInterviewSessionStatus = async (
   sessionId: string,
 ): Promise<InterviewSessionStatusResponse> => {
   const response = await apiClient.get(`/interview-sessions/${sessionId}/status`);
+  return response.data;
+};
+
+const sendInterviewEmail = async (
+  sessionId: string,
+  payload: SendEmailPayload,
+): Promise<SendEmailResponse> => {
+  const response = await apiClient.post(`/interview-session/${sessionId}/send-email`, payload);
   return response.data;
 };
 
@@ -134,6 +144,14 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     },
   });
 
+  const sendEmailMutation = useMutation({
+    mutationFn: ({ sessionId, payload }: { sessionId: string; payload: SendEmailPayload }) =>
+      sendInterviewEmail(sessionId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interview-sessions"] });
+    },
+  });
+
   return {
     sessions: sessionData?.data ?? [],
     totalSessions: sessionData?.total ?? 0,
@@ -157,6 +175,7 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     isSubmittingFeedback: feedbackMutation.isPending,
     isStartingSession: startSessionMutation.isPending,
     isEndingSession: endSessionMutation.isPending,
+    isSendingEmail: sendEmailMutation.isPending,
 
     scheduleInterview: scheduleMutation.mutate,
     scheduleInterviewAsync: scheduleMutation.mutateAsync,
@@ -170,6 +189,9 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     endSession: endSessionMutation.mutate,
     endSessionAsync: endSessionMutation.mutateAsync,
 
+    sendEmail: sendEmailMutation.mutate,
+    sendEmailAsync: sendEmailMutation.mutateAsync,
+
     interviewers: interviewersData?.interviewers ?? [],
     isLoadingInterviewers,
 
@@ -177,6 +199,7 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     feedbackError: feedbackMutation.error?.message ?? null,
     startSessionError: startSessionMutation.error?.message ?? null,
     endSessionError: endSessionMutation.error?.message ?? null,
+    sendEmailError: sendEmailMutation.error?.message ?? null,
 
     sessionStatus: sessionStatusData?.status ?? null,
     isLoadingSessionStatus,

@@ -41,7 +41,6 @@ import { useInterview } from "@/hooks/use-interview";
 import { pushToCandidate } from "@/lib/axios";
 import { CandidateLevel, Framework } from "@/types/types";
 import ScoreEvaluator from "@/components/evaluator";
-import { useInterviewSessionDetails } from "@/hooks/use-interview-history";
 import { SystemDiagnostics } from "./process-report";
 
 type SessionType = "dsa" | "framework" | "";
@@ -58,6 +57,7 @@ export function InterviewDetail() {
     isEndingSession,
     sessions,
     sessionStatus,
+    sendEmailAsync,
   } = useInterview(candidateId, sessionId);
 
   // const { session } = useInterviewSessionDetails(sessionId);
@@ -72,7 +72,7 @@ export function InterviewDetail() {
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [upcoming, setUpcoming] = useState(false);
-  const [interviewurl, setInterviewUrl] = useState("");
+  const [interviewurl, setInterviewUrl] = useState(null);
   const [interviewStatus, setInterviewStatus] = useState<string>("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -90,6 +90,15 @@ export function InterviewDetail() {
     }
   }, [sessionStatus]);
 
+  const handleSendLoginLink = async () => {
+    try {
+      await sendEmailAsync({
+        sessionId,
+        payload: { email_type: "start" },
+      });
+    } catch (error) {}
+  };
+
   useEffect(() => {
     // if (session && session?.interview_url && session?.scheduled_at) {
     //   // const eventDate = new Date(session.scheduled_at);
@@ -104,6 +113,8 @@ export function InterviewDetail() {
     //   //   setUpcoming(false);
     //   // }
     // }
+
+    console.log(sessions, "sessions");
 
     const nextInterview = sessions
       .filter((session) => session.status === "scheduled" && session.is_upcoming)
@@ -423,19 +434,27 @@ export function InterviewDetail() {
               <CardTitle className="text-white">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]">
+              <Button
+                onClick={() => {
+                  handleSendLoginLink();
+                }}
+                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+              >
                 <EqualApproximatelyIcon className="h-4 w-4 mr-2" />
                 Send Login Email
               </Button>
 
               <Button
+                disabled={!interviewurl}
                 onClick={() => {
-                  window.api.openExternal(interviewurl);
+                  if (interviewurl) {
+                    window.api?.openExternal(interviewurl);
+                  }
                 }}
-                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <JoystickIcon className="h-4 w-4 mr-2" />
-                Join Interview
+                {interviewurl ? "Join Interview" : "Expired"}
               </Button>
             </CardContent>
           </Card>

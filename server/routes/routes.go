@@ -148,7 +148,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		interviewGroup.PATCH("/interview-session/:session_id/start", h.StartInterviewSession)
 		interviewGroup.PATCH("/interview-session/:session_id/end", h.EndInterviewSession)
 		interviewGroup.GET("/process/:session_id", h.GetProcessReports)
-
+		interviewGroup.POST("/interview-session/:session_id/send-email", h.SendLoginLink)
 	}
 
 	// Judge endpoints

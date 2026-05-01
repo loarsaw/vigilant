@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 	"vigilant/email"
-
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
@@ -882,6 +882,130 @@ func (h *AdminHandlers) CreateInterviewFeedback(c *gin.Context) {
 	})
 }
 
+func (h *AdminHandlers) sendInterviewSessionEmails(ctx context.Context, sessionID string, emailType string) {
+	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
+	if err != nil {
+		log.Printf("sendInterviewSessionEmails: failed to decode encryption key: %v", err)
+		return
+	}
+
+	sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
+	if err != nil {
+		log.Printf("sendInterviewSessionEmails: failed to load SES config: %v", err)
+		return
+	}
+
+	var candidateEmail, candidateName, interviewerEmail, interviewerName string
+	err = h.DB.QueryRowContext(ctx, `
+		SELECT 
+			c.email, 
+			COALESCE(c.full_name, ''),
+			COALESCE(a.email, ''),
+			COALESCE(a.full_name, '')
+		FROM interview_sessions iss
+		JOIN candidates c ON c.id = iss.candidate_id
+		LEFT JOIN administrators a ON a.id = iss.interviewer_id
+		WHERE iss.session_id = $1
+	`, sessionID).Scan(&candidateEmail, &candidateName, &interviewerEmail, &interviewerName)
+
+	if err != nil {
+		log.Printf("sendInterviewSessionEmails: failed to fetch candidate/interviewer: %v", err)
+		return
+	}
+
+	var candidateSubject, candidateTriggeredBy string
+	var candidateTemplateName string
+	var candidateData interface{}
+
+	switch emailType {
+	case "start":
+		candidateSubject = "Your interview is starting now"
+		candidateTriggeredBy = "start_interview_session"
+		candidateTemplateName = email.TemplateLoginLink
+		candidateData = email.LoginLinkData{
+			CandidateName: candidateName,
+			LoginURL:      sesCfg.SESLoginURL,
+		}
+	default:
+		log.Printf("sendInterviewSessionEmails: unknown email type: %s", emailType)
+		return
+	}
+
+	candidateBody, err := email.Render(candidateTemplateName, candidateData)
+	if err != nil {
+		log.Printf("sendInterviewSessionEmails: failed to render candidate email: %v", err)
+		return
+	}
+
+	_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
+		ToEmail:     candidateEmail,
+		ToName:      candidateName,
+		FromEmail:   sesCfg.SESFromEmail,
+		Subject:     candidateSubject,
+		BodyHTML:    candidateBody,
+		Template:    candidateTemplateName,
+		EntityType:  "interview_session",
+		EntityID:    sessionID,
+		TriggeredBy: candidateTriggeredBy,
+		Priority:    email.PriorityHigh,
+	})
+	if err != nil {
+		log.Printf("sendInterviewSessionEmails: failed to enqueue candidate email: %v", err)
+	}
+
+	// if interviewerEmail != "" {
+	// 	interviewerBody, err := email.Render(email.TemplateInterviewerNotification, email.InterviewerNotificationData{
+	// 		InterviewerName: interviewerName,
+	// 		CandidateName:   candidateName,
+	// 		InterviewURL:    sesCfg.SESLoginURL,
+	// 	})
+	// 	if err != nil {
+	// 		log.Printf("sendInterviewSessionEmails: failed to render interviewer email: %v", err)
+	// 	} else {
+	// 		_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
+	// 			ToEmail:     interviewerEmail,
+	// 			ToName:      interviewerName,
+	// 			FromEmail:   sesCfg.SESFromEmail,
+	// 			Subject:     "Interview session started - " + candidateName,
+	// 			BodyHTML:    interviewerBody,
+	// 			Template:    email.TemplateInterviewerNotification,
+	// 			EntityType:  "interview_session",
+	// 			EntityID:    sessionID,
+	// 			TriggeredBy: "start_interview_session_interviewer",
+	// 			Priority:    email.PriorityHigh,
+	// 		})
+	// 		if err != nil {
+	// 			log.Printf("sendInterviewSessionEmails: failed to enqueue interviewer email: %v", err)
+	// 		}
+	// 	}
+	// }
+}
+
+func (h *AdminHandlers) SendLoginLink(c *gin.Context) {
+	sessionID := c.Param("session_id")
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id is required"})
+		return
+	}
+
+	var req struct {
+		EmailType string `json:"email_type" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email_type is required"})
+		return
+	}
+
+	go h.sendInterviewSessionEmails(c.Request.Context(), sessionID, req.EmailType)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":    "email sent successfully",
+		"session_id": sessionID,
+		"email_type": req.EmailType,
+	})
+}
+
 func (h *AdminHandlers) StartInterviewSession(c *gin.Context) {
 	sessionID := c.Param("session_id")
 	if sessionID == "" {
@@ -936,83 +1060,7 @@ func (h *AdminHandlers) StartInterviewSession(c *gin.Context) {
 		return
 	}
 
-	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
-	if err != nil {
-		log.Printf("StartInterviewSession: failed to decode encryption key: %v", err)
-	} else {
-		sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
-		if err != nil {
-			log.Printf("StartInterviewSession: failed to load SES config: %v", err)
-		} else {
-			var candidateEmail, candidateName, interviewerEmail, interviewerName string
-			err = h.DB.QueryRowContext(ctx, `
-				SELECT 
-					c.email, 
-					COALESCE(c.full_name, ''),
-					COALESCE(a.email, ''),
-					COALESCE(a.full_name, '')
-				FROM interview_sessions iss
-				JOIN candidates c ON c.id = iss.candidate_id
-				LEFT JOIN administrators a ON a.id = iss.interviewer_id
-				WHERE iss.session_id = $1
-			`, sessionID).Scan(&candidateEmail, &candidateName, &interviewerEmail, &interviewerName)
-
-			if err != nil {
-				log.Printf("StartInterviewSession: failed to fetch candidate/interviewer for email: %v", err)
-			} else {
-				candidateBody, err := email.Render(email.TemplateLoginLink, email.LoginLinkData{
-					CandidateName: candidateName,
-					LoginURL:      sesCfg.SESLoginURL,
-				})
-				if err != nil {
-					log.Printf("StartInterviewSession: failed to render candidate email: %v", err)
-				} else {
-					_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
-						ToEmail:     candidateEmail,
-						ToName:      candidateName,
-						FromEmail:   sesCfg.SESFromEmail,
-						Subject:     "Your interview is starting now",
-						BodyHTML:    candidateBody,
-						Template:    email.TemplateLoginLink,
-						EntityType:  "interview_session",
-						EntityID:    sessionID,
-						TriggeredBy: "start_interview_session",
-						Priority:    email.PriorityHigh,
-					})
-					if err != nil {
-						log.Printf("StartInterviewSession: failed to enqueue candidate email: %v", err)
-					}
-				}
-
-				if interviewerEmail != "" {
-					interviewerBody, err := email.Render(email.TemplateInterviewerNotification, email.InterviewerNotificationData{
-						InterviewerName: interviewerName,
-						CandidateName:   candidateName,
-						InterviewURL:    sesCfg.SESLoginURL, // or interview_url from session
-					})
-					if err != nil {
-						log.Printf("StartInterviewSession: failed to render interviewer email: %v", err)
-					} else {
-						_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
-							ToEmail:     interviewerEmail,
-							ToName:      interviewerName,
-							FromEmail:   sesCfg.SESFromEmail,
-							Subject:     "Interview session started - " + candidateName,
-							BodyHTML:    interviewerBody,
-							Template:    email.TemplateInterviewerNotification,
-							EntityType:  "interview_session",
-							EntityID:    sessionID,
-							TriggeredBy: "start_interview_session_interviewer",
-							Priority:    email.PriorityHigh,
-						})
-						if err != nil {
-							log.Printf("StartInterviewSession: failed to enqueue interviewer email: %v", err)
-						}
-					}
-				}
-			}
-		}
-	}
+	go h.sendInterviewSessionEmails(ctx, sessionID, "start")
 
 	c.JSON(http.StatusOK, gin.H{
 		"id":         session.ID,

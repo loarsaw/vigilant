@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 	"vigilant/config"
+	vigilantcron "vigilant/cron"
 	"vigilant/db"
 	"vigilant/email"
 	"vigilant/middleware"
@@ -37,6 +38,9 @@ func main() {
 	go emailWorker.Start(context.Background())
 	defer emailWorker.Stop()
 
+	scheduler := vigilantcron.NewScheduler(database)
+	scheduler.Start()
+	defer scheduler.Stop()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 

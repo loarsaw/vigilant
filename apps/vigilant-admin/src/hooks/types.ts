@@ -611,3 +611,14 @@ export interface UseSSEOptions<T> {
   handler: (payload: T) => void;
   enabled?: boolean;
 }
+
+
+export interface SendEmailPayload {
+  email_type: "start" | "reminder";
+}
+
+export interface SendEmailResponse {
+  message: string;
+  session_id: string;
+  email_type: string;
+}
