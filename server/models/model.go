@@ -588,3 +588,14 @@ type Session struct {
 	IsUpcoming        bool      `json:"is_upcoming"`
 	Feedback          *Feedback `json:"feedback"`
 }
+
+type InterviewReminder struct {
+	SessionID         string
+	ScheduledAt       time.Time
+	InterviewURL      *string
+	Position          *string
+	ScheduledDuration *int
+	CandidateEmail    string
+	CandidateName     *string
+	InterviewerName   string
+}

@@ -656,6 +656,25 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_admin_sessions_active ON admin_sessions(is_active, logged_in_at DESC);`,
 
 		// ========================================
+		// MIGRATION 18: Remainder table
+		// ========================================
+		`
+		CREATE TABLE IF NOT EXISTS interview_reminders (
+		id          BIGSERIAL PRIMARY KEY,
+		session_id  VARCHAR(255) NOT NULL REFERENCES interview_sessions(session_id) ON DELETE CASCADE,
+		reminder_type   VARCHAR(50) NOT NULL DEFAULT '24h',
+		sent_to     TEXT NOT NULL,  
+		sent_at     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		email_job_id BIGINT REFERENCES email_jobs(id) ON DELETE SET NULL,
+		created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		UNIQUE(session_id, reminder_type)  
+)`,
+
+		`CREATE INDEX IF NOT EXISTS idx_interview_reminders_session  ON interview_reminders(session_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_reminders_sent_at  ON interview_reminders(sent_at DESC)`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_reminders_type     ON interview_reminders(reminder_type)`,
+
+		// ========================================
 		// MIGRATION 18: Audit log table
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS audit_log (

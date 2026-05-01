@@ -47,6 +47,12 @@ func (s *Scheduler) Start() {
 		}
 	})
 
+	s.c.AddFunc("0 * * * *", func() {
+		if err := s.SendInterviewReminders(); err != nil {
+			log.Printf("cron: send interview reminders: %v", err)
+		}
+	})
+
 	s.c.Start()
 	log.Println("Cron jobs started")
 }
