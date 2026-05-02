@@ -38,3 +38,5 @@ logs/
 coverage.txt
 
 apps/vigilant
+
+test.html
