@@ -8,7 +8,7 @@ import started from "electron-squirrel-startup";
 if (started) {
   app.quit();
 }
-
+app.commandLine.appendSwitch('ignore-certificate-errors');
 let nativeAddon: any;
 try {
   nativeAddon = require(path.join(__dirname, "../../build/Release/process_monitor.node"));

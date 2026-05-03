@@ -15,7 +15,7 @@ async function getBaseUrl(domain?: string): Promise<string> {
 
   if (domain) {
     const formattedDomain = domain.includes(".") ? domain : domain.split(".").reverse().join(".");
-    return `https://${formattedDomain}/api/v1`;
+    return `http://${formattedDomain}/api/v1`;
   }
 
   const storedDomain = localStorage.getItem("domain");
@@ -23,7 +23,7 @@ async function getBaseUrl(domain?: string): Promise<string> {
     const formattedDomain = storedDomain.includes(".")
       ? storedDomain
       : storedDomain.split(".").reverse().join(".");
-    return `https://${formattedDomain}/api/v1`;
+    return `http://${formattedDomain}/api/v1`;
   }
 
   console.warn("No domain configured for production environment");
@@ -40,7 +40,7 @@ async function getWsBaseUrl(): Promise<string> {
     return "";
   }
 
-  return httpBase.replace(/^https/, "wss").replace(/^http/, "ws");
+  return httpBase.replace(/^http/, "ws").replace(/^http/, "ws");
 }
 
 export const apiClient = axios.create({
@@ -130,7 +130,7 @@ export const setBaseURL = async (domain: string) => {
   if (!isDev) {
     setDomain(domain);
     const formattedDomain = domain.includes(".") ? domain : domain.split(".").reverse().join(".");
-    apiClient.defaults.baseURL = `https://${formattedDomain}/api/v1`;
+    apiClient.defaults.baseURL = `http://${formattedDomain}/api/v1`;
 
     console.log("API Base URL set to:", apiClient.defaults.baseURL);
     console.log("Domain stored:", domain);

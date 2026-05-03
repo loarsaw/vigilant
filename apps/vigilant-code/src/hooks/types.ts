@@ -209,11 +209,9 @@ export interface UpdateProfilePayload {
 }
 
 export interface InterviewSessionResponse {
-  interview_id: string;
+  // interview_id: string;
   session_id: string;
 }
-
-
 
 export interface Process {
   pid: number;

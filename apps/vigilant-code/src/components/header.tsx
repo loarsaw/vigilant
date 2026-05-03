@@ -1,5 +1,5 @@
 import { Briefcase, UserCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -36,7 +36,7 @@ export const Header = () => {
 
         {/* Profile Section */}
         {isAuthenticated && (
-          <button 
+          <button
             onClick={() => navigate("/profile")}
             className="text-slate-300 hover:text-white transition-colors"
             aria-label="View Profile"

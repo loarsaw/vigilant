@@ -18,7 +18,7 @@ export function useInterviewSession(interviewId: string | undefined) {
   });
 
   return {
-    interviewId: data?.interview_id ?? null,
+    // interviewId: data?.interview_id ?? null,
     sessionId: data?.session_id ?? null,
     isLoading,
     isError,

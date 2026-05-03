@@ -16,10 +16,7 @@ async function reportProcesses(payload: ProcessReportPayload): Promise<void> {
 export function useInterview() {
   const queryClient = useQueryClient();
 
-  const currentSession = queryClient.getQueryData<InterviewSessionResponse>([
-    "interview",
-    "session",
-  ]);
+  const currentSession = queryClient.getQueryData<string>(["interview", "session"]);
 
   console.log(currentSession, "Current Session");
 
@@ -29,8 +26,8 @@ export function useInterview() {
     error: reportError,
   } = useMutation({
     mutationFn: ({ processes }: { processes: ProcessPayload[] }) => {
-      if (!currentSession.session_id) throw new Error("No active interview session");
-      return reportProcesses({ session_id: currentSession.session_id, processes });
+      if (!currentSession) throw new Error("No active interview session");
+      return reportProcesses({ session_id: currentSession, processes });
     },
   });
 
@@ -38,7 +35,6 @@ export function useInterview() {
     const interval = setInterval(async () => {
       try {
         const processes = await window.api.getAllProcesses();
-        // console.log(processes, "process");
 
         const combinedRaw: Process[] = [...processes.data];
         const payloadProcess: PayloadProcess[] = [];

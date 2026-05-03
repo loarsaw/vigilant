@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Header } from "@/components/logo-header";
 
 interface WorkspaceEntryProps {
   onSubmit: (workspace: string) => void;
@@ -10,25 +11,6 @@ interface WorkspaceEntryProps {
 }
 
 type WorkspaceFormData = { workspace: string };
-type CodeFormData = { code: string };
-
-const LOGO_URL =
-  "https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png";
-
-function Header({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="text-center mb-10">
-      <p className="text-sm font-semibold text-blue-400 tracking-widest uppercase mb-4">
-        Vigilant Code
-      </p>
-      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 mb-5 shadow-lg">
-        <img src={LOGO_URL} alt="Vigilant Logo" className="w-8 h-8 object-contain" />
-      </div>
-      <h2 className="text-4xl font-bold text-white mb-2">{title}</h2>
-      <p className="text-base text-slate-300 font-light">{subtitle}</p>
-    </div>
-  );
-}
 
 function WorkspacePanel({ onSubmit }: { onSubmit: (w: string) => void }) {
   const {
@@ -188,7 +170,7 @@ export default function WorkspaceEntry({ onSubmit, onCodeSubmit }: WorkspaceEntr
         ))}
       </div>
 
-      <Header {...headerProps[activeTab]} />
+      <Header {...headerProps[activeTab]} top={true} />
 
       {activeTab === "workspace" ? (
         <WorkspacePanel onSubmit={onSubmit} />

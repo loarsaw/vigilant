@@ -4,14 +4,12 @@ import { HashRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sandbox from "./app/pages/code/sandbox";
 import CodeEditor from "./app/pages/code/code-editor";
-import LoginPage from "./app/pages/auth/login";
 import WaitingSetup from "./app/pages/auth/waiting";
 import AppLayout, {
   AuthLayout,
   EnvironmentLayout,
   ProtectedLayout,
 } from "./components/layout/app-layout";
-import OnboardingForm from "./app/pages/auth/onboarding";
 import Dashboard from "./app/pages/dashboard/dashboard";
 import { Profile } from "./app/pages/auth/profile";
 import { useDeepLink } from "./hooks/use-link";
@@ -29,7 +27,6 @@ const AppRoutes = () => {
         </Route>
         <Route path="/linkstart" Component={DeepLinkHandler} />
         <Route Component={ProtectedLayout}>
-          <Route path="/onboarding" Component={OnboardingForm} />
           <Route path="/dashboard" Component={Dashboard} />
           <Route path="/profile" Component={Profile} />
           <Route Component={EnvironmentLayout}>

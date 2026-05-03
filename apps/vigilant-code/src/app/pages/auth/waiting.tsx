@@ -1,16 +1,13 @@
 import { Button } from "@/components/ui/button";
-import { useInterviewSession } from "@/hooks/use-interview-session";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 
 export default function WaitingSetup() {
-  const { id } = useParams();
-  const { sessionId, isLoading } = useInterviewSession(id);
+  // const { id } = useParams();
+  // const { sessionId, isLoading } = useInterviewSession(id);
   const [dots, setDots] = useState(".");
   const queryClient = useQueryClient();
-  console.log(sessionId, "sessionID");
   const sessionMeta = queryClient.getQueryData<{
     workspace: string;
     setupPath: string;

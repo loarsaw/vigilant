@@ -36,7 +36,6 @@ export function BrowseView({ onOpen }: BrowseViewProps) {
           >
             S
           </div>
-         
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12 }}>

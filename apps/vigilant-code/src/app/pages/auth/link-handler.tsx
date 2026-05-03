@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import Success from "./success";
 import { useAuth } from "@/hooks/use-auth";
 import { AlertCircle, RefreshCw } from "lucide-react";
-
+import { useQueryClient } from "@tanstack/react-query";
+import OnboardingModal from "./onboarding";
 export default function DeepLinkHandler() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login, isLoggingIn, loginError, resetLogin, setupPoller, setSessionMeta } = useAuth();
+  const { login, user, setupPoller, setSessionMeta } = useAuth();
   const [step, setStep] = useState<
     "workspace" | "credentials" | "success" | "waiting" | "processing" | "error"
   >("processing");
@@ -15,11 +15,19 @@ export default function DeepLinkHandler() {
   const [username, setUsername] = useState("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isRetrying, setIsRetrying] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const queryClient = useQueryClient();
 
   const domainName = searchParams.get("domain_name");
   const urlUsername = searchParams.get("username");
   const password = searchParams.get("password");
   const interviewId = searchParams.get("interview_id");
+
+  useEffect(() => {
+    if (interviewId) {
+      queryClient.setQueryData(["interview", "session"], interviewId);
+    }
+  }, [interviewId, queryClient]);
 
   const getErrorMessage = (error: any) => {
     if (!error) return undefined;
@@ -44,6 +52,16 @@ export default function DeepLinkHandler() {
     setSessionMeta(workspace, setupStatus.setupPath);
   }
 
+  const handleSuccessfulLogin = () => {
+    // Check if onboarding is complete
+    if (!user?.onboarding_complete) {
+      setShowOnboarding(true);
+    } else {
+      // Navigate directly to interview
+      navigate(`/interview/${interviewId}`);
+    }
+  };
+
   const performAutoLogin = async () => {
     if (domainName && urlUsername && password) {
       setWorkspace(domainName);
@@ -55,7 +73,9 @@ export default function DeepLinkHandler() {
           workspace: domainName,
           credentials: { username: urlUsername, password },
         });
-        setStep("success");
+
+        // After successful login, check onboarding status
+        handleSuccessfulLogin();
       } catch (error) {
         console.error("Auto-login failed:", error);
         const message = getErrorMessage(error);
@@ -74,7 +94,7 @@ export default function DeepLinkHandler() {
 
   useEffect(() => {
     performAutoLogin();
-  }, [domainName, urlUsername, password, login]);
+  }, [domainName, urlUsername, password]);
 
   const handleProceedToWaiting = () => {
     if (interviewId) {
@@ -94,6 +114,11 @@ export default function DeepLinkHandler() {
     performAutoLogin();
   };
 
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    navigate(`/interview/${interviewId}`);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-hidden">
       <div className="absolute top-10 left-10 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse" />
@@ -104,6 +129,18 @@ export default function DeepLinkHandler() {
       <div
         className="absolute top-1/2 right-1/4 w-72 h-72 bg-blue-700 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
         style={{ animationDelay: "1s" }}
+      />
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        open={showOnboarding}
+        onOpenChange={(open) => {
+          if (!open && !user?.onboarding_complete) {
+            return;
+          }
+          setShowOnboarding(open);
+        }}
+        onComplete={handleOnboardingComplete}
       />
 
       <div className="relative z-10 w-full max-w-md px-4 flex items-center justify-center">
@@ -156,17 +193,6 @@ export default function DeepLinkHandler() {
             </div>
           </div>
         )}
-
-        {/* Success */}
-        <div
-          className={`w-full transition-all duration-700 ease-out absolute ${
-            step === "success"
-              ? "opacity-100 translate-y-0 pointer-events-auto"
-              : "opacity-0 translate-y-8 pointer-events-none"
-          }`}
-        >
-          <Success workspace={workspace} username={username} onProceed={handleProceedToWaiting} />
-        </div>
 
         {/* Waiting fallback (no interview_id) */}
         {step === "waiting" && (

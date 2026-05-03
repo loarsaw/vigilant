@@ -46,13 +46,13 @@ export function useHiringPositions(filters: PositionFilters = {}) {
     queryFn: () => fetchPositions(filters),
     staleTime: 1000 * 60 * 5,
   });
-  const scheduledInterview = response?.data.find((p) => p.interview?.session_id)?.interview ?? null;
+  // const scheduledInterview = response?.data.find((p) => p.interview?.session_id)?.interview ?? null;
 
-  useEffect(() => {
-    if (scheduledInterview) {
-      queryClient.setQueryData(["interview", "session"], scheduledInterview);
-    }
-  }, [scheduledInterview, queryClient]);
+  // useEffect(() => {
+  //   if (scheduledInterview) {
+  //     queryClient.setQueryData(["interview", "session"], scheduledInterview);
+  //   }
+  // }, [scheduledInterview, queryClient]);
 
   const {
     mutate: applyMutate,
