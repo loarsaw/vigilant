@@ -153,8 +153,13 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 
 	rows, err := h.DB.Query(fmt.Sprintf(`
 		SELECT id, email, full_name, created_at, updated_at, is_active,
-		       resume_url, github_url, skills, phone_number, experience_years,
-		       onboarding_complete,last_login
+		       COALESCE(resume_url, '') as resume_url,
+		       COALESCE(github_url, '') as github_url,
+		       COALESCE(skills, '') as skills,
+		       COALESCE(phone_number, '') as phone_number,
+		       COALESCE(experience_years, 0) as experience_years,
+		       onboarding_complete,
+		       COALESCE(last_login, '1970-01-01'::timestamp) as last_login
 		FROM candidates %s
 		ORDER BY created_at DESC
 		LIMIT %s OFFSET %s
@@ -174,39 +179,16 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	candidates := []CandidateWithPresence{}
 	for rows.Next() {
 		var cand models.Candidate
-		var resumeUrl, githubUrl, skills, phoneNumber sql.NullString
-		var lastLogin sql.NullTime
-		var experienceYears sql.NullInt16
 
 		if err := rows.Scan(
 			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
 			&cand.IsActive,
-			&resumeUrl, &githubUrl, &skills, &phoneNumber, &experienceYears,
+			&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
 			&cand.OnboardingComplete,
-			&lastLogin,
+			&cand.LastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
-		}
-
-		if resumeUrl.Valid {
-			cand.ResumeUrl = resumeUrl.String
-		}
-		if githubUrl.Valid {
-			cand.GithubUrl = githubUrl.String
-		}
-		if skills.Valid {
-			cand.Skills = skills.String
-		}
-		if phoneNumber.Valid {
-			cand.PhoneNumber = phoneNumber.String
-		}
-
-		if lastLogin.Valid {
-			cand.LastLogin = &lastLogin.Time
-		}
-		if experienceYears.Valid {
-			cand.ExperienceYears = uint8(experienceYears.Int16)
 		}
 
 		candidates = append(candidates, CandidateWithPresence{
@@ -237,8 +219,13 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 
 	err := h.DB.QueryRow(`
 		SELECT id, email, full_name, created_at, updated_at, is_active,
-		       resume_url, github_url, skills, phone_number, experience_years,
-		       onboarding_complete,last_login
+		       COALESCE(resume_url, '') as resume_url,
+		       COALESCE(github_url, '') as github_url,
+		       COALESCE(skills, '') as skills,
+		       COALESCE(phone_number, '') as phone_number,
+		       COALESCE(experience_years, 0) as experience_years,
+		       onboarding_complete,
+		       COALESCE(last_login, '1970-01-01'::timestamp) as last_login
 		FROM candidates WHERE id = $1::uuid
 	`, candidateID).Scan(
 		&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,

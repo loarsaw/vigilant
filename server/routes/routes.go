@@ -28,6 +28,14 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 		healthGroup.GET("/health", candidateH.HealthCheck)
 	}
 
+	// PUBLIC POSITION ENDPOINTS
+	publicPositionGroup := r.Group("/api/v1/public/positions")
+	publicPositionGroup.Use(middleware.RateLimitMiddleware(middleware.APILimiter))
+	{
+		publicPositionGroup.GET("", adminH.ListPositions)
+		publicPositionGroup.GET("/:id", adminH.GetPositionByID)
+	}
+
 	// Auth endpoints
 	authGroup := r.Group("/api/v1/auth")
 	authGroup.Use(middleware.RateLimitMiddleware(middleware.AuthLimiter))
@@ -190,7 +198,8 @@ func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *
 
 	// Position management
 	g.GET("/get-open-positions", h.GetPositionDetails)
-	g.GET("/positions", h.ListPositions)
+
+	// g.GET("/positions", h.ListPositions)
 	g.POST("/positions/:position_id/apply", h.ApplyForPosition)
 
 	// Judge endpoints with judge-specific rate limit

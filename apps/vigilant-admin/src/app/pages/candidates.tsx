@@ -298,9 +298,9 @@ export function CandidatesList() {
                 </Card>
               );
 
-              if (isPending) {
-                return <div key={candidate.id}>{cardContent}</div>;
-              }
+              // if (isPending) {
+              //   return <div key={candidate.id}>{cardContent}</div>;
+              // }
 
               return (
                 <Link key={candidate.id} to={`/candidates/${candidate.id}`}>
