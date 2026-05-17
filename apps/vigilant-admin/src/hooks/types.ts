@@ -622,3 +622,19 @@ export interface SendEmailResponse {
   session_id: string;
   email_type: string;
 }
+
+
+export interface TwilioConfigResponse {
+  account_sid: string;
+  api_key_sid: string;
+  twiml_app_sid: string;
+  from_number: string;
+}
+
+export interface SaveTwilioConfigPayload {
+  account_sid: string;
+  api_key_sid: string;
+  api_key_secret: string;
+  twiml_app_sid: string;
+  from_number: string;
+}

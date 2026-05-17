@@ -182,6 +182,8 @@ const SessionCard = ({
 export const InterviewHistory = ({ applicationID }: InterviewHistoryCardProps) => {
   const { sessions, total, isLoading, isError } = useApplicationInterviewFeedback(applicationID);
 
+  console.log(sessions, "session");
+
   return (
     <Card className="bg-[#1a1f2e] border-gray-800">
       <CardHeader>

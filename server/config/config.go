@@ -40,6 +40,14 @@ type Config struct {
 
 	// Encryption
 	EncryptionKey string
+
+	TwilioAccountSID string
+	TwilioAuthToken  string
+	TwilioFromNumber string
+
+	TwilioAPIKeySID    string
+	TwilioAPIKeySecret string
+	TwilioTwiMLAppSID  string
 }
 
 func Load() (*Config, error) {
@@ -130,6 +138,21 @@ func Load() (*Config, error) {
 			config.AllowOrigin = value
 		case "ENCRYPTION_KEY":
 			config.EncryptionKey = value
+
+		case "TWILIO_ACCOUNT_SID":
+			config.TwilioAccountSID = value
+		case "TWILIO_AUTH_TOKEN":
+			config.TwilioAuthToken = value
+		case "TWILIO_FROM_NUMBER":
+			config.TwilioFromNumber = value
+
+		case "TWILIO_API_KEY_SID":
+			config.TwilioAPIKeySID = value
+		case "TWILIO_API_KEY_SECRET":
+			config.TwilioAPIKeySecret = value
+		case "TWILIO_TWIML_APP_SID":
+			config.TwilioTwiMLAppSID = value
+
 		}
 	}
 

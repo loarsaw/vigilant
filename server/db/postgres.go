@@ -698,6 +698,39 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_audit_log_action    ON audit_log(action)`,
 		`CREATE INDEX IF NOT EXISTS idx_audit_log_entity    ON audit_log(entity_type, entity_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_audit_log_created   ON audit_log(created_at DESC)`,
+
+		// ========================================
+		// MIGRATION 19: Twilio table
+		// ========================================
+
+		`CREATE TABLE IF NOT EXISTS twilio_config (
+		id         BIGSERIAL PRIMARY KEY,
+		account_sid     TEXT NOT NULL,
+		api_key_sid     TEXT NOT NULL,
+		api_key_secret  TEXT NOT NULL,
+		twiml_app_sid   TEXT NOT NULL,
+		from_number     TEXT NOT NULL,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	)`,
+
+		// ========================================
+		// MIGRATION 20: Twilio table
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS call_logs (
+    id          BIGSERIAL PRIMARY KEY,
+    admin_id    UUID REFERENCES administrators(id) ON DELETE SET NULL,
+    candidate_id UUID REFERENCES candidates(id) ON DELETE SET NULL,
+    to_number   VARCHAR(50) NOT NULL,
+    call_sid    VARCHAR(100),
+    status      VARCHAR(50) DEFAULT 'initiated',
+    duration    INTEGER DEFAULT 0,
+    created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    ended_at    TIMESTAMPTZ
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_call_logs_admin     ON call_logs(admin_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_call_logs_candidate ON call_logs(candidate_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_call_logs_created   ON call_logs(created_at DESC)`,
 	}
 
 	for i, migration := range migrations {

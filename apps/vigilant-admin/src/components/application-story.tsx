@@ -41,7 +41,7 @@ export const ApplicationHistory = ({ candidate_id }: CandidateApplication) => {
           <Link to={`/applications/${candidate_id}/${app.id}`}>
             <div
               key={app.id}
-              className="p-4 rounded-lg border border-gray-800 bg-[#161b26] hover:border-gray-700 transition-colors"
+              className="p-4 my-2 rounded-lg border border-gray-800 bg-[#161b26] hover:border-gray-700 transition-colors"
             >
               <div className="flex justify-between items-start mb-3">
                 <div>
