@@ -15,12 +15,15 @@ import (
 func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	authH := &auth.AuthHandlers{DB: db, Cfg: cfg}
 	adminH := &admin.AdminHandlers{DB: db, Cfg: cfg}
+
 	candidateH := &candidate.Handlers{DB: db, Cfg: cfg}
 	judgeH := &judge.Handlers{DB: db, Cfg: cfg}
 
 	// Apply CORS middleware globally
 	r.Use(middleware.CORSMiddleware(cfg))
-
+	// In Register(), outside adminGroup — no auth middleware
+	r.POST("/api/v1/twilio/outbound", adminH.OutboundCallTwiML)
+	r.POST("/api/v1/twilio/outbound/status", adminH.CallStatusTwiML)
 	// Health check endpoint with lenient rate limit
 	healthGroup := r.Group("/")
 	healthGroup.Use(middleware.RateLimitMiddleware(middleware.HealthLimiter))
@@ -87,8 +90,15 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *judge.Handlers) {
 	// Admin auth
 	g.GET("/me", h.GetAdminMe)
-
+	// Hello Hello
+	g.GET("/call/token", h.GetCallToken)
+	// g.POST("/call/outbound", h.OutboundCallTwiML)
 	// Email endpoints
+
+	// Twilio config
+	g.POST("/twilio-config", h.SaveTwilioConfig)
+	g.GET("/twilio-config", h.GetTwilioConfig)
+	// g.GET("/call/logs", h.ListCallLogs)
 	emailGroup := g.Group("/")
 	{
 		emailGroup.POST("/email-config", h.SaveEmailConfig)

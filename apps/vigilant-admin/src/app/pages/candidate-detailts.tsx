@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, Mail, Phone, Calendar, Award, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,21 @@ import { UpcomingInterview } from "@/components/upcoming-interview";
 import { EmailModal } from "@/components/qa/email-modal";
 import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
 import { ApplicationHistory } from "@/components/application-story";
+import { useCall } from "@/hooks/use-call";
 
 export function CandidateDetail() {
   const { candidateId } = useParams();
   const navigate = useNavigate();
 
+  const { makeCall, hangUp, isCalling, isReady, error: twError, setup } = useCall();
+  const HARDCODED_NUMBER = "";
+
+  useEffect(() => {
+    setup();
+  }, []);
+
   const { data, isLoading, isError, error } = useCandidate(candidateId);
+  console.log(data, "data");
   const { applications, statistics } = useJobApplications({
     candidate_id: candidateId,
   });
@@ -61,7 +70,7 @@ export function CandidateDetail() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/applications")}
+            onClick={() => navigate(-1)}
             className="text-gray-400 hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -206,6 +215,7 @@ export function CandidateDetail() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
+                disabled={!data.candidate.onboarding_complete}
                 className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
                 onClick={() => setShowScheduleDialog(true)}
               >
@@ -230,6 +240,29 @@ export function CandidateDetail() {
                   View Resume
                 </Button>
               )}
+
+              {/* {candidateData.phone_number && ( */}
+              <Button
+                variant="outline"
+                className={`w-full border-gray-700 text-gray-300 ${isCalling ? "border-red-600 text-red-400" : ""}`}
+                onClick={() => (isCalling ? hangUp() : makeCall(HARDCODED_NUMBER))}
+                disabled={!isReady}
+              >
+                {isCalling ? (
+                  <>
+                    <Phone className="h-4 w-4 text-red-400 mr-2 animate-pulse" />
+                    Hang Up
+                  </>
+                ) : (
+                  <>
+                    <Phone className="h-4 w-4 text-gray-400 mr-2" />
+                    {isReady ? "Call" : "Connecting..."}
+                  </>
+                )}
+              </Button>
+
+              {twError && <p className="text-red-400 text-xs text-center">{twError}</p>}
+              {/* )} */}
             </CardContent>
           </Card>
 

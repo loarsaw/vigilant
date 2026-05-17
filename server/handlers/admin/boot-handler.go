@@ -17,6 +17,7 @@ type UserData struct {
 type AdminHandlers struct {
 	DB  *sql.DB
 	Cfg *config.Config
+	// Twilio *call.TwilioClient
 }
 
 func (h *AdminHandlers) loadMailer(c *gin.Context) (*email.Mailer, *email.SESConfig, error) {

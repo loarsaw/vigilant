@@ -285,7 +285,7 @@ export function InterviewDetail() {
         </div>
 
         {/* Session controls */}
-        <div className="flex items-center gap-3">
+        {/* <div className="flex items-center gap-3">
           {sessionError && interviewStatus !== "completed" && (
             <p className="text-sm text-red-400">{sessionError}</p>
           )}
@@ -316,7 +316,7 @@ export function InterviewDetail() {
               {isStartingSession ? "Starting..." : "Start interview"}
             </Button>
           )}
-        </div>
+        </div> */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

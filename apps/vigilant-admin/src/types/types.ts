@@ -35,3 +35,11 @@ export interface CandidateData {
   sessionStartTime?: string;
   runningProcesses: string[];
 }
+
+export interface TwilioConfigForm {
+  accountSid: string;
+  apiKeySid: string;
+  apiKeySecret: string;
+  twimlAppSid: string;
+  fromNumber: string;
+}
