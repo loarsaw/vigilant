@@ -1,0 +1,4 @@
+{
+  "extends": "../../.prettierrc.json",
+  "printWidth": 100
+}

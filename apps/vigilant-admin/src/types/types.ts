@@ -12,9 +12,9 @@ export interface CandidateHistory {
   leftAt?: string;
 }
 
-export type CandidateLevel = 'Junior' | 'Intern' | 'Senior';
-export type Framework = 'React' | 'Nextjs' | 'Vue';
-export type TestStatus = 'DSA' | 'React' | 'Nextjs' | 'pending';
+export type CandidateLevel = "Junior" | "Intern" | "Senior";
+export type Framework = "React" | "Nextjs" | "Vue";
+export type TestStatus = "DSA" | "React" | "Nextjs" | "pending";
 
 export interface CandidateData {
   id: string;

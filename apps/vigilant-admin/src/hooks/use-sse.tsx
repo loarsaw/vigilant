@@ -1,7 +1,5 @@
-import { createSSEConnection } from '@/lib/axios';
-import { useEffect, useRef } from 'react';
-
-
+import { createSSEConnection } from "@/lib/axios";
+import { useEffect, useRef } from "react";
 
 interface UseSSEOptions<T> {
   path?: string;
@@ -11,7 +9,7 @@ interface UseSSEOptions<T> {
 }
 
 export function useSSE<T = unknown>({
-  path = '/events',
+  path = "/events",
   type,
   handler,
   enabled = true,
@@ -22,14 +20,11 @@ export function useSSE<T = unknown>({
   useEffect(() => {
     if (!enabled) return;
 
-    const close = createSSEConnection(
-      path,
-      (msgType, payload) => {
-        if (msgType === type) {
-          handlerRef.current(payload as T);
-        }
+    const close = createSSEConnection(path, (msgType, payload) => {
+      if (msgType === type) {
+        handlerRef.current(payload as T);
       }
-    );
+    });
 
     return close;
   }, [path, type, enabled]);
