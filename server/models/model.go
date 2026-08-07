@@ -599,3 +599,21 @@ type InterviewReminder struct {
 	CandidateName     *string
 	InterviewerName   string
 }
+
+type TwilioConfig struct {
+	AccountSID   string `json:"account_sid" binding:"required"`
+	APIKeySID    string `json:"api_key_sid" binding:"required"`
+	APIKeySecret string `json:"api_key_secret" binding:"required"`
+	TwiMLAppSID  string `json:"twiml_app_sid" binding:"required"`
+	FromNumber   string `json:"from_number" binding:"required"`
+}
+
+type LiveKitConfig struct {
+	ID        int       `json:"id"`
+	Host      string    `json:"host"`
+	APIKey    string    `json:"api_key"`
+	APISecret string    `json:"api_secret"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

@@ -416,7 +416,7 @@ export interface CandidateApplicationsResponse {
 
 export interface CreateInterviewPayload {
   candidate_id: string;
-  position_id: string;        
+  position_id: string;
   interviewer_id: string;
   position: string;
   interview_type: string;
@@ -637,4 +637,25 @@ export interface SaveTwilioConfigPayload {
   api_key_secret: string;
   twiml_app_sid: string;
   from_number: string;
+}
+
+
+export interface LiveKitConfigResponse {
+  id: number;
+  host: string;
+  api_key: string;
+  api_secret: string;
+  is_active: boolean;
+}
+
+export interface SaveLiveKitConfigPayload {
+  host: string;
+  api_key: string;
+  api_secret: string;
+}
+
+export interface LiveKitConfigForm {
+  host: string;
+  apiKey: string;
+  apiSecret: string;
 }

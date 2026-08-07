@@ -58,17 +58,17 @@ func RunMigrations(db *sql.DB) error {
 			password_hash VARCHAR(255) NOT NULL,
 			full_name VARCHAR(255) NOT NULL,
 			phone_number VARCHAR(512),
-			
+
 			role VARCHAR(50) NOT NULL DEFAULT 'interviewer',
 			-- 'hr' → can create sessions, assign interviewers, move application stages
 			-- 'interviewer' → can only view and conduct assigned sessions
-			
+
 			department VARCHAR(255),
 			designation VARCHAR(255),
-			
+
 			is_active BOOLEAN DEFAULT TRUE,
 			last_login TIMESTAMPTZ,
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			created_by UUID REFERENCES administrators(id) ON DELETE SET NULL
@@ -102,17 +102,17 @@ func RunMigrations(db *sql.DB) error {
 			email VARCHAR(255) UNIQUE NOT NULL,
 			password_hash VARCHAR(255) NOT NULL,
 			full_name VARCHAR(255),
-			
+
 			resume_url VARCHAR(512),
 			github_url VARCHAR(512),
 			skills VARCHAR(512),
 			phone_number VARCHAR(512),
 			experience_years SMALLINT CHECK (experience_years >= 0 AND experience_years <= 50),
-			
+
 			is_active BOOLEAN DEFAULT TRUE,
 			onboarding_complete BOOLEAN DEFAULT FALSE,
 			last_login TIMESTAMPTZ,
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -144,18 +144,18 @@ func RunMigrations(db *sql.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
 			session_token TEXT UNIQUE NOT NULL,
-			
+
 			logged_in_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			logged_out_at TIMESTAMPTZ,
 			last_activity TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-			
+
 			system_type VARCHAR(50),
 			os_version VARCHAR(100),
 			ip_address INET,
 			user_agent TEXT,
 			country VARCHAR(100),
 			city VARCHAR(100),
-			
+
 			is_active BOOLEAN DEFAULT TRUE,
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -175,18 +175,18 @@ func RunMigrations(db *sql.DB) error {
 			location VARCHAR(255) NOT NULL,
 			employment_type VARCHAR(50) NOT NULL,
 			experience_required VARCHAR(100) NOT NULL,
-			
+
 			salary_range_min INTEGER,
 			salary_range_max INTEGER,
 			salary_range_text VARCHAR(100),
 			number_of_openings INTEGER NOT NULL DEFAULT 1,
-			
+
 			job_description TEXT NOT NULL,
 			requirements TEXT NOT NULL,
-			
+
 			status VARCHAR(50) DEFAULT 'active',
 			is_active BOOLEAN DEFAULT TRUE,
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			created_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
@@ -223,16 +223,16 @@ func RunMigrations(db *sql.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
 			position_id UUID NOT NULL REFERENCES hiring_positions(id) ON DELETE CASCADE,
-			
+
 			status VARCHAR(50) DEFAULT 'applied',
 			-- applied → screening → interviewing → offered → hired / rejected / withdrawn
-			
+
 			cover_letter TEXT,
 			notes TEXT,
-			
+
 			applied_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-			
+
 			UNIQUE(candidate_id, position_id)
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_job_applications_candidate ON job_applications(candidate_id)`,
@@ -273,16 +273,16 @@ func RunMigrations(db *sql.DB) error {
 			interview_type VARCHAR(50),
 			interview_platform SMALLINT DEFAULT 0 CHECK (interview_platform IN (0)), -- 0: Google Meet
 			interview_url TEXT,
-			
+
 			scheduled_at TIMESTAMPTZ,
 			started_at TIMESTAMPTZ,
 			ended_at TIMESTAMPTZ,
 			scheduled_duration INTEGER,
-			
+
 			status VARCHAR(50) DEFAULT 'scheduled',
 			metadata JSONB,
 			notes TEXT,
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -320,9 +320,9 @@ func RunMigrations(db *sql.DB) error {
 			id BIGSERIAL PRIMARY KEY,
 			interview_session_id INTEGER NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
 			candidate_session_id UUID REFERENCES candidate_sessions(id) ON DELETE SET NULL,
-			
+
 			logged_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-			
+
 			pid INTEGER NOT NULL,
 			ppid INTEGER,
 			name VARCHAR(255) NOT NULL,
@@ -330,19 +330,19 @@ func RunMigrations(db *sql.DB) error {
 			cmd TEXT,
 			memory DECIMAL(10, 2),
 			cpu_usage DECIMAL(5, 2),
-			
+
 			is_user_app BOOLEAN DEFAULT FALSE,
 			is_gui_app BOOLEAN DEFAULT FALSE,
 			username VARCHAR(255),
 			process_type VARCHAR(50),
 			category VARCHAR(50),
 			confidence DECIMAL(3, 2),
-			
+
 			is_unknown BOOLEAN DEFAULT FALSE,
 			is_suspicious BOOLEAN DEFAULT FALSE,
 			is_electron BOOLEAN DEFAULT FALSE,
 			alert_level VARCHAR(20) DEFAULT 'none',
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_process_logs_interview ON process_logs(interview_session_id)`,
@@ -360,18 +360,18 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS alert_summary (
 			id SERIAL PRIMARY KEY,
 			interview_session_id INTEGER UNIQUE NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
-			
+
 			total_processes INTEGER DEFAULT 0,
 			unknown_processes INTEGER DEFAULT 0,
 			suspicious_processes INTEGER DEFAULT 0,
 			high_memory_processes INTEGER DEFAULT 0,
 			electron_processes INTEGER DEFAULT 0,
-			
+
 			critical_alerts INTEGER DEFAULT 0,
 			high_alerts INTEGER DEFAULT 0,
 			medium_alerts INTEGER DEFAULT 0,
 			low_alerts INTEGER DEFAULT 0,
-			
+
 			risk_score DECIMAL(5, 2) DEFAULT 0.0,
 			first_alert_at TIMESTAMPTZ,
 			last_alert_at TIMESTAMPTZ,
@@ -436,12 +436,12 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS process_reports (
 			id BIGSERIAL PRIMARY KEY,
 			session_id VARCHAR(255) NOT NULL REFERENCES interview_sessions(session_id) ON DELETE CASCADE,
-			
+
 			processes JSONB,
 			alert_count INTEGER DEFAULT 0,
 			high_memory_alerts INTEGER DEFAULT 0,
 			unknown_electron_alerts INTEGER DEFAULT 0,
-			
+
 			reported_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -456,13 +456,13 @@ func RunMigrations(db *sql.DB) error {
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 			language TEXT NOT NULL,
 			code TEXT NOT NULL,
-			
+
 			stdout TEXT NOT NULL DEFAULT '',
 			stderr TEXT NOT NULL DEFAULT '',
 			exit_code INT NOT NULL DEFAULT 0,
 			time_ms BIGINT NOT NULL DEFAULT 0,
 			memory_kb BIGINT NOT NULL DEFAULT 0,
-			
+
 			status TEXT NOT NULL DEFAULT 'pending',
 			created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -482,7 +482,7 @@ func RunMigrations(db *sql.DB) error {
 			aws_secret_access_key TEXT NOT NULL,
 			ses_from_email TEXT NOT NULL,
 			ses_login_url TEXT NOT NULL,
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
@@ -493,38 +493,38 @@ func RunMigrations(db *sql.DB) error {
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS email_jobs (
 			id BIGSERIAL PRIMARY KEY,
-			
+
 			-- Routing
 			to_email TEXT NOT NULL,
 			to_name TEXT,
 			from_email TEXT NOT NULL,
 			reply_to TEXT,
-			
+
 			-- Content
 			subject TEXT NOT NULL,
 			body_html TEXT NOT NULL,
 			body_text TEXT,
 			template VARCHAR(100),
 			template_data JSONB,
-			
+
 			-- Context (traceability)
 			entity_type VARCHAR(50),
 			entity_id TEXT,
 			triggered_by TEXT,
-			
+
 			-- Queue management
 			status VARCHAR(20) DEFAULT 'pending',
 			priority SMALLINT DEFAULT 0,
 			attempts SMALLINT DEFAULT 0,
 			max_attempts SMALLINT DEFAULT 3,
 			scheduled_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-			
+
 			-- Result
 			sent_at TIMESTAMPTZ,
 			failed_at TIMESTAMPTZ,
 			error TEXT,
 			provider_message_id TEXT,
-			
+
 			-- Audit
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -540,19 +540,19 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS email_logs (
 			id BIGSERIAL PRIMARY KEY,
 			job_id BIGINT REFERENCES email_jobs(id) ON DELETE SET NULL,
-			
+
 			-- Snapshot at send time
 			to_email TEXT NOT NULL,
 			from_email TEXT NOT NULL,
 			subject TEXT NOT NULL,
 			body_html TEXT NOT NULL,
-			
+
 			-- Result
 			status VARCHAR(20) NOT NULL,
 			provider_message_id TEXT,
 			error TEXT,
 			attempt SMALLINT NOT NULL,
-			
+
 			sent_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 		)`,
 		`CREATE INDEX IF NOT EXISTS idx_email_logs_job ON email_logs(job_id)`,
@@ -566,27 +566,27 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS google_credentials (
 			id SERIAL PRIMARY KEY,
 			credential_name VARCHAR(255) NOT NULL UNIQUE,
-			
+
 			service_account_email VARCHAR(255) NOT NULL,
 			project_id VARCHAR(255) NOT NULL,
 			private_key_id VARCHAR(255) NOT NULL,
 			private_key TEXT NOT NULL,
 			client_email VARCHAR(255) NOT NULL,
 			client_id VARCHAR(255) NOT NULL,
-			
+
 			access_token TEXT,
 			refresh_token TEXT,
 			token_expiry TIMESTAMPTZ,
 			scopes TEXT[],
 			credentials_json JSONB,
-			
+
 			credential_type VARCHAR(50) DEFAULT 'service_account',
 			is_active BOOLEAN DEFAULT TRUE,
 			is_default BOOLEAN DEFAULT FALSE,
-			
+
 			delegated_admin_email VARCHAR(255),
 			subject_email VARCHAR(255),
-			
+
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			created_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
@@ -663,11 +663,11 @@ func RunMigrations(db *sql.DB) error {
 		id          BIGSERIAL PRIMARY KEY,
 		session_id  VARCHAR(255) NOT NULL REFERENCES interview_sessions(session_id) ON DELETE CASCADE,
 		reminder_type   VARCHAR(50) NOT NULL DEFAULT '24h',
-		sent_to     TEXT NOT NULL,  
+		sent_to     TEXT NOT NULL,
 		sent_at     TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 		email_job_id BIGINT REFERENCES email_jobs(id) ON DELETE SET NULL,
 		created_at  TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-		UNIQUE(session_id, reminder_type)  
+		UNIQUE(session_id, reminder_type)
 )`,
 
 		`CREATE INDEX IF NOT EXISTS idx_interview_reminders_session  ON interview_reminders(session_id)`,
@@ -731,7 +731,21 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_call_logs_admin     ON call_logs(admin_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_call_logs_candidate ON call_logs(candidate_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_call_logs_created   ON call_logs(created_at DESC)`,
-	}
+
+        `CREATE TABLE IF NOT EXISTS livekits_configs(
+           id SERIAL PRIMARY KEY,
+           host VARCHAR(255) NOT NULL,
+           api_key VARCHAR(255) NOT NULL,
+           api_secret VARCHAR(255) NOT NULL,
+           is_active BOOLEAN DEFAULT TRUE,
+           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+           updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
+
+        )`,
+
+
+    }
 
 	for i, migration := range migrations {
 		if _, err := db.Exec(migration); err != nil {

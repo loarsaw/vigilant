@@ -15,6 +15,8 @@ import (
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
+
+	"vigilant/livekit"
 )
 
 type Handlers struct {
@@ -27,6 +29,31 @@ func (h *Handlers) HealthCheck(c *gin.Context) {
 		"status":    "ok",
 		"timestamp": time.Now(),
 		"service":   "vigilant-server",
+	})
+}
+
+func (h *Handlers) GetLiveKitToken(c *gin.Context) {
+	roomName := c.Query("room_name")
+	identity := c.GetString("user_id") // From AuthMiddleware
+
+	if roomName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "room_name is required"})
+		return
+	}
+
+	// 1. Initialize LiveKit service passing the DB handle
+	lkService := livekit.NewService(h.DB)
+
+	// 2. Call GenerateToken on the service (it fetches the DB config internally)
+	token, host, err := lkService.GenerateToken(roomName, identity, false)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "LiveKit configuration error or token generation failed"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"host":  host,
 	})
 }
 
@@ -608,7 +635,7 @@ func (h *Handlers) ApplyForPosition(c *gin.Context) {
 	var positionExists bool
 	err := h.DB.QueryRow(`
         SELECT EXISTS(
-            SELECT 1 FROM hiring_positions 
+            SELECT 1 FROM hiring_positions
             WHERE id = $1 AND is_active = TRUE AND status = 'active'
         )
     `, positionID).Scan(&positionExists)
