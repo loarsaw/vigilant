@@ -99,6 +99,9 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.POST("/twilio-config", h.SaveTwilioConfig)
 	g.GET("/twilio-config", h.GetTwilioConfig)
 	// g.GET("/call/logs", h.ListCallLogs)
+
+	g.POST("/livekit-config", h.SaveLiveKitConfig)
+	g.GET("/livekit-config", h.GetLiveKitConfig)
 	emailGroup := g.Group("/")
 	{
 		emailGroup.POST("/email-config", h.SaveEmailConfig)

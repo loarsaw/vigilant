@@ -122,6 +122,8 @@ func (s *Scheduler) SendInterviewReminders() error {
 
 	return rows.Err()
 }
+
+
 func (s *Scheduler) enqueueReminderEmail(r models.InterviewReminder) error {
 	tx, err := s.db.Begin()
 	if err != nil {
