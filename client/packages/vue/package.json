@@ -1,0 +1,37 @@
+{
+  "name": "vigilant-jobs-vue",
+  "version": "0.1.0",
+  "description": "Vue 3 composables for fetching job postings and applying to them, built on vigilant-jobs-client.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "keywords": ["jobs", "careers", "vue", "composables", "api-client"],
+  "license": "MIT",
+  "dependencies": {
+    "vigilant-jobs-client": "^0.1.0"
+  },
+  "peerDependencies": {
+    "vue": ">=3"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.5.4",
+    "vue": "^3.4.31",
+    "vue-tsc": "^2.0.24"
+  }
+}
