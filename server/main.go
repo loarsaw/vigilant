@@ -1,3 +1,4 @@
+// server/main.go
 package main
 
 import (
@@ -38,7 +39,7 @@ func main() {
 	go emailWorker.Start(context.Background())
 	defer emailWorker.Stop()
 
-	scheduler := vigilantcron.NewScheduler(database)
+	scheduler := vigilantcron.NewScheduler(database, cfg)
 	scheduler.Start()
 	defer scheduler.Stop()
 	gin.SetMode(gin.ReleaseMode)

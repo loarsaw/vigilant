@@ -1,17 +1,83 @@
+// server//handlers/admin/admin-handler.go
 package admin
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"vigilant/email"
 	"vigilant/middleware"
+	"vigilant/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func (h *AdminHandlers) CreateAccessLink(c *gin.Context) {
+	adminIDVal, _ := c.Get("admin_id")
+	adminID, _ := adminIDVal.(string)
+
+	var req struct {
+		Email      string `json:"email" validate:"required,email"`
+		PositionID string `json:"position_id,omitempty"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "valid email is required"})
+		return
+	}
+	toEmail := strings.ToLower(strings.TrimSpace(req.Email))
+
+	rawToken, tokenHash, err := utils.GenerateToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate link"})
+		return
+	}
+
+	var linkID string
+	err = h.DB.QueryRow(`
+		INSERT INTO candidate_access_links (email, position_id, token_hash, created_by)
+		VALUES ($1, NULLIF($2, ''), $3, $4)
+		RETURNING id
+	`, toEmail, req.PositionID, tokenHash, adminID).Scan(&linkID)
+	if err != nil {
+		log.Printf("Error storing access link: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate link"})
+		return
+	}
+
+	link := fmt.Sprintf("%s/apply?token=%s", h.Cfg.DomainName, rawToken)
+
+	var fromEmail string
+	err = h.DB.QueryRow(`SELECT ses_from_email FROM email_config LIMIT 1`).Scan(&fromEmail)
+	if err != nil {
+		log.Printf("Warning: failed to load ses_from_email, using fallback: %v", err)
+		fromEmail = "no-reply@localhost"
+	}
+
+	body, err := email.Render(email.TemplateCandidateInvite, email.CandidateInviteData{
+		ApplyURL: link,
+	})
+	if err != nil {
+		log.Printf("Error rendering invite email: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate link"})
+		return
+	}
+
+	_, err = h.DB.Exec(`
+		INSERT INTO email_jobs (to_email, from_email, subject, body_html, template, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5, 'access_link', $6)
+	`, toEmail, fromEmail, "You've been invited to apply", body, email.TemplateCandidateInvite, linkID)
+	if err != nil {
+		log.Printf("Error queuing invite email: %v", err)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"link": link, "expires_in_days": 10})
+}
 
 func (h *AdminHandlers) CreateAdmin(c *gin.Context) {
 	callerRole := c.GetString("admin_role")

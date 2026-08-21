@@ -1,3 +1,4 @@
+// server/middleware/rate-limit.go
 package middleware
 
 import (
@@ -114,6 +115,23 @@ var (
 	// SSELimiter - Lenient for Server-Sent Events
 	// 5 requests per second with burst of 10
 	SSELimiter = NewIPRateLimiter(rate.Limit(5), 10)
+
+	// ApplyLimiter - Strict for the public, unauthenticated job application
+	// endpoint. This is a write endpoint anyone on the internet can hit with
+	// no login required, so it's tuned much tighter than APILimiter/PublicLimiter:
+	// ~1 request every 10 seconds sustained, small burst for legitimate
+	// double-submits/retries. Deliberately not keyed any looser than this —
+	// a real applicant does not submit the same form dozens of times a minute,
+	// but a scraper/bot filling every open position would.
+	ApplyLimiter = NewIPRateLimiter(rate.Limit(0.1), 3)
+
+	// PasscodeLimiter - Strict for the public, unauthenticated room-passcode
+	// verification endpoint. A passcode is a short, guessable secret (12 chars),
+	// so this endpoint is a brute-force target if left at APILimiter/PublicLimiter
+	// rates. Tuned similarly to ApplyLimiter: a real candidate verifies their
+	// passcode once (maybe a couple retries), a script trying to guess codes
+	// would hit this far more often.
+	PasscodeLimiter = NewIPRateLimiter(rate.Limit(0.2), 5)
 )
 
 func InitLimiters(cfg *config.Config) {

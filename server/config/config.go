@@ -41,6 +41,9 @@ type Config struct {
 	// Encryption
 	EncryptionKey string
 
+	// Email
+	EmailFromAddress string
+
 	TwilioAccountSID string
 	TwilioAuthToken  string
 	TwilioFromNumber string
@@ -138,6 +141,8 @@ func Load() (*Config, error) {
 			config.AllowOrigin = value
 		case "ENCRYPTION_KEY":
 			config.EncryptionKey = value
+		case "EMAIL_FROM_ADDRESS":
+			config.EmailFromAddress = value
 
 		case "TWILIO_ACCOUNT_SID":
 			config.TwilioAccountSID = value

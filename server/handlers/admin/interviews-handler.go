@@ -14,6 +14,7 @@ import (
 	"time"
 	"vigilant/email"
 	"vigilant/models"
+	"vigilant/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -30,7 +31,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		InterviewType     string    `json:"interview_type"     binding:"required"`
 		ScheduledAt       time.Time `json:"scheduled_at"       binding:"required"`
 		ScheduledDuration int       `json:"scheduled_duration" binding:"required,min=15"`
-		InterviewURL      string    `json:"interview_url"      binding:"required"`
+		InterviewURL      string    `json:"interview_url"`
 		TimeZone          string    `json:"timezone"`
 	}
 
@@ -129,6 +130,10 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		return
 	}
 
+	// interview_platform: 0 = Google Meet , 1 = LiveKit.
+	interviewPlatform := 1
+	interviewURL := req.InterviewURL
+
 	var id int64
 	var createdAt time.Time
 
@@ -147,8 +152,8 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		req.InterviewerID,
 		req.Position,
 		req.InterviewType,
-		0,
-		req.InterviewURL,
+		interviewPlatform,
+		interviewURL,
 		req.ScheduledAt,
 		req.ScheduledDuration,
 		"scheduled",
@@ -173,24 +178,139 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 
 	log.Printf("Interview session created. ID: %d, candidate: %s, interviewer: %s", id, candidateEmail, interviewerEmail)
 
+	// Create the LiveKit room and a candidate join token scoped to this
+	// session's actual scheduled window (+ buffer for late starts/overruns).
+	// Non-fatal on failure — the session row already exists; room/token
+	// creation can be retried via a resend-invite or reschedule path.
+	validFor := time.Until(req.ScheduledAt) + time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
+	if validFor < 0 {
+		validFor = time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
+	}
+
+	var livekitToken, livekitHost string
+	if h.LiveKitService != nil {
+		if _, err := h.LiveKitService.CreateRoom(ctx, sessionID); err != nil {
+			log.Printf("CreateInterviewSession: failed to create LiveKit room for %s: %v", sessionID, err)
+		} else {
+			token, host, tokenErr := h.LiveKitService.GenerateToken(sessionID, candidateEmail, false, validFor)
+			if tokenErr != nil {
+				log.Printf("CreateInterviewSession: failed to generate candidate token for %s: %v", sessionID, tokenErr)
+			} else {
+				livekitToken, livekitHost = token, host
+			}
+		}
+	} else {
+		log.Printf("CreateInterviewSession: LiveKitService not configured, skipping room/token creation for %s", sessionID)
+	}
+
+	// Generate a passcode tied to this session's LiveKit room token, instead
+	// of exposing a raw join URL/JWT to the candidate. The verify-passcode
+	// handler (separate endpoint) will look this up and return the room
+	// token to whoever presents the correct passcode.
+	var passcode string
+	var passcodeExpiresAt time.Time
+	if livekitToken != "" {
+		passcode, passcodeExpiresAt, err = h.createRoomPasscode(ctx, sessionID, livekitToken, livekitHost, validFor)
+		if err != nil {
+			log.Printf("CreateInterviewSession: failed to create passcode for %s: %v", sessionID, err)
+		}
+	} else {
+		log.Printf("CreateInterviewSession: skipping passcode creation for %s — no livekit token", sessionID)
+	}
+
+	// Send the interview invite email with the passcode + scheduled date/time
+	// (no room URL or JWT exposed here anymore).
+	if passcode != "" {
+		key, keyErr := email.DecodeKey(h.Cfg.EncryptionKey)
+		if keyErr != nil {
+			log.Printf("CreateInterviewSession: failed to decode encryption key for invite email: %v", keyErr)
+		} else {
+			sesCfg, sesErr := email.LoadSESConfig(ctx, h.DB, key)
+			if sesErr != nil {
+				log.Printf("CreateInterviewSession: failed to load SES config for invite email: %v", sesErr)
+			} else {
+				body, renderErr := email.Render(email.TemplateInterviewJoinInvite, email.InterviewJoinInviteData{
+					CandidateName: candidateName,
+					Position:      req.Position,
+					ScheduledAt:   req.ScheduledAt.Format(time.RFC1123),
+					Duration:      req.ScheduledDuration,
+					Passcode:      passcode,
+				})
+				if renderErr != nil {
+					log.Printf("CreateInterviewSession: failed to render invite email: %v", renderErr)
+				} else {
+					_, enqueueErr := email.Enqueue(ctx, h.DB, email.EmailJob{
+						ToEmail:     candidateEmail,
+						ToName:      candidateName,
+						FromEmail:   sesCfg.SESFromEmail,
+						Subject:     fmt.Sprintf("Interview Scheduled: %s", req.Position),
+						BodyHTML:    body,
+						Template:    email.TemplateInterviewJoinInvite,
+						EntityType:  "interview_session",
+						EntityID:    sessionID,
+						TriggeredBy: "create_interview_session",
+						Priority:    email.PriorityHigh,
+					})
+					if enqueueErr != nil {
+						log.Printf("CreateInterviewSession: failed to enqueue invite email: %v", enqueueErr)
+					}
+				}
+			}
+		}
+	} else {
+		log.Printf("CreateInterviewSession: skipping invite email for %s — passcode missing", sessionID)
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"id":                 id,
-		"session_id":         sessionID,
-		"candidate_id":       req.CandidateID,
-		"application_id":     resolvedAppID,
-		"interviewer_id":     req.InterviewerID,
-		"interviewer_email":  interviewerEmail,
-		"candidate_email":    candidateEmail,
-		"candidate_name":     candidateName,
-		"position":           req.Position,
-		"interview_type":     req.InterviewType,
-		"interview_platform": 0,
-		"interview_url":      req.InterviewURL,
-		"scheduled_at":       req.ScheduledAt,
-		"scheduled_duration": req.ScheduledDuration,
-		"status":             "scheduled",
-		"created_at":         createdAt,
+		"id":                  id,
+		"session_id":          sessionID,
+		"candidate_id":        req.CandidateID,
+		"application_id":      resolvedAppID,
+		"interviewer_id":      req.InterviewerID,
+		"interviewer_email":   interviewerEmail,
+		"candidate_email":     candidateEmail,
+		"candidate_name":      candidateName,
+		"position":            req.Position,
+		"interview_type":      req.InterviewType,
+		"interview_platform":  interviewPlatform,
+		"interview_url":       interviewURL,
+		"scheduled_at":        req.ScheduledAt,
+		"scheduled_duration":  req.ScheduledDuration,
+		"status":              "scheduled",
+		"created_at":          createdAt,
+		"passcode":            passcode,
+		"passcode_expires_at": passcodeExpiresAt,
 	})
+}
+
+// createRoomPasscode generates a unique passcode and stores it alongside the
+// LiveKit room token/host for this session, retrying on rare collisions.
+func (h *AdminHandlers) createRoomPasscode(ctx context.Context, sessionID, roomToken, roomHost string, validFor time.Duration) (string, time.Time, error) {
+	expiresAt := time.Now().Add(validFor)
+
+	for attempt := 0; attempt < 5; attempt++ {
+		passcode, err := utils.GeneratePasscode(8)
+		if err != nil {
+			return "", time.Time{}, err
+		}
+
+		_, err = h.DB.ExecContext(ctx, `
+			INSERT INTO interview_room_passcodes (
+				session_id, passcode, room_token, room_host, expires_at
+			) VALUES ($1, $2, $3, $4, $5)
+		`, sessionID, passcode, roomToken, roomHost, expiresAt)
+		if err == nil {
+			return passcode, expiresAt, nil
+		}
+
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" { // unique_violation on passcode
+			continue
+		}
+		return "", time.Time{}, fmt.Errorf("insert passcode: %w", err)
+	}
+
+	return "", time.Time{}, fmt.Errorf("failed to generate unique passcode after retries")
 }
 
 func (h *AdminHandlers) ListApplicationInterviewFeedback(c *gin.Context) {
@@ -1149,3 +1269,119 @@ func (h *AdminHandlers) EndInterviewSession(c *gin.Context) {
 		"updated_at": session.UpdatedAt,
 	})
 }
+
+// RescheduleInterviewSession updates scheduled_at/duration for an existing
+// session and sends a fresh invite email with a new LiveKit token +
+// candidate JWT (both scoped to the new schedule window). The old LiveKit
+// room is reused — only the token validity window changes.
+// func (h *AdminHandlers) RescheduleInterviewSession(c *gin.Context) {
+// 	sessionID := c.Param("session_id")
+// 	if sessionID == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id is required"})
+// 		return
+// 	}
+
+// 	var req struct {
+// 		ScheduledAt       time.Time `json:"scheduled_at"       binding:"required"`
+// 		ScheduledDuration int       `json:"scheduled_duration" binding:"required,min=15"`
+// 	}
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format", "details": err.Error()})
+// 		return
+// 	}
+
+// 	ctx := c.Request.Context()
+
+// 	var candidateID, candidateEmail, candidateName, position string
+// 	err := h.DB.QueryRowContext(ctx, `
+// 		UPDATE interview_sessions iss
+// 		SET scheduled_at = $1, scheduled_duration = $2, status = 'scheduled',
+// 		    started_at = NULL, ended_at = NULL, updated_at = CURRENT_TIMESTAMP
+// 		FROM candidates c
+// 		WHERE iss.session_id = $3 AND iss.candidate_id = c.id
+// 		RETURNING iss.candidate_id, c.email, c.full_name, iss.position
+// 	`, req.ScheduledAt, req.ScheduledDuration, sessionID).
+// 		Scan(&candidateID, &candidateEmail, &candidateName, &position)
+
+// 	if err == sql.ErrNoRows {
+// 		c.JSON(http.StatusNotFound, gin.H{"error": "interview session not found"})
+// 		return
+// 	}
+// 	if err != nil {
+// 		log.Printf("RescheduleInterviewSession: failed to update session %s: %v", sessionID, err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to reschedule interview session"})
+// 		return
+// 	}
+
+// 	validFor := time.Until(req.ScheduledAt) + time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
+// 	if validFor < 0 {
+// 		validFor = time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
+// 	}
+
+// 	var livekitToken, livekitHost string
+// 	if h.LiveKitService != nil {
+// 		token, host, tokenErr := h.LiveKitService.GenerateToken(sessionID, candidateEmail, false, validFor)
+// 		if tokenErr != nil {
+// 			log.Printf("RescheduleInterviewSession: failed to generate candidate token for %s: %v", sessionID, tokenErr)
+// 		} else {
+// 			livekitToken, livekitHost = token, host
+// 		}
+// 	}
+
+// 	candidateJWT, err := middleware.IssueCandidateJWT(h.Cfg, candidateID, candidateEmail, sessionID, validFor)
+// 	if err != nil {
+// 		log.Printf("RescheduleInterviewSession: failed to issue candidate JWT for %s: %v", sessionID, err)
+// 	}
+
+// 	if livekitToken != "" && candidateJWT != "" {
+// 		key, keyErr := email.DecodeKey(h.Cfg.EncryptionKey)
+// 		if keyErr != nil {
+// 			log.Printf("RescheduleInterviewSession: failed to decode encryption key: %v", keyErr)
+// 		} else {
+// 			sesCfg, sesErr := email.LoadSESConfig(ctx, h.DB, key)
+// 			if sesErr != nil {
+// 				log.Printf("RescheduleInterviewSession: failed to load SES config: %v", sesErr)
+// 			} else {
+// 				domainName := strings.TrimPrefix(strings.TrimPrefix(sesCfg.SESLoginURL, "https://"), "http://")
+// 				deepLink := buildInterviewDeepLink(domainName, candidateEmail, candidateJWT, sessionID, livekitToken, livekitHost)
+
+// 				body, renderErr := email.Render(email.TemplateInterviewJoinInvite, email.InterviewJoinInviteData{
+// 					CandidateName: candidateName,
+// 					Position:      position,
+// 					ScheduledAt:   req.ScheduledAt.Format(time.RFC1123),
+// 					Duration:      req.ScheduledDuration,
+// 					DeepLink:      deepLink,
+// 				})
+// 				if renderErr != nil {
+// 					log.Printf("RescheduleInterviewSession: failed to render invite email: %v", renderErr)
+// 				} else {
+// 					_, enqueueErr := email.Enqueue(ctx, h.DB, email.EmailJob{
+// 						ToEmail:     candidateEmail,
+// 						ToName:      candidateName,
+// 						FromEmail:   sesCfg.SESFromEmail,
+// 						Subject:     fmt.Sprintf("Interview Rescheduled: %s", position),
+// 						BodyHTML:    body,
+// 						Template:    email.TemplateInterviewJoinInvite,
+// 						EntityType:  "interview_session",
+// 						EntityID:    sessionID,
+// 						TriggeredBy: "reschedule_interview_session",
+// 						Priority:    email.PriorityHigh,
+// 					})
+// 					if enqueueErr != nil {
+// 						log.Printf("RescheduleInterviewSession: failed to enqueue invite email: %v", enqueueErr)
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"session_id":         sessionID,
+// 		"scheduled_at":       req.ScheduledAt,
+// 		"scheduled_duration": req.ScheduledDuration,
+// 		"status":             "scheduled",
+// 		"livekit_token":      livekitToken,
+// 		"livekit_host":       livekitHost,
+// 		"candidate_jwt":      candidateJWT,
+// 	})
+// }

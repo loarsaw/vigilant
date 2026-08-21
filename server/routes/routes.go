@@ -1,27 +1,41 @@
+// server/routes/routes.go
 package routes
 
 import (
 	"database/sql"
+	"vigilant/ai"
+	"vigilant/analyzer"
 	"vigilant/config"
 	"vigilant/handlers/admin"
 	"vigilant/handlers/auth"
 	"vigilant/handlers/candidate"
 	"vigilant/handlers/judge"
+	"vigilant/livekit"
 	"vigilant/middleware"
+	"vigilant/notifications"
 
 	"github.com/gin-gonic/gin"
 )
 
 func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	authH := &auth.AuthHandlers{DB: db, Cfg: cfg}
-	adminH := &admin.AdminHandlers{DB: db, Cfg: cfg}
+	aiService := ai.NewService(db)
+	notifSvc := notifications.NewService(db)
+	liveKitSvc := livekit.NewService(db)
 
+	adminH := &admin.AdminHandlers{
+		DB:              db,
+		Cfg:             cfg,
+		AIService:       aiService,
+		Notifications:   notifSvc,
+		LiveKitService:  liveKitSvc,
+		AnalyzerService: analyzer.NewService(db, cfg.EncryptionKey, aiService, notifSvc),
+	}
 	candidateH := &candidate.Handlers{DB: db, Cfg: cfg}
 	judgeH := &judge.Handlers{DB: db, Cfg: cfg}
 
 	// Apply CORS middleware globally
 	r.Use(middleware.CORSMiddleware(cfg))
-	// In Register(), outside adminGroup — no auth middleware
 	r.POST("/api/v1/twilio/outbound", adminH.OutboundCallTwiML)
 	r.POST("/api/v1/twilio/outbound/status", adminH.CallStatusTwiML)
 	// Health check endpoint with lenient rate limit
@@ -32,6 +46,10 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	}
 
 	// PUBLIC POSITION ENDPOINTS
+	// Browsing positions and applying are both unauthenticated — anyone can
+	// list/view open positions and submit an application with no login.
+	// Apply uses its own strict, IP-keyed limiter (ApplyLimiter) instead of
+	// APILimiter, since this is a public write endpoint reachable by bots.
 	publicPositionGroup := r.Group("/api/v1/public/positions")
 	publicPositionGroup.Use(middleware.RateLimitMiddleware(middleware.APILimiter))
 	{
@@ -39,22 +57,33 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 		publicPositionGroup.GET("/:id", adminH.GetPositionByID)
 	}
 
-	// Auth endpoints
-	authGroup := r.Group("/api/v1/auth")
-	authGroup.Use(middleware.RateLimitMiddleware(middleware.AuthLimiter))
+	publicInterviewGroup := r.Group("/api/v1/public/interview")
+	publicInterviewGroup.Use(middleware.RateLimitMiddleware(middleware.PasscodeLimiter))
 	{
-		authGroup.POST("/login", authH.Login)
+		publicInterviewGroup.POST("/verify-passcode", candidateH.VerifyRoomPasscode)
 	}
+
+	publicApplyGroup := r.Group("/api/v1/public/positions")
+	publicApplyGroup.Use(middleware.RateLimitMiddleware(middleware.ApplyLimiter))
+	{
+		publicApplyGroup.POST("/:id/apply", candidateH.ApplyForPosition)
+	}
+
+	// Auth endpoints
+	// authGroup := r.Group("/api/v1/auth")
+	// authGroup.Use(middleware.RateLimitMiddleware(middleware.AuthLimiter))
+	// {
+	// 	authGroup.POST("/login", authH.Login)
+	// }
 
 	// Protected auth endpoints
 	authProtected := r.Group("/api/v1/auth")
-	authProtected.Use(middleware.AuthMiddleware(cfg))
+	authProtected.Use(middleware.AuthMiddleware(db, cfg))
 	authProtected.Use(middleware.RateLimitMiddleware(middleware.APILimiter))
 	{
 		authProtected.POST("/logout", authH.Logout)
 		authProtected.GET("/me", authH.GetMe)
 	}
-
 	// Admin login
 	adminLoginGroup := r.Group("/api/v1/admin")
 	adminLoginGroup.Use(middleware.RateLimitMiddleware(middleware.AuthLimiter))
@@ -75,10 +104,9 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 
 	// Candidate API routes
 	apiGroup := r.Group("/api/v1")
-	apiGroup.Use(middleware.AuthMiddleware(cfg))
+	apiGroup.Use(middleware.AuthMiddleware(db, cfg))
 	apiGroup.Use(middleware.RateLimitMiddleware(middleware.APILimiter))
 	registerCandidateRoutes(apiGroup, candidateH, judgeH)
-
 	// SSE events
 	sseGroup := r.Group("/api/v1")
 	sseGroup.Use(middleware.RateLimitMiddleware(middleware.SSELimiter))
@@ -99,6 +127,39 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	g.POST("/twilio-config", h.SaveTwilioConfig)
 	g.GET("/twilio-config", h.GetTwilioConfig)
 	// g.GET("/call/logs", h.ListCallLogs)
+
+	// GitHub config (org + PAT used for creating assignment repos and invites)
+	g.POST("/github-config", h.SaveGithubConfig)
+	g.GET("/github-config", h.GetGithubConfig)
+
+	aiGroup := g.Group("/ai")
+	{
+		aiGroup.POST("/providers", h.SaveAIProviderConfig)
+		aiGroup.GET("/providers", h.ListAIProviderConfigs)
+		aiGroup.POST("/scenarios", h.SaveAIScenario)
+		aiGroup.GET("/scenarios", h.ListAIScenarios)
+		aiGroup.PATCH("/scenarios/:key/deactivate", h.DeactivateAIScenario)
+	}
+
+	// registerAdminRoutes
+	notifGroup := g.Group("/notifications")
+	{
+		notifGroup.GET("", h.ListNotifications)
+		notifGroup.PATCH("/:id/read", h.MarkNotificationRead)
+		notifGroup.POST("/read-all", h.MarkAllNotificationsRead)
+	}
+
+	// Assignment management
+	assignmentGroup := g.Group("/assignments")
+	{
+		assignmentGroup.POST("", h.CreateAssignment)
+		assignmentGroup.GET("", h.ListAssignments)
+		assignmentGroup.GET("/:id", h.GetAssignment)
+		assignmentGroup.PATCH("/:id", h.UpdateAssignment)
+		assignmentGroup.DELETE("/:id", h.DeleteAssignment)
+	}
+
+	g.PATCH("/submissions/:id/review", h.ReviewAssignmentSubmission)
 
 	g.POST("/livekit-config", h.SaveLiveKitConfig)
 	g.GET("/livekit-config", h.GetLiveKitConfig)
@@ -161,10 +222,12 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	{
 		interviewGroup.POST("/interviews/send-invite", h.SendInterviewInvite)
 		interviewGroup.GET("/interviews", h.ListInterviewSessions)
+		// interviewGroup.PATCH("/interview-session/:session_id/reschedule", h.RescheduleInterviewSession)
 		interviewGroup.GET("/interview-sessions/:id/status", h.GetInterviewSessionStatus)
 		interviewGroup.GET("/interview-sessions/:id/details", h.GetCompletedInterviewWithFeedback)
 		interviewGroup.POST("/create-interview", h.CreateInterviewSession)
 		interviewGroup.GET("/interviewers", h.ListInterviewers)
+		interviewGroup.GET("/interview-sessions/mine", h.ListMyInterviewSessions)
 		interviewGroup.POST("/interview-session/feeback", h.CreateInterviewFeedback)
 		interviewGroup.PATCH("/interview-session/:session_id/start", h.StartInterviewSession)
 		interviewGroup.PATCH("/interview-session/:session_id/end", h.EndInterviewSession)
@@ -182,6 +245,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		applicationGroup.GET("/:id", h.GetJobApplication)
 		applicationGroup.GET("/:id/status", h.GetJobApplicationStatus)
 		applicationGroup.GET("/:id/interviews/feedback", h.ListApplicationInterviewFeedback)
+		applicationGroup.GET("/:id/submissions", h.ListSubmissionsForApplication)
 		applicationGroup.PATCH("/:id/status", h.UpdateJobApplicationStatus)
 	}
 	// Admin management
@@ -213,7 +277,12 @@ func registerCandidateRoutes(g *gin.RouterGroup, h *candidate.Handlers, judgeH *
 	g.GET("/get-open-positions", h.GetPositionDetails)
 
 	// g.GET("/positions", h.ListPositions)
-	g.POST("/positions/:position_id/apply", h.ApplyForPosition)
+	// NOTE: apply moved to the public, unauthenticated group in Register()
+	// above (/api/v1/public/positions/:id/apply) since anyone should be able
+	// to submit an application without a candidate account.
+
+	// Assignment submissions (candidate submits work against their own application)
+	g.POST("/applications/:id/submissions", h.CreateAssignmentSubmission)
 
 	// Judge endpoints with judge-specific rate limit
 	judgeGroup := g.Group("/judge")

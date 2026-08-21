@@ -1,3 +1,4 @@
+// server/handlers/admin/candidate-handler.go
 package admin
 
 import (
@@ -183,7 +184,7 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 		if err := rows.Scan(
 			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
 			&cand.IsActive,
-			&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
+			&cand.PhoneNumber,
 			&cand.OnboardingComplete,
 			&cand.LastLogin,
 		); err != nil {
@@ -230,7 +231,7 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 	`, candidateID).Scan(
 		&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
 		&cand.IsActive,
-		&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
+		&cand.PhoneNumber,
 		&cand.OnboardingComplete,
 		&cand.LastLogin,
 	)

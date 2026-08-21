@@ -105,7 +105,15 @@ services:
       dockerfile: python/Dockerfile
     container_name: vigilant-runner-python
     <<: *runner-common
-
+  adminer:
+    image: adminer
+    container_name: vigilant-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - public
+    <<: *default-logging
 volumes:
   postgres_data:
 

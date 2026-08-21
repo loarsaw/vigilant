@@ -1,10 +1,15 @@
+// server/handlers/admin/boot-handler.go
 package admin
 
 import (
 	"database/sql"
 	"net/http"
+	"vigilant/ai"
+	"vigilant/analyzer"
 	"vigilant/config"
 	"vigilant/email"
+	"vigilant/livekit"
+	"vigilant/notifications"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +23,10 @@ type AdminHandlers struct {
 	DB  *sql.DB
 	Cfg *config.Config
 	// Twilio *call.TwilioClient
+	AIService       *ai.Service
+	AnalyzerService *analyzer.Service
+	Notifications   *notifications.Service
+	LiveKitService  *livekit.Service
 }
 
 func (h *AdminHandlers) loadMailer(c *gin.Context) (*email.Mailer, *email.SESConfig, error) {

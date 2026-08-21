@@ -47,8 +47,10 @@ func (s *Service) GetActiveConfig() (*models.LiveKitConfig, error) {
 	return &cfg, nil
 }
 
-// GenerateToken creates a JWT for joining a room using DB credentials
-func (s *Service) GenerateToken(roomName, participantIdentity string, isGrantAdmin bool) (string, string, error) {
+// GenerateToken creates a JWT for joining a room using DB credentials.
+// validFor should cover the scheduled interview window with a buffer —
+// callers should NOT rely on the old hardcoded 24h.
+func (s *Service) GenerateToken(roomName, participantIdentity string, isGrantAdmin bool, validFor time.Duration) (string, string, error) {
 	cfg, err := s.GetActiveConfig()
 	if err != nil {
 		return "", "", err
@@ -56,16 +58,16 @@ func (s *Service) GenerateToken(roomName, participantIdentity string, isGrantAdm
 
 	at := auth.NewAccessToken(cfg.APIKey, cfg.APISecret)
 	grant := &auth.VideoGrant{
-		RoomJoin:     true,          // bool
-		Room:         roomName,      // string
-		RoomAdmin:    isGrantAdmin,  // bool
-		CanPublish:   boolPtr(true), // *bool
-		CanSubscribe: boolPtr(true), // *bool
+		RoomJoin:     true,
+		Room:         roomName,
+		RoomAdmin:    isGrantAdmin,
+		CanPublish:   boolPtr(true),
+		CanSubscribe: boolPtr(true),
 	}
 
 	at.SetVideoGrant(grant).
 		SetIdentity(participantIdentity).
-		SetValidFor(24 * time.Hour)
+		SetValidFor(validFor)
 
 	token, err := at.ToJWT()
 	if err != nil {
@@ -89,4 +91,14 @@ func (s *Service) CreateRoom(ctx context.Context, roomName string) (*livekit.Roo
 		EmptyTimeout:    10 * 60, // 10 minutes
 		MaxParticipants: 10,
 	})
+}
+
+func (s *Service) DeleteRoom(ctx context.Context, roomName string) error {
+	cfg, err := s.GetActiveConfig()
+	if err != nil {
+		return err
+	}
+	roomClient := lksdk.NewRoomServiceClient(cfg.Host, cfg.APIKey, cfg.APISecret)
+	_, err = roomClient.DeleteRoom(ctx, &livekit.DeleteRoomRequest{Room: roomName})
+	return err
 }
