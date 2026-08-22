@@ -44,6 +44,13 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		req.TimeZone = "Asia/Kolkata"
 	}
 
+	req.ScheduledAt = req.ScheduledAt.UTC()
+
+	if !req.ScheduledAt.After(time.Now().UTC()) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "scheduled_at must be in the future"})
+		return
+	}
+
 	ctx := c.Request.Context()
 
 	var candidateEmail, candidateName string
@@ -206,11 +213,11 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	// Generate a passcode tied to this session's LiveKit room token, instead
 	// of exposing a raw join URL/JWT to the candidate. The verify-passcode
 	// handler (separate endpoint) will look this up and return the room
-	// token to whoever presents the correct passcode.
+	// token to whoever presents the correct passcode
 	var passcode string
 	var passcodeExpiresAt time.Time
 	if livekitToken != "" {
-		passcode, passcodeExpiresAt, err = h.createRoomPasscode(ctx, sessionID, livekitToken, livekitHost, validFor)
+		passcode, passcodeExpiresAt, err = h.createRoomPasscode(ctx, sessionID, livekitToken, livekitHost, req.ScheduledAt, validFor)
 		if err != nil {
 			log.Printf("CreateInterviewSession: failed to create passcode for %s: %v", sessionID, err)
 		}
@@ -285,8 +292,9 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 
 // createRoomPasscode generates a unique passcode and stores it alongside the
 // LiveKit room token/host for this session, retrying on rare collisions.
-func (h *AdminHandlers) createRoomPasscode(ctx context.Context, sessionID, roomToken, roomHost string, validFor time.Duration) (string, time.Time, error) {
-	expiresAt := time.Now().Add(validFor)
+func (h *AdminHandlers) createRoomPasscode(ctx context.Context, sessionID, roomToken, roomHost string, interviewStartsAt time.Time, validFor time.Duration) (string, time.Time, error) {
+	expiresAt := time.Now().UTC().Add(validFor)
+	interviewStartsAt = interviewStartsAt.UTC()
 
 	for attempt := 0; attempt < 5; attempt++ {
 		passcode, err := utils.GeneratePasscode(8)
@@ -296,9 +304,9 @@ func (h *AdminHandlers) createRoomPasscode(ctx context.Context, sessionID, roomT
 
 		_, err = h.DB.ExecContext(ctx, `
 			INSERT INTO interview_room_passcodes (
-				session_id, passcode, room_token, room_host, expires_at
-			) VALUES ($1, $2, $3, $4, $5)
-		`, sessionID, passcode, roomToken, roomHost, expiresAt)
+				session_id, passcode, room_token, room_host, interview_starts_at, expires_at
+			) VALUES ($1, $2, $3, $4, $5, $6)
+		`, sessionID, passcode, roomToken, roomHost, interviewStartsAt, expiresAt)
 		if err == nil {
 			return passcode, expiresAt, nil
 		}
@@ -312,7 +320,6 @@ func (h *AdminHandlers) createRoomPasscode(ctx context.Context, sessionID, roomT
 
 	return "", time.Time{}, fmt.Errorf("failed to generate unique passcode after retries")
 }
-
 func (h *AdminHandlers) ListApplicationInterviewFeedback(c *gin.Context) {
 	applicationID := c.Param("id")
 	if applicationID == "" {

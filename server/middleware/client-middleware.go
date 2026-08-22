@@ -11,54 +11,21 @@ import (
 	"vigilant/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
-
-type CandidateClaims struct {
-	CandidateID string `json:"candidate_id"`
-	Email       string `json:"email"`
-	SessionID   string `json:"session_id,omitempty"`
-	jwt.RegisteredClaims
-}
-
-func IssueCandidateJWT(cfg *config.Config, candidateID, email, sessionID string, validFor time.Duration) (string, error) {
-	claims := CandidateClaims{
-		CandidateID: candidateID,
-		Email:       email,
-		SessionID:   sessionID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(validFor)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Subject:   candidateID,
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(cfg.JWTSecret))
-}
 
 // AuthMiddleware protects candidate routes. Two ways to authenticate:
 //
-//  1. Authorization: Bearer <jwt> : a candidate JWT issued via
-//     IssueCandidateJWT (interview invite login), scoped to one
-//     interview session via claims.SessionID.
-//  2. X-Access-Token header / ?token= query param : the original opaque
-//     candidate_access_links flow (job application invite links).
+//  1. Authorization: Bearer <jwt> : a candidate ACCESS JWT issued via
+//     utils.IssueCandidateJWT (interview invite login / passcode verify),
+//     scoped to one interview session via claims.SessionID.
 func AuthMiddleware(db *sql.DB, cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) == 2 && strings.EqualFold(parts[0], "bearer") {
-				claims := &CandidateClaims{}
-				jwtToken, err := jwt.ParseWithClaims(parts[1], claims, func(t *jwt.Token) (interface{}, error) {
-					if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-						return nil, jwt.ErrSignatureInvalid
-					}
-					return []byte(cfg.JWTSecret), nil
-				})
-
-				if err != nil || !jwtToken.Valid {
+				claims, err := utils.ParseCandidateJWT(cfg, parts[1])
+				if err != nil {
 					c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: invalid or expired token"})
 					c.Abort()
 					return

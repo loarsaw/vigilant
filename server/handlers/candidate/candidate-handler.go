@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 	"vigilant/config"
+	"vigilant/utils"
 
 	"vigilant/models"
 
@@ -1027,17 +1028,23 @@ func (h *Handlers) VerifyRoomPasscode(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var (
-		sessionID string
-		roomToken string
-		roomHost  sql.NullString
-		expiresAt time.Time
+		sessionID         string
+		roomToken         string
+		roomHost          sql.NullString
+		expiresAt         time.Time
+		interviewStartsAt time.Time
+		candidateID       string
+		candidateEmail    string
 	)
 
 	err := h.DB.QueryRowContext(ctx, `
-		SELECT session_id, room_token, room_host, expires_at
-		FROM interview_room_passcodes
-		WHERE passcode = $1
-	`, passcode).Scan(&sessionID, &roomToken, &roomHost, &expiresAt)
+		SELECT p.session_id, p.room_token, p.room_host, p.expires_at, p.interview_starts_at,
+		       s.candidate_id, c.email
+		FROM interview_room_passcodes p
+		JOIN interview_sessions s ON s.session_id = p.session_id
+		JOIN candidates c ON c.id = s.candidate_id
+		WHERE p.passcode = $1
+	`, passcode).Scan(&sessionID, &roomToken, &roomHost, &expiresAt, &interviewStartsAt, &candidateID, &candidateEmail)
 
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invalid passcode"})
@@ -1049,8 +1056,16 @@ func (h *Handlers) VerifyRoomPasscode(c *gin.Context) {
 		return
 	}
 
-	if time.Now().After(expiresAt) {
+	now := time.Now().UTC()
+
+	if now.After(expiresAt) {
 		c.JSON(http.StatusGone, gin.H{"error": "passcode has expired"})
+		return
+	}
+
+	// Only allow joining within 5 minutes of the scheduled interview start
+	if time.Until(interviewStartsAt) > 5*time.Minute {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "passcode not valid yet,  please try again closer to your scheduled interview time"})
 		return
 	}
 
@@ -1060,13 +1075,24 @@ func (h *Handlers) VerifyRoomPasscode(c *gin.Context) {
 		WHERE passcode = $1
 	`, passcode)
 	if err != nil {
-		// Non-fatal: log it, but don't block the join over a bookkeeping write.
 		log.Printf("VerifyRoomPasscode: failed to update used_at for passcode: %v", err)
 	}
 
+	accessValidFor := time.Until(expiresAt)
+	if accessValidFor < 0 {
+		accessValidFor = 0
+	}
+	accessToken, err := utils.IssueCandidateJWT(h.Cfg, candidateID, candidateEmail, sessionID, accessValidFor)
+	if err != nil {
+		log.Printf("VerifyRoomPasscode: failed to issue access token for session %s: %v", sessionID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to issue session token"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"session_id": sessionID,
-		"room_token": roomToken,
-		"room_host":  roomHost.String,
+		"session_id":   sessionID,
+		"room_token":   roomToken,
+		"room_host":    roomHost.String,
+		"access_token": accessToken,
 	})
 }

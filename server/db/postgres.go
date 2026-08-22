@@ -1022,7 +1022,7 @@ org_name VARCHAR(255) NOT NULL,
 		`CREATE INDEX IF NOT EXISTS idx_admin_notifications_entity ON admin_notifications(entity_type, entity_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_admin_notifications_unread ON admin_notifications(is_read) WHERE is_read = FALSE;`,
 
-		`CREATE TABLE interview_room_passcodes (
+		`CREATE TABLE IF NOT EXISTS interview_room_passcodes (
     id           BIGSERIAL PRIMARY KEY,
 	session_id   VARCHAR(255) NOT NULL REFERENCES interview_sessions(session_id) ON DELETE CASCADE,
     passcode     VARCHAR(12) NOT NULL,
@@ -1033,8 +1033,9 @@ org_name VARCHAR(255) NOT NULL,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (passcode)
 );`,
+		`ALTER TABLE interview_room_passcodes ADD COLUMN IF NOT EXISTS interview_starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
 
-		`CREATE INDEX idx_interview_room_passcodes_session_id ON interview_room_passcodes(session_id);`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_room_passcodes_session_id ON interview_room_passcodes(session_id);`,
 	}
 
 	for i, migration := range migrations {
