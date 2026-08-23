@@ -14,17 +14,16 @@ export const useDeepLink = () => {
     const handleDeepLink = (data: DeepLinkData) => {
       const { action, params } = data;
 
-      if (params.domain_name && params.username && params.password) {
-        const queryParams = new URLSearchParams();
+      const hasPasswordAuth = params.domain_name && params.username && params.password;
+      const hasJWTAuth = params.domain_name && params.username && params.candidate_jwt;
 
+      if (hasPasswordAuth || hasJWTAuth) {
+        const queryParams = new URLSearchParams();
         Object.entries(params).forEach(([key, value]) => {
           queryParams.append(key, value);
         });
 
-        const queryString = queryParams.toString();
-        const route = `/linkstart?${queryString}`;
-
-        console.log("Navigating to:", route);
+        const route = `/linkstart?${queryParams.toString()}`;
         navigate(route);
         return;
       }

@@ -152,15 +152,11 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	offsetPlaceholder := fmt.Sprintf("$%d", len(args)+2)
 	args = append(args, limit, offset)
 
+	// Only columns that actually exist on candidates.
 	rows, err := h.DB.Query(fmt.Sprintf(`
-		SELECT id, email, full_name, created_at, updated_at, is_active,
-		       COALESCE(resume_url, '') as resume_url,
-		       COALESCE(github_url, '') as github_url,
-		       COALESCE(skills, '') as skills,
-		       COALESCE(phone_number, '') as phone_number,
-		       COALESCE(experience_years, 0) as experience_years,
-		       onboarding_complete,
-		       COALESCE(last_login, '1970-01-01'::timestamp) as last_login
+		SELECT id, email, full_name, phone_number, created_at, updated_at,
+		       is_active, onboarding_complete,
+		       COALESCE(last_login, '1970-01-01'::timestamptz) as last_login
 		FROM candidates %s
 		ORDER BY created_at DESC
 		LIMIT %s OFFSET %s
@@ -172,36 +168,85 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	}
 	defer rows.Close()
 
+	type ApplicationSummary struct {
+		ApplicationID string    `json:"application_id"`
+		PositionTitle string    `json:"position_title"`
+		Status        string    `json:"status"`
+		AppliedAt     time.Time `json:"applied_at"`
+	}
+
 	type CandidateWithPresence struct {
 		models.Candidate
-		IsOnline bool `json:"is_online"`
+		IsOnline     bool                 `json:"is_online"`
+		Applications []ApplicationSummary `json:"applications"`
 	}
 
 	candidates := []CandidateWithPresence{}
+	ids := []string{}
+
 	for rows.Next() {
 		var cand models.Candidate
+		var lastLogin time.Time
 
 		if err := rows.Scan(
-			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
-			&cand.IsActive,
-			&cand.PhoneNumber,
-			&cand.OnboardingComplete,
-			&cand.LastLogin,
+			&cand.ID, &cand.Email, &cand.FullName, &cand.PhoneNumber,
+			&cand.CreatedAt, &cand.UpdatedAt,
+			&cand.IsActive, &cand.OnboardingComplete,
+			&lastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
 		}
+		cand.LastLogin = &lastLogin
 
 		candidates = append(candidates, CandidateWithPresence{
 			Candidate: cand,
 			IsOnline:  websocket.Manager.IsActive(cand.ID),
 		})
+		ids = append(ids, cand.ID)
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Printf("Error iterating candidates: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidates"})
 		return
+	}
+
+	// Fetch applications (with position names) for this page of candidates in one query.
+	if len(ids) > 0 {
+		appRows, err := h.DB.Query(`
+			SELECT ja.candidate_id, ja.id, hp.position_title, ja.status, ja.applied_at
+			FROM job_applications ja
+			JOIN hiring_positions hp ON hp.id = ja.position_id
+			WHERE ja.candidate_id = ANY($1)
+			ORDER BY ja.applied_at DESC
+		`, pq.Array(ids))
+		if err != nil {
+			log.Printf("Error querying candidate applications: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+			return
+		}
+		defer appRows.Close()
+
+		byCandidate := make(map[string][]ApplicationSummary)
+		for appRows.Next() {
+			var candID string
+			var app ApplicationSummary
+			if err := appRows.Scan(&candID, &app.ApplicationID, &app.PositionTitle, &app.Status, &app.AppliedAt); err != nil {
+				log.Printf("Error scanning application: %v", err)
+				continue
+			}
+			byCandidate[candID] = append(byCandidate[candID], app)
+		}
+		if err := appRows.Err(); err != nil {
+			log.Printf("Error iterating applications: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+			return
+		}
+
+		for i := range candidates {
+			candidates[i].Applications = byCandidate[candidates[i].ID]
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -217,23 +262,18 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 
 	var cand models.Candidate
+	var lastLogin time.Time
 
 	err := h.DB.QueryRow(`
-		SELECT id, email, full_name, created_at, updated_at, is_active,
-		       COALESCE(resume_url, '') as resume_url,
-		       COALESCE(github_url, '') as github_url,
-		       COALESCE(skills, '') as skills,
-		       COALESCE(phone_number, '') as phone_number,
-		       COALESCE(experience_years, 0) as experience_years,
-		       onboarding_complete,
-		       COALESCE(last_login, '1970-01-01'::timestamp) as last_login
+		SELECT id, email, full_name, phone_number, created_at, updated_at,
+		       is_active, onboarding_complete,
+		       COALESCE(last_login, '1970-01-01'::timestamptz) as last_login
 		FROM candidates WHERE id = $1::uuid
 	`, candidateID).Scan(
-		&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
-		&cand.IsActive,
-		&cand.PhoneNumber,
-		&cand.OnboardingComplete,
-		&cand.LastLogin,
+		&cand.ID, &cand.Email, &cand.FullName, &cand.PhoneNumber,
+		&cand.CreatedAt, &cand.UpdatedAt,
+		&cand.IsActive, &cand.OnboardingComplete,
+		&lastLogin,
 	)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
@@ -244,10 +284,72 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidate"})
 		return
 	}
+	cand.LastLogin = &lastLogin
+
+	type ApplicationDetail struct {
+		ApplicationID   string    `json:"application_id"`
+		PositionID      string    `json:"position_id"`
+		PositionTitle   string    `json:"position_title"`
+		Status          string    `json:"status"`
+		FullName        string    `json:"full_name,omitempty"`
+		PhoneNumber     string    `json:"phone_number,omitempty"`
+		ResumeURL       string    `json:"resume_url,omitempty"`
+		GithubURLs      []string  `json:"github_urls,omitempty"`
+		Skills          string    `json:"skills,omitempty"`
+		ExperienceYears int       `json:"experience_years"`
+		IsQualified     bool      `json:"is_qualified"`
+		IsShortlisted   bool      `json:"is_shortlisted"`
+		AppliedAt       time.Time `json:"applied_at"`
+	}
+
+	appRows, err := h.DB.Query(`
+		SELECT ja.id, ja.position_id, hp.position_title, ja.status,
+		       COALESCE(ja.full_name, ''),
+		       COALESCE(ja.phone_number, ''),
+		       COALESCE(ja.resume_url, ''),
+		       ja.github_urls,
+		       COALESCE(ja.skills, ''),
+		       COALESCE(ja.experience_years, 0),
+		       ja.is_qualified, ja.is_shortlisted,
+		       ja.applied_at
+		FROM job_applications ja
+		JOIN hiring_positions hp ON hp.id = ja.position_id
+		WHERE ja.candidate_id = $1::uuid
+		ORDER BY ja.applied_at DESC
+	`, candidateID)
+	if err != nil {
+		log.Printf("Error querying candidate applications: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+		return
+	}
+	defer appRows.Close()
+
+	applications := []ApplicationDetail{}
+	for appRows.Next() {
+		var app ApplicationDetail
+		if err := appRows.Scan(
+			&app.ApplicationID, &app.PositionID, &app.PositionTitle, &app.Status,
+			&app.FullName, &app.PhoneNumber, &app.ResumeURL,
+			pq.Array(&app.GithubURLs),
+			&app.Skills, &app.ExperienceYears,
+			&app.IsQualified, &app.IsShortlisted,
+			&app.AppliedAt,
+		); err != nil {
+			log.Printf("Error scanning application: %v", err)
+			continue
+		}
+		applications = append(applications, app)
+	}
+	if err := appRows.Err(); err != nil {
+		log.Printf("Error iterating applications: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"candidate": cand,
-		"is_online": websocket.Manager.IsActive(cand.ID),
+		"candidate":    cand,
+		"is_online":    websocket.Manager.IsActive(cand.ID),
+		"applications": applications,
 	})
 }
 

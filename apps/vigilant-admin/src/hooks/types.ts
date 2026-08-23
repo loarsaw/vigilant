@@ -416,7 +416,7 @@ export interface CandidateApplicationsResponse {
 
 export interface CreateInterviewPayload {
   candidate_id: string;
-  position_id: string;
+  application_id: string;
   interviewer_id: string;
   position: string;
   interview_type: string;
@@ -658,4 +658,25 @@ export interface LiveKitConfigForm {
   host: string;
   apiKey: string;
   apiSecret: string;
+}
+
+
+export interface AIProviderConfigResponse {
+  provider: "openai" | "gemini" | "claude";
+  model: string;
+  base_url?: string;
+  is_active: boolean;
+}
+
+export interface SaveAIProviderConfigPayload {
+  provider: "openai" | "gemini" | "claude";
+  api_key: string;
+  model: string;
+  base_url?: string;
+}
+
+export interface AIProviderConfigForm {
+  apiKey: string;
+  model: string;
+  baseUrl: string;
 }

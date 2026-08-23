@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, safeStorage, session, desktopCapturer } from "electron";
 import path from "path";
+import Store from "electron-store";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 import started from "electron-squirrel-startup";
@@ -50,6 +51,23 @@ if (!gotTheLock) {
   });
 }
 
+const store = new Store();
+
+ipcMain.handle("auth:setToken", (_event, token: string) => {
+  const encrypted = safeStorage.encryptString(token);
+  store.set("authToken", encrypted.toString("base64"));
+});
+
+ipcMain.handle("auth:getToken", () => {
+  const stored = store.get("authToken") as string | undefined;
+  if (!stored) return null;
+  return safeStorage.decryptString(Buffer.from(stored, "base64"));
+});
+
+ipcMain.handle("auth:clearToken", () => {
+  store.delete("authToken");
+});
+
 app.on("open-url", (event, url) => {
   event.preventDefault();
   console.log("Opened from URL (open-url):", url);
@@ -87,8 +105,29 @@ ipcMain.handle("dev:isDev", async (_event) => {
   return { isDev: !app.isPackaged };
 });
 
+function setupDisplayMediaHandler() {
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (_request, callback) => {
+      desktopCapturer
+        .getSources({ types: ["window", "screen"] })
+        .then((sources) => {
+          if (!sources.length) {
+            console.error("[main] setDisplayMediaRequestHandler: no sources found");
+            callback({});
+            return;
+          }
+          callback({ video: sources[0], audio: "loopback" });
+        })
+        .catch((err) => {
+          console.error("[main] setDisplayMediaRequestHandler: desktopCapturer failed:", err);
+          callback({});
+        });
+    },
+    { useSystemPicker: true },
+  );
+}
+
 const createWindow = () => {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -127,7 +166,10 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  setupDisplayMediaHandler();
+  createWindow();
+});
 
 ipcMain.handle("get-all-processes", async () => {
   try {

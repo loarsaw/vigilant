@@ -223,6 +223,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		interviewGroup.POST("/interviews/send-invite", h.SendInterviewInvite)
 		interviewGroup.GET("/interviews", h.ListInterviewSessions)
 		// interviewGroup.PATCH("/interview-session/:session_id/reschedule", h.RescheduleInterviewSession)
+		interviewGroup.GET("/interview-session/:session_id/room-token", h.GetInterviewerRoomToken)
 		interviewGroup.GET("/interview-sessions/:id/status", h.GetInterviewSessionStatus)
 		interviewGroup.GET("/interview-sessions/:id/details", h.GetCompletedInterviewWithFeedback)
 		interviewGroup.POST("/create-interview", h.CreateInterviewSession)

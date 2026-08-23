@@ -16,9 +16,13 @@ async function reportProcesses(payload: ProcessReportPayload): Promise<void> {
 export function useInterview() {
   const queryClient = useQueryClient();
 
-  const currentSession = queryClient.getQueryData<string>(["interview", "session"]);
+  const interviewRoom = queryClient.getQueryData<{
+    sessionId: string;
+    roomToken: string;
+    roomHost: string;
+  }>(["interview", "room"]);
 
-  console.log(currentSession, "Current Session");
+  const currentSession = interviewRoom?.sessionId;
 
   const {
     mutateAsync: sendProcessReport,

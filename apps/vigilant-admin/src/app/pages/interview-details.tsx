@@ -58,10 +58,11 @@ export function InterviewDetail() {
     sessions,
     sessionStatus,
     sendEmailAsync,
+    getRoomTokenAsync,
+    isFetchingRoomToken,
+    roomTokenError,
   } = useInterview(candidateId, sessionId);
 
-  // const { session } = useInterviewSessionDetails(sessionId);
-  // console.log(session, "s");
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
 
@@ -72,10 +73,10 @@ export function InterviewDetail() {
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [upcoming, setUpcoming] = useState(false);
-  const [interviewurl, setInterviewUrl] = useState(null);
   const [interviewStatus, setInterviewStatus] = useState<string>("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const canDispatch =
     sessionType === "framework"
@@ -90,40 +91,22 @@ export function InterviewDetail() {
     }
   }, [sessionStatus]);
 
-  const handleSendLoginLink = async () => {
-    try {
-      await sendEmailAsync({
-        sessionId,
-        payload: { email_type: "start" },
-      });
-    } catch (error) {}
-  };
+  // const handleSendLoginLink = async () => {
+  //   try {
+  //     await sendEmailAsync({
+  //       sessionId,
+  //       payload: { email_type: "start" },
+  //     });
+  //   } catch (error) {}
+  // };
 
   useEffect(() => {
-    // if (session && session?.interview_url && session?.scheduled_at) {
-    //   // const eventDate = new Date(session.scheduled_at);
-    //   // const now = new Date();
-    //   // const bufferTime = new Date(eventDate.getTime());
-    //   // bufferTime.setMinutes(bufferTime.getMinutes() - 30);
-    //   // if (now >= bufferTime && now <= eventDate) {
-    //   //   setUpcoming(true);
-    //   // } else if (now < bufferTime) {
-    //   //   setUpcoming(false);
-    //   // } else {
-    //   //   setUpcoming(false);
-    //   // }
-    // }
-
-    console.log(sessions, "sessions");
-
     const nextInterview = sessions
       .filter((session) => session.status === "scheduled" && session.is_upcoming)
       .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())[0];
 
-    console.log(nextInterview, "nextInterview");
     if (nextInterview && nextInterview?.is_upcoming) {
       setUpcoming(nextInterview.is_upcoming);
-      setInterviewUrl(nextInterview.interview_url);
     }
   }, [sessions]);
 
@@ -182,6 +165,20 @@ export function InterviewDetail() {
     }
   };
 
+  // Fetches the interviewer's own LiveKit room token (see
+  // AdminHandlers.GetInterviewerRoomToken) and navigates into the room
+  // inside this app — no more opening an external interview_url.
+  const handleJoinInterview = async () => {
+    if (!sessionId) return;
+    setJoinError(null);
+    try {
+      await getRoomTokenAsync(sessionId);
+      navigate(`/interview/${sessionId}/room`);
+    } catch (err: any) {
+      setJoinError(err?.response?.data?.error ?? "Failed to join interview room");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -211,7 +208,6 @@ export function InterviewDetail() {
     ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
 
-  console.log(upcoming, "as");
   return (
     <div className="space-y-6 p-5">
       {/* End Interview Confirmation Modal */}
@@ -283,40 +279,6 @@ export function InterviewDetail() {
             </div>
           </div>
         </div>
-
-        {/* Session controls */}
-        {/* <div className="flex items-center gap-3">
-          {sessionError && interviewStatus !== "completed" && (
-            <p className="text-sm text-red-400">{sessionError}</p>
-          )}
-
-          {interviewStatus === "completed" ? (
-            <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-3 py-1.5 text-sm">
-              <CheckCircle className="h-4 w-4 mr-1.5" />
-              Session completed
-            </Badge>
-          ) : interviewStatus === "in_progress" ? (
-            <>
-              <Badge className="bg-cyan-500/20 text-cyan-400 border-cyan-500/30 px-3 py-1.5 text-sm">
-                <span className="h-2 w-2 rounded-full bg-cyan-400 mr-2 animate-pulse inline-block" />
-                Scheduled
-              </Badge>
-            </>
-          ) : (
-            <Button
-              onClick={handleStartInterview}
-              disabled={isStartingSession || !sessionId}
-              className="bg-green-600 hover:bg-green-500 text-white gap-2"
-            >
-              {isStartingSession ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-              {isStartingSession ? "Starting..." : "Start interview"}
-            </Button>
-          )}
-        </div> */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -416,11 +378,6 @@ export function InterviewDetail() {
                     {candidateData.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                {/* {candidateData.last_login && (
-                  <p className="text-gray-500 text-xs mt-1">
-                    Last login: {new Date(candidateData.last_login).toLocaleString()}
-                  </p>
-                )} */}
               </div>
             </CardContent>
           </Card>
@@ -435,27 +392,20 @@ export function InterviewDetail() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                onClick={() => {
-                  handleSendLoginLink();
-                }}
-                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
-              >
-                <EqualApproximatelyIcon className="h-4 w-4 mr-2" />
-                Send Login Email
-              </Button>
-
-              <Button
-                disabled={!interviewurl}
-                onClick={() => {
-                  if (interviewurl) {
-                    window.api?.openExternal(interviewurl);
-                  }
-                }}
+                disabled={!sessionId || isFetchingRoomToken}
+                onClick={handleJoinInterview}
                 className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <JoystickIcon className="h-4 w-4 mr-2" />
-                {interviewurl ? "Join Interview" : "Expired"}
+                {isFetchingRoomToken ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <JoystickIcon className="h-4 w-4 mr-2" />
+                )}
+                {isFetchingRoomToken ? "Joining..." : "Join Interview"}
               </Button>
+              {(joinError || roomTokenError) && (
+                <p className="text-xs text-red-400">{joinError ?? roomTokenError}</p>
+              )}
             </CardContent>
           </Card>
 

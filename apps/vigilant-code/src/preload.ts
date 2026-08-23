@@ -1,3 +1,4 @@
+// preload.ts
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("api", {
@@ -9,6 +10,10 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.removeAllListeners("deep-link");
   },
   getAllProcesses: () => ipcRenderer.invoke("get-all-processes"),
+
+  setAuthToken: (token: string) => ipcRenderer.invoke("auth:setToken", token),
+  getAuthToken: () => ipcRenderer.invoke("auth:getToken"),
+  clearAuthToken: () => ipcRenderer.invoke("auth:clearToken"),
 });
 
 declare global {
@@ -18,6 +23,9 @@ declare global {
       onDeepLink: (callback: (data: any) => void) => void;
       removeDeepLinkListener: () => void;
       getAllProcesses: () => Promise<any>;
+      setAuthToken: (token: string) => Promise<void>;
+      getAuthToken: () => Promise<string | null>;
+      clearAuthToken: () => Promise<void>;
     };
   }
 }

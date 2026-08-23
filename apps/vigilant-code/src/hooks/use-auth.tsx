@@ -3,6 +3,16 @@ import { apiClient, setBaseURL, presenceSocket, setAuthToken } from "@/lib/axios
 import { useEffect } from "react";
 import { AuthUser, LoginCredentials, LoginResponse, SetupStatus } from "./types";
 
+interface PasscodeVerifyResponse {
+  session_id: string;
+  room_token: string;
+  room_host: string;
+  access_token: string;
+}
+
+
+type AuthKind = "account" | "interview";
+
 const authApi = {
   login: async (workspace: string, credentials: LoginCredentials): Promise<LoginResponse> => {
     await setBaseURL(workspace);
@@ -10,6 +20,22 @@ const authApi = {
       email: credentials.username,
       password: credentials.password,
     });
+    return data;
+  },
+
+    loginWithToken: async (workspace: string, token: string): Promise<AuthUser> => {
+    await setBaseURL(workspace);
+    setAuthToken(token);
+    const { data } = await apiClient.get<AuthUser>("/auth/me");
+    return data;
+  },
+
+  verifyPasscode: async (workspace: string, passcode: string): Promise<PasscodeVerifyResponse> => {
+    await setBaseURL(workspace);
+    const { data } = await apiClient.post<PasscodeVerifyResponse>(
+      "/public/interview/verify-passcode",
+      { passcode },
+    );
     return data;
   },
 
@@ -34,7 +60,9 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const hasToken = !!apiClient.defaults.headers.common["Authorization"];
   const hasBaseURL = !!apiClient.defaults.baseURL;
-  const canFetchMe = hasToken && hasBaseURL;
+
+  const authKind = queryClient.getQueryData<AuthKind>(["auth", "kind"]);
+  const canFetchMe = hasToken && hasBaseURL && authKind !== "interview";
 
   const {
     data: user,
@@ -83,6 +111,7 @@ export function useAuth() {
     }) => authApi.login(workspace, credentials),
     onSuccess: (data) => {
       setAuthToken(data.token);
+      queryClient.setQueryData(["auth", "kind"], "account" satisfies AuthKind);
       queryClient.setQueryData(["auth", "me"], {
         candidate_id: data.candidate_id,
         email: data.email,
@@ -99,11 +128,59 @@ export function useAuth() {
     },
   });
 
+  const {
+    mutateAsync: loginWithToken,
+    isPending: isLoggingInWithToken,
+    error: loginWithTokenError,
+    reset: resetLoginWithToken,
+  } = useMutation({
+    mutationFn: ({ workspace, token }: { workspace: string; token: string }) =>
+      authApi.loginWithToken(workspace, token),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["auth", "kind"], "account" satisfies AuthKind);
+      queryClient.setQueryData(["auth", "me"], data);
+      presenceSocket.connect({
+        token: apiClient.defaults.headers.common["Authorization"]
+          ?.toString()
+          .replace("Bearer ", "") ?? "",
+        onStatusChange: (status) => {
+          console.log("[Presence]", status);
+        },
+      });
+    },
+  });
+
+  const {
+    mutateAsync: verifyPasscode,
+    isPending: isVerifyingPasscode,
+    error: verifyPasscodeError,
+    reset: resetVerifyPasscode,
+  } = useMutation({
+    mutationFn: ({ workspace, passcode }: { workspace: string; passcode: string }) =>
+      authApi.verifyPasscode(workspace, passcode),
+    onSuccess: (data) => {
+      setAuthToken(data.access_token);
+      queryClient.setQueryData(["auth", "kind"], "interview" satisfies AuthKind);
+      queryClient.setQueryData(["interview", "room"], {
+        sessionId: data.session_id,
+        roomToken: data.room_token,
+        roomHost: data.room_host,
+      });
+      presenceSocket.connect({
+        token: data.access_token,
+        onStatusChange: (status) => {
+          console.log("[Presence]", status);
+        },
+      });
+    },
+  });
+
   const { mutateAsync: logout, isPending: isLoggingOut } = useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
       presenceSocket.disconnect();
       queryClient.removeQueries({ queryKey: ["auth"] });
+      queryClient.removeQueries({ queryKey: ["interview"] });
       queryClient.clear();
     },
   });
@@ -128,9 +205,16 @@ export function useAuth() {
     workspace: string;
     setupPath: string;
   }>(["auth", "session-meta"]);
+
+  const interviewRoom = queryClient.getQueryData<{
+    sessionId: string;
+    roomToken: string;
+    roomHost: string;
+  }>(["interview", "room"]);
+
   return {
     user: user ?? null,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user || authKind === "interview",
     isLoadingUser,
     isAuthError,
     setSessionMeta,
@@ -140,6 +224,17 @@ export function useAuth() {
     isLoggingIn,
     loginError,
     resetLogin,
+
+    loginWithToken,
+    isLoggingInWithToken,
+    loginWithTokenError,
+    resetLoginWithToken,
+
+    verifyPasscode,
+    isVerifyingPasscode,
+    verifyPasscodeError,
+    resetVerifyPasscode,
+    interviewRoom,
 
     logout,
     isLoggingOut,

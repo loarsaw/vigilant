@@ -656,6 +656,88 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 	})
 }
 
+func (h *AdminHandlers) GetInterviewerRoomToken(c *gin.Context) {
+	sessionID := c.Param("session_id")
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id is required"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	adminID, exists := c.Get("admin_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	var (
+		interviewerID string
+		scheduledAt   time.Time
+		scheduledDur  int
+		status        string
+		adminEmail    string
+		adminRole     string
+	)
+
+	err := h.DB.QueryRowContext(ctx, `
+		SELECT interviewer_id, scheduled_at, scheduled_duration, status
+		FROM interview_sessions
+		WHERE session_id = $1
+	`, sessionID).Scan(&interviewerID, &scheduledAt, &scheduledDur, &status)
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "interview session not found"})
+		return
+	}
+	if err != nil {
+		log.Printf("GetInterviewerRoomToken: failed to fetch session: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	err = h.DB.QueryRowContext(ctx, `
+		SELECT email, role FROM administrators WHERE id = $1
+	`, adminID).Scan(&adminEmail, &adminRole)
+	if err != nil {
+		log.Printf("GetInterviewerRoomToken: failed to fetch admin: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	if adminID.(string) != interviewerID && adminRole != "hr" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: not the assigned interviewer for this session"})
+		return
+	}
+
+	if status == "cancelled" || status == "completed" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("interview session is %s", status)})
+		return
+	}
+
+	if h.LiveKitService == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "livekit not configured"})
+		return
+	}
+
+	validFor := time.Until(scheduledAt) + time.Duration(scheduledDur)*time.Minute + 2*time.Hour
+	if validFor < 0 {
+		validFor = time.Duration(scheduledDur)*time.Minute + 2*time.Hour
+	}
+
+	token, host, err := h.LiveKitService.GenerateToken(sessionID, adminEmail, true, validFor)
+	if err != nil {
+		log.Printf("GetInterviewerRoomToken: failed to generate token for session %s: %v", sessionID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate room token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"session_id": sessionID,
+		"room_token": token,
+		"room_host":  host,
+	})
+}
+
 func (h *AdminHandlers) GetCompletedInterviewWithFeedback(c *gin.Context) {
 	sessionID := c.Param("id")
 

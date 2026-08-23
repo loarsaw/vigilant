@@ -9,14 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import JobCard from "@/components/job-card";
 import { useHiringPositions } from "@/hooks/use-hiring";
 import {

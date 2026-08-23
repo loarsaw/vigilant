@@ -14,6 +14,12 @@ import {
   SendEmailResponse,
 } from "./types";
 
+interface InterviewRoomTokenResponse {
+  session_id: string;
+  room_token: string;
+  room_host: string;
+}
+
 const fetchInterviewSessions = async (
   params: InterviewSessionsParams,
 ): Promise<InterviewSessionsResponse> => {
@@ -60,6 +66,15 @@ const sendInterviewEmail = async (
   payload: SendEmailPayload,
 ): Promise<SendEmailResponse> => {
   const response = await apiClient.post(`/interview-session/${sessionId}/send-email`, payload);
+  return response.data;
+};
+
+// Fetches a LiveKit room token for the interviewer/admin to join the same
+// room as the candidate — see AdminHandlers.GetInterviewerRoomToken.
+const fetchInterviewerRoomToken = async (
+  sessionId: string,
+): Promise<InterviewRoomTokenResponse> => {
+  const response = await apiClient.get(`/interview-session/${sessionId}/room-token`);
   return response.data;
 };
 
@@ -152,6 +167,23 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     },
   });
 
+  // On-demand fetch of the interviewer's own LiveKit room token — call this
+  // right before navigating into the room (mirrors the candidate's
+  // verify-passcode flow, but authenticated via normal admin auth instead
+  // of a passcode). Stashed under ["interview", "admin-room"] so a room
+  // page can read it the same way the candidate flow reads
+  // ["interview", "room"].
+  const roomTokenMutation = useMutation({
+    mutationFn: fetchInterviewerRoomToken,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["interview", "admin-room"], {
+        sessionId: data.session_id,
+        roomToken: data.room_token,
+        roomHost: data.room_host,
+      });
+    },
+  });
+
   return {
     sessions: sessionData?.data ?? [],
     totalSessions: sessionData?.total ?? 0,
@@ -176,6 +208,7 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     isStartingSession: startSessionMutation.isPending,
     isEndingSession: endSessionMutation.isPending,
     isSendingEmail: sendEmailMutation.isPending,
+    isFetchingRoomToken: roomTokenMutation.isPending,
 
     scheduleInterview: scheduleMutation.mutate,
     scheduleInterviewAsync: scheduleMutation.mutateAsync,
@@ -192,6 +225,9 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     sendEmail: sendEmailMutation.mutate,
     sendEmailAsync: sendEmailMutation.mutateAsync,
 
+    getRoomToken: roomTokenMutation.mutate,
+    getRoomTokenAsync: roomTokenMutation.mutateAsync,
+
     interviewers: interviewersData?.interviewers ?? [],
     isLoadingInterviewers,
 
@@ -200,6 +236,7 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     startSessionError: startSessionMutation.error?.message ?? null,
     endSessionError: endSessionMutation.error?.message ?? null,
     sendEmailError: sendEmailMutation.error?.message ?? null,
+    roomTokenError: roomTokenMutation.error?.message ?? null,
 
     sessionStatus: sessionStatusData?.status ?? null,
     isLoadingSessionStatus,

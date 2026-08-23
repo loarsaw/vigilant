@@ -45,6 +45,8 @@
   "license": "MIT",
   "dependencies": {
     "@electron-forge/publisher-github": "^7.11.1",
+    "@livekit/components-react": "^2.9.24",
+    "@livekit/components-styles": "^1.2.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -64,6 +66,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "electron-squirrel-startup": "^1.0.1",
+    "livekit-client": "^2.22.0",
     "lucide-react": "^0.564.0",
     "react": "^18.3.1",
     "react-day-picker": "^9.14.0",

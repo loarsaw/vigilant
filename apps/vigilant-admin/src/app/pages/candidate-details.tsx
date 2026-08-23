@@ -25,10 +25,13 @@ export function CandidateDetail() {
 
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   console.log(data, "data");
-  const { applications, statistics } = useJobApplications({
+  const {
+    applications,
+    statistics,
+    isLoading: isLoadingApplications,
+  } = useJobApplications({
     candidate_id: candidateId,
   });
-  console.log(applications, "applications", statistics);
 
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
@@ -242,7 +245,7 @@ export function CandidateDetail() {
               )}
 
               {/* {candidateData.phone_number && ( */}
-              <Button
+              {/* <Button
                 variant="outline"
                 className={`w-full border-gray-700 text-gray-300 ${isCalling ? "border-red-600 text-red-400" : ""}`}
                 onClick={() => (isCalling ? hangUp() : makeCall(HARDCODED_NUMBER))}
@@ -259,9 +262,9 @@ export function CandidateDetail() {
                     {isReady ? "Call" : "Connecting..."}
                   </>
                 )}
-              </Button>
+              </Button> */}
 
-              {twError && <p className="text-red-400 text-xs text-center">{twError}</p>}
+              {/* {twError && <p className="text-red-400 text-xs text-center">{twError}</p>} */}
               {/* )} */}
             </CardContent>
           </Card>
@@ -282,6 +285,8 @@ export function CandidateDetail() {
           onClose={() => setShowScheduleDialog(false)}
           candidateName={candidateData.full_name}
           candidateId={candidateId!}
+          applications={applications ?? []}
+          isLoadingApplications={isLoadingApplications}
           onSchedule={() => {}}
         />
       </div>

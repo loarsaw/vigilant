@@ -1,8 +1,10 @@
 import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+// import { useInterview } from "@/hooks/use-session";
+// import { useEffect } from "react";
+import { useSSE } from "@/hooks/use-sse";
 import { useInterview } from "@/hooks/use-session";
 import { useEffect } from "react";
-import { useSSE } from "@/hooks/use-sse";
 
 interface SessionConfig {
   framework: string;

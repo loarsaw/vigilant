@@ -14,15 +14,21 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useInterview } from "@/hooks/use-interview";
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/axios";
-import { useHiringPositions } from "@/hooks/use-hiring";
+
+interface JobApplication {
+  id: string;
+  position_id: string;
+  position_title: string;
+  status: string;
+}
 
 interface ScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
   candidateId: string;
   candidateName: string;
+  applications?: JobApplication[];
+  isLoadingApplications?: boolean;
   onSchedule: (details: any) => void;
 }
 
@@ -31,12 +37,13 @@ export function ScheduleInterviewModal({
   onClose,
   candidateId,
   candidateName,
+  applications = [],
+  isLoadingApplications,
   onSchedule,
 }: ScheduleModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("60");
-  const [interviewerEmail, setInterviewerEmail] = useState("");
   const [interviewType, setInterviewType] = useState("");
   const [interviewURL, setInterviewURL] = useState("");
   const [timezone, setTimezone] = useState("UTC");
@@ -44,7 +51,6 @@ export function ScheduleInterviewModal({
   const [notes, setNotes] = useState("");
   const [interviewerId, setInterviewerId] = useState("");
   const [interviewerSearch, setInterviewerSearch] = useState("");
-  const { positions, isLoadingPositions } = useHiringPositions();
   const { scheduleInterviewAsync, isScheduling, interviewers, isLoadingInterviewers } =
     useInterview(candidateId);
 
@@ -53,25 +59,13 @@ export function ScheduleInterviewModal({
     return i.full_name.toLowerCase().includes(q) || i.email.toLowerCase().includes(q);
   });
 
-  // const { data: applicationsData, isLoading } = useQuery({
-  //   queryKey: ["candidate-applications", candidateId],
-  //   queryFn: async () => {
-  //     const response = await apiClient.get(`/candidates/${candidateId}/applications`);
-  //     return response.data;
-  //   },
-  //   enabled: isOpen && !!candidateId,
-  // });
-
-  // const applicationOptions = applicationsData?.data ?? [];
-
-  const selectedApplication = positions.find((p) => p.id === selectedApplicationId);
+  const selectedApplication = applications.find((a) => a.id === selectedApplicationId);
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedDate(new Date());
       setTime("");
       setDuration("60");
-      setInterviewerEmail("");
       setInterviewType("");
       setInterviewURL("");
       setTimezone("UTC");
@@ -100,7 +94,7 @@ export function ScheduleInterviewModal({
     try {
       await scheduleInterviewAsync({
         candidate_id: candidateId,
-        position_id: selectedApplicationId,
+        application_id: selectedApplicationId,
         interviewer_id: interviewerId,
         position: selectedApplication?.position_title ?? "",
         interview_type: interviewType,
@@ -139,21 +133,27 @@ export function ScheduleInterviewModal({
           <div className="space-y-4">
             {/* Application Select */}
             <div>
-              <Label className="text-gray-300">Application / Position</Label>
+              <Label className="text-gray-300">Application</Label>
               <Select
                 value={selectedApplicationId}
                 onValueChange={setSelectedApplicationId}
-                disabled={isLoadingPositions}
+                disabled={isLoadingApplications}
               >
                 <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
                   <SelectValue
-                    placeholder={isLoadingPositions ? "Loading..." : "Select position"}
+                    placeholder={
+                      isLoadingApplications
+                        ? "Loading..."
+                        : applications.length === 0
+                          ? "No applications on file"
+                          : "Select application"
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {positions.map((pos) => (
-                    <SelectItem key={pos.id} value={pos.id}>
-                      {pos.position_title}
+                  {applications.map((app) => (
+                    <SelectItem key={app.id} value={app.id}>
+                      {app.position_title} — {app.status}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -195,9 +195,6 @@ export function ScheduleInterviewModal({
                 <SelectContent>
                   <SelectItem value="Technical Round">Technical Round</SelectItem>
                   <SelectItem value="Technical Round - System Design">System Design</SelectItem>
-                  {/* Will be included in next version */}
-                  {/* <SelectItem value="HR Round">HR Round</SelectItem> */}
-                  {/* <SelectItem value="Culture Fit">Culture Fit</SelectItem> */}
                   <SelectItem value="Final Round">Final Round</SelectItem>
                 </SelectContent>
               </Select>

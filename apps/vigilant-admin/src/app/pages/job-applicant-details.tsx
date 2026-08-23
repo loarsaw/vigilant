@@ -40,7 +40,13 @@ export function JobApplicationDetails() {
   console.log(ses, "ses");
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   const { sessions } = useInterview(candidateId);
-  const { approveApplication, rejectApplication, isApprovingOrRejecting } = useJobApplications();
+  const {
+    applications,
+    isLoading: isLoadingApplications,
+    approveApplication,
+    rejectApplication,
+    isApprovingOrRejecting,
+  } = useJobApplications({ candidate_id: candidateId });
   console.log(sessions, "sees");
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
@@ -162,7 +168,6 @@ export function JobApplicationDetails() {
               <Button
                 className="bg-green-500 hover:bg-green-600 text-white"
                 disabled={true}
-                // onClick={() => approveApplication(applicationId!)}
               >
                 {isApprovingOrRejecting ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -342,6 +347,8 @@ export function JobApplicationDetails() {
           onClose={() => setShowScheduleDialog(false)}
           candidateName={candidateData.full_name}
           candidateId={candidateId!}
+          applications={applications ?? []}
+          isLoadingApplications={isLoadingApplications}
           onSchedule={() => {}}
         />
       </div>

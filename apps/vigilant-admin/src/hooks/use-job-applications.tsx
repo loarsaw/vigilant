@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-import { JobApplication, JobApplicationsFilters, JobApplicationsResponse, UpdateApplicationStatusPayload } from "./types";
+import {
+  JobApplication,
+  JobApplicationsFilters,
+  JobApplicationsResponse,
+  UpdateApplicationStatusPayload,
+} from "./types";
 
 const fetchJobApplications = async (
   filters: JobApplicationsFilters,
@@ -19,6 +24,11 @@ const fetchJobApplications = async (
   if (filters.include_stats) params.set("include_stats", "true");
 
   const response = await apiClient.get(`/applications?${params.toString()}`);
+
+  if (Array.isArray(response.data)) {
+    return { applications: response.data } as JobApplicationsResponse;
+  }
+
   return response.data;
 };
 
