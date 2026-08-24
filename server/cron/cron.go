@@ -27,7 +27,6 @@ func NewScheduler(db *sql.DB, cfg *config.Config) *Scheduler {
 		encryptionKey: cfg.EncryptionKey,
 	}
 }
-
 func (s *Scheduler) Start() {
 	s.c.AddFunc("0 1 * * *", func() {
 		if err := s.CancelUnstartedInterviews(); err != nil {
@@ -59,6 +58,12 @@ func (s *Scheduler) Start() {
 	s.c.AddFunc("0 * * * *", func() {
 		if err := s.SendInterviewReminders(); err != nil {
 			log.Printf("cron: send interview reminders: %v", err)
+		}
+	})
+
+	s.c.AddFunc("0 * * * *", func() {
+		if err := s.ReconcileStaleInterviewSessions(); err != nil {
+			log.Printf("cron: reconcile stale interview sessions: %v", err)
 		}
 	})
 

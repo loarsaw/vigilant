@@ -1,3 +1,4 @@
+// server/analyzer/service.go
 package analyzer
 
 import (
@@ -20,10 +21,9 @@ import (
 )
 
 const (
-	ShortlistThreshold = 10.0
-	QualifiedThreshold = 10.0
+	QualifiedThreshold = 35.0
+	ShortlistThreshold = 60.0
 )
-
 const InvitePermission = "push"
 
 type Service struct {

@@ -9,6 +9,7 @@ import {
   BrickWallShieldIcon,
   UserCheck2,
   AppWindowMacIcon,
+  BellIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,12 +20,13 @@ export function SidebarLayout() {
   const navigate = useNavigate();
   const { role, logout } = useAdminAuth();
 
-  console.log(role);
+  // console.log(role);
   const [NAV_ITEMS] = useState([
     { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     { label: "Candidate List", to: "/candidates", icon: Users },
     { label: "Applications", to: "/applications", icon: AppWindowMacIcon },
     { label: "Interviews", to: "/interviews", icon: UserCheck2 },
+    { label: "Notifications", to: "/notifications", icon: BellIcon },
 
     { label: "Hiring", to: "/hiring", icon: BrickWallShieldIcon },
     { label: "Settings", to: "/settings", icon: Settings },

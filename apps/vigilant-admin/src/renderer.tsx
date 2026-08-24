@@ -15,6 +15,7 @@ import { AdminList } from "./app/pages/admins";
 import { InterviewDetail } from "./app/pages/interview-details";
 import { InterviewList } from "./app/pages/interviews";
 import AdminInterviewRoomPage from "./app/pages/interview-room";
+import { NotificationsPage } from "./app/pages/notifications";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
@@ -31,6 +32,8 @@ root.render(
           <Route path="/candidates" Component={CandidatesList} />
           <Route path="/candidates/:candidateId" Component={CandidateDetail} />
           <Route path="/applications" Component={JobApplicationsList} />
+          <Route path="/notifications" Component={NotificationsPage} />
+         
           <Route path="/team" Component={AdminList} />
           <Route
             path="/applications/:candidateId/:applicationId"
