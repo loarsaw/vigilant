@@ -4,12 +4,12 @@ import { LiveKitConfigResponse, SaveLiveKitConfigPayload } from "./types";
 
 const livekitApi = {
   getConfig: async (): Promise<LiveKitConfigResponse> => {
-    const { data } = await apiClient.get<LiveKitConfigResponse>("/admin/livekit-config");
+    const { data } = await apiClient.get<LiveKitConfigResponse>("/livekit-config");
     return data;
   },
 
   saveConfig: async (payload: SaveLiveKitConfigPayload): Promise<{ message: string }> => {
-    const { data } = await apiClient.post<{ message: string }>("/admin/livekit-config", payload);
+    const { data } = await apiClient.post<{ message: string }>("/livekit-config", payload);
     return data;
   },
 };

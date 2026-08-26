@@ -1,13 +1,28 @@
+// use-ai-provider.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-import { AIProviderConfigResponse, SaveAIProviderConfigPayload } from "@/hooks/types";
+import { SaveAIProviderConfigPayload } from "@/hooks/types";
 
 type ProviderKey = "openai" | "gemini" | "claude";
 
+interface ProviderRecord {
+  provider: ProviderKey;
+  base_url: string | null;
+  model: string;
+  has_key: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ProvidersConfigResponse {
+  providers: ProviderRecord[];
+}
+
 const aiProviderApi = {
-  getConfig: async (provider: ProviderKey): Promise<AIProviderConfigResponse> => {
-    const { data } = await apiClient.get<AIProviderConfigResponse>(
-      `/ai/provider-config/${provider}`,
+  getAllConfigs: async (): Promise<ProvidersConfigResponse> => {
+    const { data } = await apiClient.get<ProvidersConfigResponse>(
+      `/ai/providers-config`,
     );
     return data;
   },
@@ -26,12 +41,14 @@ export function useAIProvider(provider: ProviderKey) {
     isLoading: isLoadingProvider,
     isError: isProviderError,
   } = useQuery({
-    queryKey: ["ai", "provider-config", provider],
-    queryFn: () => aiProviderApi.getConfig(provider),
+    queryKey: ["ai", "providers-config"],
+    queryFn: aiProviderApi.getAllConfigs,
     retry: false,
+    select: (data) => data.providers.find((p) => p.provider === provider) ?? null,
   });
 
-  const isProviderConfigured = !!providerConfig && !isProviderError;
+  // Configured means: the record exists AND actually has a stored key.
+  const isProviderConfigured = !isProviderError && !!providerConfig?.has_key;
 
   const {
     mutate: saveProviderConfig,
@@ -42,7 +59,8 @@ export function useAIProvider(provider: ProviderKey) {
   } = useMutation({
     mutationFn: (payload: SaveAIProviderConfigPayload) => aiProviderApi.saveConfig(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["ai", "provider-config", provider] });
+      // Invalidate the shared list, not a per-provider key that no longer exists.
+      queryClient.invalidateQueries({ queryKey: ["ai", "providers-config"] });
     },
   });
 

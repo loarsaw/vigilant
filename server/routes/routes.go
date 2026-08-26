@@ -134,8 +134,8 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 
 	aiGroup := g.Group("/ai")
 	{
-		aiGroup.POST("/providers", h.SaveAIProviderConfig)
-		aiGroup.GET("/providers", h.ListAIProviderConfigs)
+		aiGroup.POST("/provider-config", h.SaveAIProviderConfig)
+		aiGroup.GET("/providers-config", h.ListAIProviderConfigs)
 		aiGroup.POST("/scenarios", h.SaveAIScenario)
 		aiGroup.GET("/scenarios", h.ListAIScenarios)
 		aiGroup.PATCH("/scenarios/:key/deactivate", h.DeactivateAIScenario)
