@@ -1,0 +1,48 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: vigilant-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - public
+    logging:
+      driver: json-file
+      options:
+        max-size: 100M
+
+  server:
+    ports: !reset []          
+    expose:
+      - "3333"                
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: "1.0"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3333/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db:
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: "1.0"
+    security_opt:
+      - no-new-privileges:true
+
+  adminer:
+    deploy:
+      replicas: 0             
+
+volumes:
+  caddy_data:
+  caddy_config:

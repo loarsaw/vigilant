@@ -40,3 +40,4 @@ coverage.txt
 apps/vigilant
 
 test.html
+vigilant.conf

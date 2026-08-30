@@ -1,5 +1,7 @@
 # ============================================================
 #                   VIGILANT CONFIGURATION
+#   Copy this file to `vigilant.conf` and fill in real values.
+#   NEVER commit the real `vigilant.conf` — it holds secrets.
 # ============================================================
 
 
@@ -17,19 +19,23 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 POSTGRES_DB=vigilant
 POSTGRES_USER=vigilant
-POSTGRES_PASSWORD=vigilant123
+# generate: openssl rand -base64 24
+POSTGRES_PASSWORD=changeme
 
 
 # ------------------------------------------------------------
 # Authentication
 # ------------------------------------------------------------
-AUTHN_TOKEN=tokenvalue
+# generate: openssl rand -hex 32
+AUTHN_TOKEN=changeme
 
 
 # ------------------------------------------------------------
 # Admin
 # ------------------------------------------------------------
-ADMIN_AUTH_TOKEN=admintokenvalue
+# generate: openssl rand -hex 32
+ADMIN_AUTH_TOKEN=changeme
+# optional: restrict admin routes to a specific IP. Leave blank to allow any.
 ADMIN_IP_ADDRESS=
 ADMIN_SESSION_TIMEOUT=24
 
@@ -37,7 +43,8 @@ ADMIN_SESSION_TIMEOUT=24
 # ------------------------------------------------------------
 # Security
 # ------------------------------------------------------------
-JWT_SECRET=
+# generate: openssl rand -hex 32
+JWT_SECRET=changeme
 BCRYPT_COST=10
 
 
@@ -54,15 +61,16 @@ HIGH_MEMORY_THRESHOLD=500
 # Network & CORS
 # ------------------------------------------------------------
 ENABLE_WEBSOCKETS=true
+# In production, set this to your actual frontend origin, e.g.
+# https://app.your-domain.com.
 ALLOW_ORIGIN=*
 
 
 # ------------------------------------------------------------
 # Encryption
 # ------------------------------------------------------------
-ENCRYPTION_KEY= nTSThNlBN6s+hYUG21g9hukvy7qAutGHOaJt6PBdrZU=
-  
-# run: openssl rand -base64 32
+# generate: openssl rand -base64 32
+ENCRYPTION_KEY=
 
 
 # ------------------------------------------------------------
@@ -74,4 +82,4 @@ MINIMUM_ADMIN_APP=v0.0.0
 # ------------------------------------------------------------
 # Minimum Code App Version
 # ------------------------------------------------------------
-MINIMUM_ADMIN_APP=v0.0.0
+MINIMUM_CODE_APP=v0.0.0
