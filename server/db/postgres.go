@@ -1036,6 +1036,54 @@ org_name VARCHAR(255) NOT NULL,
 		`ALTER TABLE interview_room_passcodes ADD COLUMN IF NOT EXISTS interview_starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`,
 
 		`CREATE INDEX IF NOT EXISTS idx_interview_room_passcodes_session_id ON interview_room_passcodes(session_id);`,
+
+		`CREATE TABLE IF NOT EXISTS application_events (
+    id BIGSERIAL PRIMARY KEY,
+    job_application_id UUID NOT NULL REFERENCES job_applications(id) ON DELETE CASCADE,
+
+    event_type VARCHAR(50) NOT NULL,
+    -- 'applied' | 'status_changed' | 'qualified' | 'shortlisted' |
+    -- 'assignment_submitted' | 'interview_scheduled' | 'hired' | 'rejected' ...
+
+    from_value VARCHAR(50),   -- e.g. old status, or NULL
+    to_value   VARCHAR(50),   -- e.g. new status
+    label      TEXT,          -- human-readable, e.g. "Marked as qualified"
+
+    metadata   JSONB,         -- optional extra context (score, interviewer, etc.)
+    caused_by  UUID REFERENCES administrators(id) ON DELETE SET NULL,
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`,
+
+		`CREATE INDEX IF NOT EXISTS idx_app_events_application ON application_events(job_application_id, occurred_at);`,
+
+		`CREATE OR REPLACE FUNCTION log_job_application_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.status IS DISTINCT FROM OLD.status THEN
+        INSERT INTO application_events (job_application_id, event_type, from_value, to_value, label)
+        VALUES (NEW.id, 'status_changed', OLD.status, NEW.status,
+                'Status changed to ' || NEW.status);
+    END IF;
+
+    IF NEW.is_qualified IS DISTINCT FROM OLD.is_qualified AND NEW.is_qualified THEN
+        INSERT INTO application_events (job_application_id, event_type, label)
+        VALUES (NEW.id, 'qualified', 'Marked as qualified');
+    END IF;
+
+    IF NEW.is_shortlisted IS DISTINCT FROM OLD.is_shortlisted AND NEW.is_shortlisted THEN
+        INSERT INTO application_events (job_application_id, event_type, label)
+        VALUES (NEW.id, 'shortlisted', 'Shortlisted');
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_log_job_application_events ON job_applications;
+CREATE TRIGGER trigger_log_job_application_events
+    AFTER UPDATE ON job_applications
+    FOR EACH ROW
+    EXECUTE FUNCTION log_job_application_status_change();`,
 	}
 
 	for i, migration := range migrations {

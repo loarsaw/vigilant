@@ -20,7 +20,7 @@ export function useJobApplicationStatus(applicationID: string) {
   });
 
   return {
-    applicationID: data?.application_id ?? null,
+    // applicationID: data?.application_id ?? null,
     status: data?.status ?? null,
 
     isLoading,

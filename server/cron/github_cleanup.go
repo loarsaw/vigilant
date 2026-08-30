@@ -2,6 +2,7 @@ package cron
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -78,6 +79,7 @@ func (s *Scheduler) CleanupExpiredGithubRepos() error {
 		if err := client.DeleteRepo(t.repoName); err != nil {
 			log.Printf("cron: cleanup github repos: failed to delete repo %q (application %s): %v",
 				t.repoName, t.applicationID, err)
+			s.notifyRepoCleanupFailure(t.applicationID, t.repoName, "delete_failed", err)
 			continue // don't let one failure block the rest of the batch
 		}
 
@@ -88,6 +90,7 @@ func (s *Scheduler) CleanupExpiredGithubRepos() error {
 		`, t.applicationID); err != nil {
 			log.Printf("cron: cleanup github repos: deleted repo %q but failed to mark application %s: %v",
 				t.repoName, t.applicationID, err)
+			s.notifyRepoCleanupFailure(t.applicationID, t.repoName, "mark_deleted_failed", err)
 			continue
 		}
 
@@ -95,4 +98,26 @@ func (s *Scheduler) CleanupExpiredGithubRepos() error {
 	}
 
 	return nil
+}
+
+func (s *Scheduler) notifyRepoCleanupFailure(applicationID, repoName, stage string, cause error) {
+	metadata, _ := json.Marshal(map[string]string{
+		"repo_name": repoName,
+		"stage":     stage,
+		"error":     cause.Error(),
+	})
+
+	_, err := s.db.Exec(`
+		INSERT INTO admin_notifications (admin_id, type, title, message, entity_type, entity_id, metadata, severity)
+		VALUES (NULL, 'github_repo_cleanup_failed', $1, $2, 'job_application', $3, $4, 'warning')
+	`,
+		fmt.Sprintf("Failed to clean up GitHub repo %q", repoName),
+		fmt.Sprintf("Cleanup cron could not delete repo %q for application %s: %v", repoName, applicationID, cause),
+		applicationID,
+		metadata,
+	)
+	if err != nil {
+		log.Printf("cron: cleanup github repos: failed to write admin notification for application %s: %v",
+			applicationID, err)
+	}
 }

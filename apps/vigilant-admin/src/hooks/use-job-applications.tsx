@@ -25,6 +25,8 @@ const fetchJobApplications = async (
 
   const response = await apiClient.get(`/applications?${params.toString()}`);
 
+  // console.log(params.toString() , "params");
+
   if (Array.isArray(response.data)) {
     return { applications: response.data } as JobApplicationsResponse;
   }

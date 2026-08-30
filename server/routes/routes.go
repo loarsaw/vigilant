@@ -185,11 +185,11 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	}
 
 	// CSV upload
-	uploadGroup := g.Group("/")
-	uploadGroup.Use(middleware.RateLimitMiddleware(middleware.UploadLimiter))
-	{
-		uploadGroup.POST("/csv-upload", h.ParseUserList)
-	}
+	// uploadGroup := g.Group("/")
+	// uploadGroup.Use(middleware.RateLimitMiddleware(middleware.UploadLimiter))
+	// {
+	// uploadGroup.POST("/csv-upload", h.ParseUserList)
+	// }
 
 	// Position management
 	positionGroup := g.Group("/positions")

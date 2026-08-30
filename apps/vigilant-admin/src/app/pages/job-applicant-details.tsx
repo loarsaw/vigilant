@@ -9,14 +9,11 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Send,
   Loader2,
-  Zap,
-  Code2,
-  Layers,
-  Terminal,
-  Clock,
-  History,
+  Github,
+  Briefcase,
+  MapPin,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,16 +25,32 @@ import { UpcomingInterview } from "@/components/upcoming-interview";
 import { EmailModal } from "@/components/qa/email-modal";
 import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
 import { useJobApplicationStatus } from "@/hooks/use-job-application-status";
-import { useApplicationInterviewFeedback } from "@/hooks/use-application-interview-session";
+// import { useApplicationInterviewFeedback } from "@/hooks/use-application-interview-session";
 import { InterviewHistory } from "@/components/interview-history";
+
+// Badge color per application status, matching the app's status vocabulary.
+const STATUS_STYLES: Record<string, string> = {
+  applied: "bg-gray-700 text-gray-200",
+  screening: "bg-blue-500/20 text-blue-300",
+  interviewing: "bg-cyan-500/20 text-cyan-300",
+  offered: "bg-purple-500/20 text-purple-300",
+  hired: "bg-green-500/20 text-green-300",
+  rejected: "bg-red-500/20 text-red-300",
+  withdrawn: "bg-gray-600/20 text-gray-400",
+};
+
+// Badge color per github invite status (invited / accepted / failed / pending).
+const GITHUB_STATUS_STYLES: Record<string, string> = {
+  invited: "bg-blue-500/20 text-blue-300",
+  accepted: "bg-green-500/20 text-green-300",
+  failed: "bg-red-500/20 text-red-300",
+  pending: "bg-gray-700 text-gray-300",
+};
 
 export function JobApplicationDetails() {
   const { candidateId, applicationId } = useParams();
-  const { status, applicationID } = useJobApplicationStatus(applicationId);
-  console.log(status, applicationID, "application id");
+  const { status } = useJobApplicationStatus(applicationId);
   const navigate = useNavigate();
-  const ses = useApplicationInterviewFeedback(applicationID);
-  console.log(ses, "ses");
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   const { sessions } = useInterview(candidateId);
   const {
@@ -47,37 +60,14 @@ export function JobApplicationDetails() {
     rejectApplication,
     isApprovingOrRejecting,
   } = useJobApplications({ candidate_id: candidateId });
-  console.log(sessions, "sees");
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
-  const interviewHistory = sessions
-    .filter((session) => session.status === "completed")
-    .sort((a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime());
-
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
 
-  const formatInterviewType = (type: string) => {
-    return type
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "completed":
-        return "bg-green-500/10 text-green-400 border-green-500/20";
-      case "scheduled":
-        return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-      case "in-progress":
-        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
-      case "cancelled":
-        return "bg-red-500/10 text-red-400 border-red-500/20";
-      default:
-        return "bg-gray-500/10 text-gray-400 border-gray-500/20";
-    }
-  };
+  // The specific application being viewed on this page — applications is
+  // scoped to this candidate but can include more than one job posting.
+  const currentApplication = applications?.find((app) => app.id === applicationId);
 
   if (isLoading) {
     return (
@@ -107,7 +97,14 @@ export function JobApplicationDetails() {
   const skillsArray = candidateData.skills
     ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
-  console.log(candidateData, "ca");
+
+  const statusBadgeClass = currentApplication
+    ? (STATUS_STYLES[currentApplication.status] ?? "bg-gray-700 text-gray-200")
+    : "";
+  const githubBadgeClass = currentApplication?.github_invite_status
+    ? (GITHUB_STATUS_STYLES[currentApplication.github_invite_status] ?? "bg-gray-700 text-gray-300")
+    : "";
+
   return (
     <div className="space-y-6 p-5">
       <div className="flex items-center justify-between">
@@ -165,10 +162,7 @@ export function JobApplicationDetails() {
             </>
           ) : (
             <>
-              <Button
-                className="bg-green-500 hover:bg-green-600 text-white"
-                disabled={true}
-              >
+              <Button className="bg-green-500 hover:bg-green-600 text-white" disabled={true}>
                 {isApprovingOrRejecting ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -183,6 +177,124 @@ export function JobApplicationDetails() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {/* Application Overview — data specific to THIS application, not
+              the candidate's general profile (position, status, scores,
+              github repo state, cover letter). */}
+          {currentApplication && (
+            <Card className="bg-[#1a1f2e] border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-cyan-400" />
+                  Application Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-white font-medium">{currentApplication.position_title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
+                      <span>{currentApplication.department}</span>
+                      {currentApplication.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {currentApplication.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Badge className={statusBadgeClass}>{currentApplication.status}</Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-sm">Applied</p>
+                    <p className="text-white mt-1">
+                      {new Date(currentApplication.applied_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Last Updated</p>
+                    <p className="text-white mt-1">
+                      {new Date(currentApplication.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Scores */}
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-800">
+                  <div>
+                    <p className="text-gray-400 text-sm flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5" />
+                      Overall Score
+                    </p>
+                    <p className="text-white mt-1">
+                      {currentApplication.overall_score != null
+                        ? `${currentApplication.overall_score.toFixed(1)} (${currentApplication.overall_tier || "—"})`
+                        : "Not analyzed yet"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Assignment Score</p>
+                    <p className="text-white mt-1">
+                      {currentApplication.assignment_overall_score != null
+                        ? `${currentApplication.assignment_overall_score.toFixed(1)} (${currentApplication.assignment_overall_tier || "—"})`
+                        : "Not scored yet"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {currentApplication.is_shortlisted && (
+                    <Badge className="bg-cyan-500/20 text-cyan-300">Shortlisted</Badge>
+                  )}
+                </div>
+
+                {/* Assignment GitHub repo */}
+                {currentApplication.github_repo_url && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm mb-2">Assignment Repo</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div
+                        onClick={() => window.api.openExternal(currentApplication.github_repo_url)}
+                        // target="_blank"
+                        // rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                      >
+                        <Github className="h-4 w-4" />
+                        View Repository
+                      </div>
+                      {currentApplication.github_invite_status && (
+                        <Badge className={githubBadgeClass}>
+                          {currentApplication.github_invite_status}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cover letter */}
+                {currentApplication.cover_letter && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm mb-2">Cover Letter</p>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                      {currentApplication.cover_letter}
+                    </p>
+                  </div>
+                )}
+
+                {/* Internal notes */}
+                {currentApplication.notes && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm mb-2">Notes</p>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                      {currentApplication.notes}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="bg-[#1a1f2e] border-gray-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
@@ -250,26 +362,24 @@ export function JobApplicationDetails() {
                   <p className="text-gray-400 text-sm mb-2">Links</p>
                   <div className="space-y-2">
                     {candidateData.github_url && (
-                      <a
-                        href={candidateData.github_url}
-                        target="_blank"
+                      <div
+                        onClick={() => window.api.openExternal(candidateData.github_url)}
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
                       >
                         <FileText className="h-4 w-4" />
                         GitHub Profile
-                      </a>
+                      </div>
                     )}
                     {candidateData.resume_url && (
-                      <a
-                        href={candidateData.resume_url}
-                        target="_blank"
+                      <div
+                        onClick={() => window.api.openExternal(candidateData.resume_url)}
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
                       >
                         <FileText className="h-4 w-4" />
                         View Resume
-                      </a>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -293,7 +403,7 @@ export function JobApplicationDetails() {
           </Card>
 
           {/* Interview History */}
-          {applicationID && <InterviewHistory applicationID={applicationID} />}
+          {applicationId && <InterviewHistory applicationID={applicationId} />}
         </div>
 
         <div className="space-y-6">
@@ -318,11 +428,16 @@ export function JobApplicationDetails() {
                 <Mail className="h-4 w-4 mr-2" />
                 Send Email
               </Button>
-              {candidateData.resume_url && (
+              {(currentApplication?.resume_url || candidateData.resume_url) && (
                 <Button
                   variant="outline"
                   className="w-full border-gray-700 text-gray-300"
-                  onClick={() => window.open(candidateData.resume_url, "_blank")}
+                  onClick={() =>
+                    window.open(
+                      currentApplication?.resume_url || candidateData.resume_url,
+                      "_blank",
+                    )
+                  }
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   View Resume
