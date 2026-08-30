@@ -1,0 +1,9 @@
+{
+  "label": "Positions API",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "title": "Positions API",
+    "description": "Fetch open positions and let candidates apply — for teams hosting Vigilant and building their own careers page frontend."
+  }
+}

@@ -95,7 +95,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold text-primary">Vigilant Admin</CardTitle>
-          <CardDescription className="text-muted-foreground">Employer Dashboard</CardDescription>
+          <CardDescription className="text-muted-foreground">Admin Dashboard</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -222,7 +222,7 @@ export default function LoginPage() {
           </Tabs>
 
           <p className="text-xs text-muted-foreground text-center mt-4">
-             Employer portal for candidate management
+            Admin portal for candidate management
           </p>
         </CardContent>
       </Card>
