@@ -16,7 +16,7 @@ export interface Notification {
 }
 
 interface NotificationsResponse {
-  data: Notification[];
+  notifications: Notification[];
   total: number;
   unread_count?: number;
 }
@@ -61,9 +61,9 @@ export function useNotifications() {
     },
   });
 
-  const notifications = data?.data ?? [];
+  const notifications = data?.notifications ?? [];
   const unreadCount = data?.unread_count ?? notifications.filter((n) => !n.is_read).length;
-
+  console.log(data, "notfiaction");
   return {
     notifications,
     total: data?.total ?? 0,

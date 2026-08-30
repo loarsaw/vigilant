@@ -37,13 +37,47 @@ type Notification struct {
 	AdminID    *string
 	Type       string
 	Title      string
-	Message    string
-	EntityType string
-	EntityID   string
+	Message    sql.NullString
+	EntityType sql.NullString
+	EntityID   sql.NullString
 	Metadata   map[string]any
 	Severity   Severity
 	IsRead     bool
+	ReadAt     sql.NullString
 	CreatedAt  string
+}
+
+func (n Notification) MarshalJSON() ([]byte, error) {
+	type alias struct {
+		ID         int64          `json:"id"`
+		Type       string         `json:"type"`
+		Title      string         `json:"title"`
+		Message    *string        `json:"message"`
+		EntityType *string        `json:"entity_type"`
+		EntityID   *string        `json:"entity_id"`
+		Metadata   map[string]any `json:"metadata"`
+		Severity   Severity       `json:"severity"`
+		IsRead     bool           `json:"is_read"`
+		ReadAt     *string        `json:"read_at"`
+		CreatedAt  string         `json:"created_at"`
+	}
+	a := alias{
+		ID: n.ID, Type: n.Type, Title: n.Title, Metadata: n.Metadata,
+		Severity: n.Severity, IsRead: n.IsRead, CreatedAt: n.CreatedAt,
+	}
+	if n.Message.Valid {
+		a.Message = &n.Message.String
+	}
+	if n.EntityType.Valid {
+		a.EntityType = &n.EntityType.String
+	}
+	if n.EntityID.Valid {
+		a.EntityID = &n.EntityID.String
+	}
+	if n.ReadAt.Valid {
+		a.ReadAt = &n.ReadAt.String
+	}
+	return json.Marshal(a)
 }
 
 type Service struct {
@@ -68,6 +102,13 @@ type CreateInput struct {
 	EntityID   string
 	Metadata   map[string]any
 	Severity   Severity
+}
+
+func toNullString(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{}
+	}
+	return sql.NullString{String: s, Valid: true}
 }
 
 // Create persists a notification and pushes it live if a broadcaster is
@@ -98,17 +139,26 @@ func (s *Service) Create(ctx context.Context, in CreateInput) error {
 
 	if s.Broadcaster != nil {
 		s.Broadcaster(in.AdminID, Notification{
-			ID: id, AdminID: in.AdminID, Type: in.Type, Title: in.Title, Message: in.Message,
-			EntityType: in.EntityType, EntityID: in.EntityID, Metadata: in.Metadata,
-			Severity: in.Severity, CreatedAt: createdAt,
+			ID:         id,
+			AdminID:    in.AdminID,
+			Type:       in.Type,
+			Title:      in.Title,
+			Message:    toNullString(in.Message),
+			EntityType: toNullString(in.EntityType),
+			EntityID:   toNullString(in.EntityID),
+			Metadata:   in.Metadata,
+			Severity:   in.Severity,
+			IsRead:     false,
+			ReadAt:     sql.NullString{}, // just created, not read yet
+			CreatedAt:  createdAt,
 		})
 	}
 	return nil
 }
 
-func (s *Service) ListForAdmin(ctx context.Context, adminID string, unreadOnly bool, limit int) ([]Notification, error) {
+func (s *Service) ListForAdmin(ctx context.Context, adminID string, unreadOnly bool, limit int) ([]Notification, int, int, error) {
 	query := `
-		SELECT id, admin_id, type, title, message, entity_type, entity_id, metadata, severity, is_read, created_at
+		SELECT id, admin_id, type, title, message, entity_type, entity_id, metadata, severity, is_read, read_at, created_at
 		FROM admin_notifications
 		WHERE (admin_id = $1 OR admin_id IS NULL)
 	`
@@ -121,26 +171,52 @@ func (s *Service) ListForAdmin(ctx context.Context, adminID string, unreadOnly b
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, err
 	}
 	defer rows.Close()
 
-	var out []Notification
+	out := []Notification{} // never nil -> frontend always gets [] not null
 	for rows.Next() {
 		var n Notification
 		var metaBytes []byte
 		var adminIDNullable sql.NullString
 		if err := rows.Scan(&n.ID, &adminIDNullable, &n.Type, &n.Title, &n.Message,
-			&n.EntityType, &n.EntityID, &metaBytes, &n.Severity, &n.IsRead, &n.CreatedAt); err != nil {
-			return nil, err
+			&n.EntityType, &n.EntityID, &metaBytes, &n.Severity, &n.IsRead, &n.ReadAt, &n.CreatedAt); err != nil {
+			return nil, 0, 0, err
 		}
 		if adminIDNullable.Valid {
 			n.AdminID = &adminIDNullable.String
 		}
-		json.Unmarshal(metaBytes, &n.Metadata)
+		if len(metaBytes) > 0 {
+			if err := json.Unmarshal(metaBytes, &n.Metadata); err != nil {
+				return nil, 0, 0, fmt.Errorf("unmarshal metadata for notification %d: %w", n.ID, err)
+			}
+		}
 		out = append(out, n)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, 0, 0, err
+	}
+
+	// total = count matching the same filter as the page above (respects unreadOnly)
+	totalQuery := `SELECT COUNT(*) FROM admin_notifications WHERE (admin_id = $1 OR admin_id IS NULL)`
+	if unreadOnly {
+		totalQuery += " AND is_read = FALSE"
+	}
+	var total int
+	if err := s.db.QueryRowContext(ctx, totalQuery, adminID).Scan(&total); err != nil {
+		return nil, 0, 0, err
+	}
+
+	var unreadCount int
+	if err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM admin_notifications WHERE (admin_id = $1 OR admin_id IS NULL) AND is_read = FALSE`,
+		adminID,
+	).Scan(&unreadCount); err != nil {
+		return nil, 0, 0, err
+	}
+
+	return out, total, unreadCount, nil
 }
 
 func (s *Service) MarkRead(ctx context.Context, notificationID int64) error {

@@ -32,13 +32,17 @@ func (h *AdminHandlers) ListNotifications(c *gin.Context) {
 		}
 	}
 
-	notifs, err := h.Notifications.ListForAdmin(c.Request.Context(), adminID.(string), unreadOnly, limit)
+	notifs, total, unreadCount, err := h.Notifications.ListForAdmin(c.Request.Context(), adminID.(string), unreadOnly, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to list notifications"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"notifications": notifs})
+	c.JSON(http.StatusOK, gin.H{
+		"notifications": notifs,
+		"total":         total,
+		"unread_count":  unreadCount,
+	})
 }
 
 // MarkNotificationRead marks a single notification as read.

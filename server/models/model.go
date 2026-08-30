@@ -868,3 +868,20 @@ type GeneratedAssignment struct {
 	StarterReadme  string   `json:"starter_readme"`
 	EstimatedHours float64  `json:"estimated_hours"`
 }
+
+type Severity string
+
+type Notification struct {
+	ID         int64
+	AdminID    *string
+	Type       string
+	Title      string
+	Message    sql.NullString
+	EntityType sql.NullString
+	EntityID   sql.NullString
+	Metadata   map[string]any
+	Severity   Severity
+	IsRead     bool
+	ReadAt     sql.NullString
+	CreatedAt  string
+}
