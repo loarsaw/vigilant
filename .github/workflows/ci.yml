@@ -1,4 +1,4 @@
-name: Build & Publish For Windows and Linux
+name: CI
 
 on:
   push:
@@ -6,11 +6,11 @@ on:
       - master
   pull_request:
     branches:
-      - master    
+      - master
 
 jobs:
-  publish:
-    name: Build & Publish for ${{ matrix.os }}
+  build:
+    name: Build (no publish) for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -41,12 +41,6 @@ jobs:
         working-directory: apps/vigilant
         run: npm run rebuild
 
-      - name: Publish (vigilant)
-        working-directory: apps/vigilant
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run publish
-
       - name: Install dependencies (vigilant-code)
         working-directory: apps/vigilant-code
         run: npm install
@@ -55,18 +49,6 @@ jobs:
         working-directory: apps/vigilant-code
         run: npm run rebuild
 
-      - name: Publish (vigilant-code)
-        working-directory: apps/vigilant-code
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run publish
-
       - name: Install dependencies (vigilant-admin)
         working-directory: apps/vigilant-admin
         run: npm install
-
-      - name: Publish (vigilant-admin)
-        working-directory: apps/vigilant-admin
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run publish
