@@ -125,7 +125,7 @@ export function CandidatesList() {
             )}
           </p>
         </div>
-        <div className="flex gap-3">
+        {/* <div className="flex gap-3">
           <Button
             variant="outline"
             className="border-gray-700 text-gray-300 hover:bg-gray-800"
@@ -142,7 +142,7 @@ export function CandidatesList() {
             <UserPlus className="h-4 w-4 mr-2" />
             Add Candidate
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Error Display */}

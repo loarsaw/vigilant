@@ -1,5 +1,6 @@
 import { Label } from "@radix-ui/react-label";
-import { useRef, useState } from "react";
+import { Lock, ShieldAlert } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 
 const CODE_LENGTH = 8;
@@ -17,6 +18,10 @@ function LoginCodePanel({
   const [localError, setLocalError] = useState("");
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  useEffect(() => {
+    inputRefs.current[0]?.focus();
+  }, []);
+
   const sanitize = (val: string) => val.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
   const handleChange = (val: string, idx: number) => {
@@ -32,6 +37,10 @@ function LoginCodePanel({
     if (e.key === "Backspace" && !chars[idx] && idx > 0) {
       inputRefs.current[idx - 1]?.focus();
     }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.select();
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -53,14 +62,21 @@ function LoginCodePanel({
   };
 
   const error = localError || errorMessage;
+  const filledCount = chars.filter(Boolean).length;
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-3">
-        <Label className="text-sm font-medium text-slate-200 block text-center">
+    <div className="w-full max-w-md mx-auto rounded-2xl border border-slate-800 bg-slate-950/60 backdrop-blur-sm p-8 shadow-2xl shadow-black/40">
+      <div className="flex flex-col items-center gap-2 mb-6">
+        <Label className="text-base font-semibold text-slate-100">
           Interview passcode
         </Label>
-        <div className="flex gap-2 justify-center flex-wrap" onPaste={handlePaste}>
+        <p className="text-xs text-slate-500 text-center max-w-xs">
+          Enter the {CODE_LENGTH}-character code from your interview invitation
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex gap-1.5 sm:gap-2 justify-center" onPaste={handlePaste}>
           {chars.map((ch, i) => (
             <input
               key={i}
@@ -68,28 +84,58 @@ function LoginCodePanel({
               type="text"
               inputMode="text"
               autoCapitalize="characters"
+              autoComplete="one-time-code"
+              aria-label={`Passcode character ${i + 1} of ${CODE_LENGTH}`}
               maxLength={1}
               value={ch}
               onChange={(e) => handleChange(e.target.value, i)}
               onKeyDown={(e) => handleKeyDown(e, i)}
+              onFocus={handleFocus}
               disabled={isSubmitting}
-              className={`w-10 h-12 text-center text-lg font-semibold bg-slate-900 text-white rounded-xl border-2 outline-none transition-all focus:ring-4 disabled:opacity-60 ${
+              className={`w-9 h-11 sm:w-10 sm:h-12 text-center text-lg font-mono font-semibold rounded-lg border-2 outline-none transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${
                 error
-                  ? "border-red-500/70 focus:border-red-500 focus:ring-red-500/20"
-                  : "border-slate-700 focus:border-blue-500 focus:ring-blue-500/30"
+                  ? "border-red-500/60 bg-red-500/5 text-red-100 focus:border-red-400 focus:ring-4 focus:ring-red-500/20"
+                  : ch
+                  ? "border-blue-500/50 bg-blue-500/10 text-white focus:border-blue-400 focus:ring-4 focus:ring-blue-500/25"
+                  : "border-slate-700 bg-slate-900/80 text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
               }`}
             />
           ))}
         </div>
-        {error && <p className="text-sm text-red-400 font-medium text-center">{error}</p>}
+
+        <div className="flex justify-center gap-1" aria-hidden="true">
+          {Array.from({ length: CODE_LENGTH }).map((_, i) => (
+            <span
+              key={i}
+              className={`h-1 w-4 rounded-full transition-colors duration-200 ${
+                i < filledCount ? "bg-blue-500" : "bg-slate-800"
+              }`}
+            />
+          ))}
+        </div>
+
+        {error && (
+          <p className="flex items-center justify-center gap-1.5 text-sm text-red-400 font-medium text-center">
+            <ShieldAlert className="w-4 h-4 shrink-0" />
+            {error}
+          </p>
+        )}
       </div>
+
       <Button
         type="button"
         onClick={handleSubmit}
         disabled={isSubmitting}
-        className="w-full py-3 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:pointer-events-none"
+        className="w-full mt-6 py-3 text-base font-semibold rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 hover:scale-[1.02] active:scale-95 disabled:opacity-60 disabled:pointer-events-none disabled:hover:scale-100"
       >
-        {isSubmitting ? "Verifying..." : "Verify"}
+        {isSubmitting ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            Verifying...
+          </span>
+        ) : (
+          "Verify"
+        )}
       </Button>
     </div>
   );
