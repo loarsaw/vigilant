@@ -1,18 +1,22 @@
+// src/pages/Settings.tsx (or wherever this lives)
 import { useState } from "react";
-import { Settings2, Mail, Phone, Video, Bot, CheckCircle2, Circle } from "lucide-react";
+import { Settings2, Mail, Phone, Video, Github, Bot, CheckCircle2, Circle } from "lucide-react";
 import { EmailCard } from "@/components/settings/email";
 import { CallCard } from "@/components/settings/call";
 import { LiveKitCard } from "@/components/settings/livekit";
-import { useTwilio } from "@/hooks/use-twilio";
+import { GithubCard } from "@/components/settings/github";
+// import { useTwilio } from "@/hooks/use-twilio";
 import { useLiveKit } from "@/hooks/use-livekit";
+import { useGithub } from "@/hooks/use-github";
 import { AIProvidersCard } from "@/components/ai-providers";
 
-type SectionKey = "email" | "twilio" | "livekit" | "ai";
+type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai";
 
 const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = [
   { key: "email", label: "Email", icon: Mail },
   { key: "twilio", label: "Voice (Twilio)", icon: Phone },
   { key: "livekit", label: "LiveKit", icon: Video },
+  { key: "github", label: "GitHub", icon: Github },
   { key: "ai", label: "AI Provider", icon: Bot },
 ];
 
@@ -27,16 +31,19 @@ export function Settings() {
     email: true,
     twilio: true,
     livekit: true,
+    github: true,
   });
 
-  const { isTwilioConfigured } = useTwilio();
+  // const { isTwilioConfigured } = useTwilio();
   const { isLiveKitConfigured } = useLiveKit();
+  const { isGithubConfigured } = useGithub();
 
   const statusMap: Record<SectionKey, boolean> = {
     email: configuredSections.email,
-    twilio: isTwilioConfigured,
+    twilio: false,
     livekit: isLiveKitConfigured,
-    ai: false, // AIProvidersCard tracks its own per-provider status internally
+    github: isGithubConfigured,
+    ai: false,
   };
 
   return (
@@ -97,6 +104,9 @@ export function Settings() {
             )}
             {activeSection === "livekit" && (
               <LiveKitCard editMode={editMode} setEditMode={setEditMode} />
+            )}
+            {activeSection === "github" && (
+              <GithubCard editMode={editMode} setEditMode={setEditMode} />
             )}
             {activeSection === "ai" && <AIProvidersCard />}
           </div>

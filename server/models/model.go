@@ -2,6 +2,8 @@ package models
 
 import (
 	"database/sql"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -387,6 +389,38 @@ type GithubCredentials struct {
 type SaveGithubCredentialsRequest struct {
 	OrgName string `json:"org_name" binding:"required"`
 	Token   string `json:"token" binding:"required"`
+}
+
+var (
+	// classic/OAuth/app tokens: prefix_ + 36+ alphanumeric chars
+	githubPrefixedTokenRe = regexp.MustCompile(`^(ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}$`)
+
+	// fine-grained PATs: github_pat_ + 22 chars + "_" + 59 chars (roughly)
+	githubFineGrainedTokenRe = regexp.MustCompile(`^github_pat_[A-Za-z0-9]{22}_[A-Za-z0-9]{59}$`)
+
+	// legacy classic tokens: bare 40-char hex string
+	githubLegacyTokenRe = regexp.MustCompile(`^[a-f0-9]{40}$`)
+
+	// GitHub org/user name rules: alphanumeric + single hyphens, no leading/trailing hyphen
+	githubOrgNameRe = regexp.MustCompile(`^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$`)
+)
+
+func IsValidGithubToken(token string) bool {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return false
+	}
+	return githubPrefixedTokenRe.MatchString(token) ||
+		githubFineGrainedTokenRe.MatchString(token) ||
+		githubLegacyTokenRe.MatchString(token)
+}
+
+func IsValidGithubOrgName(orgName string) bool {
+	orgName = strings.TrimSpace(orgName)
+	if orgName == "" || len(orgName) > 39 {
+		return false
+	}
+	return githubOrgNameRe.MatchString(orgName)
 }
 
 // ========================================

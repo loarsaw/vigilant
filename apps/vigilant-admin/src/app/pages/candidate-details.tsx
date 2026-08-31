@@ -16,12 +16,12 @@ export function CandidateDetail() {
   const { candidateId } = useParams();
   const navigate = useNavigate();
 
-  const { makeCall, hangUp, isCalling, isReady, error: twError, setup } = useCall();
-  const HARDCODED_NUMBER = "";
+  // const { makeCall, hangUp, isCalling, isReady, error: twError, setup } = useCall();
+  // const HARDCODED_NUMBER = "";
 
-  useEffect(() => {
-    setup();
-  }, []);
+  // useEffect(() => {
+  //   setup();
+  // }, []);
 
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   console.log(data, "data");

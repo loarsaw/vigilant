@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"strings"
 	"vigilant/email"
 	"vigilant/models"
 
@@ -17,6 +18,30 @@ func (h *AdminHandlers) SaveGithubConfig(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "validation failed",
 			"details": err.Error(),
+		})
+		return
+	}
+
+	req.OrgName = strings.TrimSpace(req.OrgName)
+	req.Token = strings.TrimSpace(req.Token)
+
+	if req.OrgName == "" || req.Token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "org_name and token are required",
+		})
+		return
+	}
+
+	if !models.IsValidGithubOrgName(req.OrgName) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "org_name must be a valid GitHub organization name (alphanumeric and hyphens, max 39 chars)",
+		})
+		return
+	}
+
+	if !models.IsValidGithubToken(req.Token) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "token does not match a known GitHub token format (expected ghp_, github_pat_, gho_, ghu_, ghs_, or a 40-char classic token)",
 		})
 		return
 	}

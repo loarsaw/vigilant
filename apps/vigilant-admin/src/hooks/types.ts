@@ -1,3 +1,5 @@
+// src/hooks/types.ts
+
 export interface SESConfigPayload {
   aws_region: string;
   aws_access_key_id: string;
@@ -679,4 +681,18 @@ export interface AIProviderConfigForm {
   apiKey: string;
   model: string;
   baseUrl: string;
+}
+
+
+
+export interface GithubConfigResponse {
+  configured: boolean;
+  org_name?: string;
+  has_token?: boolean;
+  updated_at?: string;
+}
+
+export interface SaveGithubCredentialsPayload {
+  org_name: string;
+  token: string;
 }
