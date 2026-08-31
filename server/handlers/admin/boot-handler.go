@@ -2,13 +2,17 @@
 package admin
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"vigilant/ai"
 	"vigilant/analyzer"
 	"vigilant/config"
 	"vigilant/email"
 	"vigilant/livekit"
+	"vigilant/models"
 	"vigilant/notifications"
 
 	"github.com/gin-gonic/gin"
@@ -64,5 +68,153 @@ func (h *AdminHandlers) VerifyToken(c *gin.Context) {
 			"message":       "Token is not valid",
 			"authenticated": false,
 		})
+	}
+}
+
+// ------------------------------------------------------------------
+// System readiness check
+// ------------------------------------------------------------------
+//
+// Call h.CheckSystemReadiness once at boot, right after RunMigrations /
+// InitDB succeed. It checks whether Email, LiveKit, GitHub, and AI
+// Provider have been configured. If anything is missing, it raises a
+// broadcast notification (admin_id = NULL, so every Super Admin/HR sees
+// it) via the existing admin_notifications table. If everything is
+// configured and an open "not ready" notification exists from before,
+// it's auto-resolved (marked read).
+//
+// Re-running this on every boot won't spam duplicate notifications: it
+// looks for an existing unread notification of this type first and
+// updates it in place instead of inserting a new row.
+
+const (
+	systemReadinessEntityType = "system_config"
+	systemReadinessEntityID   = "boot_check"
+	systemReadinessNotifType  = "system_not_ready"
+)
+
+// CheckSystemReadiness inspects the config tables for each integration and,
+// if anything required hasn't been saved yet, raises (or refreshes) a
+// broadcast notification for Super Admins.
+func (h *AdminHandlers) CheckSystemReadiness(ctx context.Context) error {
+	missing, err := h.findMissingConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("system readiness check: %w", err)
+	}
+
+	openID, hasOpen, err := h.findOpenReadinessNotification(ctx)
+	if err != nil {
+		return fmt.Errorf("system readiness check: %w", err)
+	}
+
+	// Nothing missing: resolve any stale open notification and stop.
+	if len(missing) == 0 {
+		if hasOpen {
+			if err := h.resolveReadinessNotification(ctx, openID); err != nil {
+				return fmt.Errorf("system readiness check: %w", err)
+			}
+		}
+		return nil
+	}
+
+	labels := make([]string, 0, len(missing))
+	for _, m := range missing {
+		labels = append(labels, m.Label)
+	}
+	message := fmt.Sprintf("The following integrations still need to be configured in Settings: %s.", joinWithCommas(labels))
+
+	metadata, err := json.Marshal(gin.H{"missing": missing})
+	if err != nil {
+		return fmt.Errorf("system readiness check: %w", err)
+	}
+
+	if hasOpen {
+		return h.updateReadinessNotification(ctx, openID, message, metadata)
+	}
+	return h.insertReadinessNotification(ctx, message, metadata)
+}
+
+// findMissingConfig checks each integration's config table and returns the
+// ones that have no active row saved yet.
+func (h *AdminHandlers) findMissingConfig(ctx context.Context) ([]models.MissingConfigItem, error) {
+	checks := []struct {
+		key, label, query string
+	}{
+		{"email", "Email (AWS SES)", `SELECT EXISTS(SELECT 1 FROM email_config)`},
+		{"livekit", "LiveKit", `SELECT EXISTS(SELECT 1 FROM livekit_configs WHERE is_active = TRUE)`},
+		{"github", "GitHub Integration", `SELECT EXISTS(SELECT 1 FROM github_credentials)`},
+		{"ai_provider", "AI Provider", `SELECT EXISTS(SELECT 1 FROM ai_provider_configs WHERE is_active = TRUE)`},
+	}
+
+	var missing []models.MissingConfigItem
+	for _, chk := range checks {
+		var configured bool
+		if err := h.DB.QueryRowContext(ctx, chk.query).Scan(&configured); err != nil {
+			return nil, fmt.Errorf("checking %s config: %w", chk.key, err)
+		}
+		if !configured {
+			missing = append(missing, models.MissingConfigItem{Key: chk.key, Label: chk.label})
+		}
+	}
+	return missing, nil
+}
+
+// findOpenReadinessNotification returns the id of an existing unread
+// "system_not_ready" broadcast notification, if any.
+func (h *AdminHandlers) findOpenReadinessNotification(ctx context.Context) (id int64, found bool, err error) {
+	row := h.DB.QueryRowContext(ctx, `
+		SELECT id FROM admin_notifications
+		WHERE type = $1 AND entity_type = $2 AND entity_id = $3 AND is_read = FALSE
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, systemReadinessNotifType, systemReadinessEntityType, systemReadinessEntityID)
+
+	if scanErr := row.Scan(&id); scanErr != nil {
+		if scanErr == sql.ErrNoRows {
+			return 0, false, nil
+		}
+		return 0, false, scanErr
+	}
+	return id, true, nil
+}
+
+func (h *AdminHandlers) insertReadinessNotification(ctx context.Context, message string, metadata []byte) error {
+	_, err := h.DB.ExecContext(ctx, `
+		INSERT INTO admin_notifications (admin_id, type, title, message, entity_type, entity_id, metadata, severity)
+		VALUES (NULL, $1, $2, $3, $4, $5, $6, 'critical')
+	`, systemReadinessNotifType, "System setup incomplete", message, systemReadinessEntityType, systemReadinessEntityID, metadata)
+	return err
+}
+
+func (h *AdminHandlers) updateReadinessNotification(ctx context.Context, id int64, message string, metadata []byte) error {
+	_, err := h.DB.ExecContext(ctx, `
+		UPDATE admin_notifications
+		SET message = $1, metadata = $2, created_at = CURRENT_TIMESTAMP
+		WHERE id = $3
+	`, message, metadata, id)
+	return err
+}
+
+func (h *AdminHandlers) resolveReadinessNotification(ctx context.Context, id int64) error {
+	_, err := h.DB.ExecContext(ctx, `
+		UPDATE admin_notifications
+		SET is_read = TRUE, read_at = CURRENT_TIMESTAMP
+		WHERE id = $1
+	`, id)
+	return err
+}
+
+func joinWithCommas(items []string) string {
+	switch len(items) {
+	case 0:
+		return ""
+	case 1:
+		return items[0]
+	default:
+		out := items[0]
+		for _, it := range items[1:] {
+			out += ", " + it
+		}
+		return out
 	}
 }

@@ -919,3 +919,8 @@ type Notification struct {
 	ReadAt     sql.NullString
 	CreatedAt  string
 }
+
+type MissingConfigItem struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+}
