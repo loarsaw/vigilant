@@ -519,12 +519,12 @@ func (s *Service) scoreOneAssignmentRepo(jobApplicationID, repoURL, token string
 				candidateName, positionTitle = "A candidate", "the position"
 			}
 			if err := s.notifSvc.CreateForRole(context.Background(), "hr", notifications.CreateInput{
-				Type:       notifications.TypeCandidateShortlisted,
+				Type:       models.TypeCandidateShortlisted,
 				Title:      "Candidate shortlisted — schedule an interview",
 				Message:    fmt.Sprintf("%s has been shortlisted for %s (score %.1f). Please schedule an interview.", candidateName, positionTitle, combinedScore),
 				EntityType: "job_application",
 				EntityID:   jobApplicationID,
-				Severity:   notifications.SeveritySuccess,
+				Severity:   models.SeveritySuccess,
 			}); err != nil {
 				log.Printf("warning: failed to notify HR for %s: %v", jobApplicationID, err)
 			}

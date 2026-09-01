@@ -903,7 +903,32 @@ type GeneratedAssignment struct {
 	EstimatedHours float64  `json:"estimated_hours"`
 }
 
+type MissingConfigItem struct {
+	Key   string `json:"key"`
+	Label string `json:"label"`
+}
+
 type Severity string
+
+const (
+	SeverityInfo     Severity = "info"
+	SeveritySuccess  Severity = "success"
+	SeverityWarning  Severity = "warning"
+	SeverityCritical Severity = "critical"
+)
+
+const (
+	TypeCandidateShortlisted       = "candidate_shortlisted"
+	TypeCandidateQualified         = "candidate_qualified"
+	TypeGithubInviteFailed         = "github_invite_failed"
+	TypeAssignmentGenerationFailed = "assignment_generation_failed"
+	TypeAIReviewFailed             = "ai_review_failed"
+	TypeEmailJobFailed             = "email_job_failed"
+	TypeInterviewScheduled         = "interview_scheduled"
+	TypeStaleAssignment            = "stale_assignment"
+	TypeSuspiciousActivity         = "suspicious_activity"
+	TypeNewApplication             = "new_application"
+)
 
 type Notification struct {
 	ID         int64
@@ -918,9 +943,4 @@ type Notification struct {
 	IsRead     bool
 	ReadAt     sql.NullString
 	CreatedAt  string
-}
-
-type MissingConfigItem struct {
-	Key   string `json:"key"`
-	Label string `json:"label"`
 }
