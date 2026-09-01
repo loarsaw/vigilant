@@ -95,14 +95,17 @@ const (
 
 // CheckSystemReadiness inspects the config tables for each integration and,
 // if anything required hasn't been saved yet, raises (or refreshes) a
-// broadcast notification for Super Admins.
-func (h *AdminHandlers) CheckSystemReadiness(ctx context.Context) error {
-	missing, err := h.findMissingConfig(ctx)
+// broadcast notification for Super Admins. It's a plain function (not a
+// method on AdminHandlers) so it can be called from main.go right after
+// db.RunMigrations, without constructing a full AdminHandlers and its
+// AI/Analyzer/Notifications/LiveKit dependencies.
+func CheckSystemReadiness(ctx context.Context, dbConn *sql.DB) error {
+	missing, err := findMissingConfig(ctx, dbConn)
 	if err != nil {
 		return fmt.Errorf("system readiness check: %w", err)
 	}
 
-	openID, hasOpen, err := h.findOpenReadinessNotification(ctx)
+	openID, hasOpen, err := findOpenReadinessNotification(ctx, dbConn)
 	if err != nil {
 		return fmt.Errorf("system readiness check: %w", err)
 	}
@@ -110,7 +113,7 @@ func (h *AdminHandlers) CheckSystemReadiness(ctx context.Context) error {
 	// Nothing missing: resolve any stale open notification and stop.
 	if len(missing) == 0 {
 		if hasOpen {
-			if err := h.resolveReadinessNotification(ctx, openID); err != nil {
+			if err := resolveReadinessNotification(ctx, dbConn, openID); err != nil {
 				return fmt.Errorf("system readiness check: %w", err)
 			}
 		}
@@ -129,14 +132,14 @@ func (h *AdminHandlers) CheckSystemReadiness(ctx context.Context) error {
 	}
 
 	if hasOpen {
-		return h.updateReadinessNotification(ctx, openID, message, metadata)
+		return updateReadinessNotification(ctx, dbConn, openID, message, metadata)
 	}
-	return h.insertReadinessNotification(ctx, message, metadata)
+	return insertReadinessNotification(ctx, dbConn, message, metadata)
 }
 
 // findMissingConfig checks each integration's config table and returns the
 // ones that have no active row saved yet.
-func (h *AdminHandlers) findMissingConfig(ctx context.Context) ([]models.MissingConfigItem, error) {
+func findMissingConfig(ctx context.Context, dbConn *sql.DB) ([]models.MissingConfigItem, error) {
 	checks := []struct {
 		key, label, query string
 	}{
@@ -149,7 +152,7 @@ func (h *AdminHandlers) findMissingConfig(ctx context.Context) ([]models.Missing
 	var missing []models.MissingConfigItem
 	for _, chk := range checks {
 		var configured bool
-		if err := h.DB.QueryRowContext(ctx, chk.query).Scan(&configured); err != nil {
+		if err := dbConn.QueryRowContext(ctx, chk.query).Scan(&configured); err != nil {
 			return nil, fmt.Errorf("checking %s config: %w", chk.key, err)
 		}
 		if !configured {
@@ -161,8 +164,8 @@ func (h *AdminHandlers) findMissingConfig(ctx context.Context) ([]models.Missing
 
 // findOpenReadinessNotification returns the id of an existing unread
 // "system_not_ready" broadcast notification, if any.
-func (h *AdminHandlers) findOpenReadinessNotification(ctx context.Context) (id int64, found bool, err error) {
-	row := h.DB.QueryRowContext(ctx, `
+func findOpenReadinessNotification(ctx context.Context, dbConn *sql.DB) (id int64, found bool, err error) {
+	row := dbConn.QueryRowContext(ctx, `
 		SELECT id FROM admin_notifications
 		WHERE type = $1 AND entity_type = $2 AND entity_id = $3 AND is_read = FALSE
 		ORDER BY created_at DESC
@@ -178,16 +181,16 @@ func (h *AdminHandlers) findOpenReadinessNotification(ctx context.Context) (id i
 	return id, true, nil
 }
 
-func (h *AdminHandlers) insertReadinessNotification(ctx context.Context, message string, metadata []byte) error {
-	_, err := h.DB.ExecContext(ctx, `
+func insertReadinessNotification(ctx context.Context, dbConn *sql.DB, message string, metadata []byte) error {
+	_, err := dbConn.ExecContext(ctx, `
 		INSERT INTO admin_notifications (admin_id, type, title, message, entity_type, entity_id, metadata, severity)
 		VALUES (NULL, $1, $2, $3, $4, $5, $6, 'critical')
 	`, systemReadinessNotifType, "System setup incomplete", message, systemReadinessEntityType, systemReadinessEntityID, metadata)
 	return err
 }
 
-func (h *AdminHandlers) updateReadinessNotification(ctx context.Context, id int64, message string, metadata []byte) error {
-	_, err := h.DB.ExecContext(ctx, `
+func updateReadinessNotification(ctx context.Context, dbConn *sql.DB, id int64, message string, metadata []byte) error {
+	_, err := dbConn.ExecContext(ctx, `
 		UPDATE admin_notifications
 		SET message = $1, metadata = $2, created_at = CURRENT_TIMESTAMP
 		WHERE id = $3
@@ -195,8 +198,8 @@ func (h *AdminHandlers) updateReadinessNotification(ctx context.Context, id int6
 	return err
 }
 
-func (h *AdminHandlers) resolveReadinessNotification(ctx context.Context, id int64) error {
-	_, err := h.DB.ExecContext(ctx, `
+func resolveReadinessNotification(ctx context.Context, dbConn *sql.DB, id int64) error {
+	_, err := dbConn.ExecContext(ctx, `
 		UPDATE admin_notifications
 		SET is_read = TRUE, read_at = CURRENT_TIMESTAMP
 		WHERE id = $1

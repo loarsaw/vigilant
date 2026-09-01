@@ -9,6 +9,7 @@ import (
 	vigilantcron "vigilant/cron"
 	"vigilant/db"
 	"vigilant/email"
+	"vigilant/handlers/admin"
 	"vigilant/middleware"
 	"vigilant/routes"
 	"vigilant/server"
@@ -33,6 +34,10 @@ func main() {
 
 	if err := db.RunMigrations(database); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	if err := admin.CheckSystemReadiness(context.Background(), database); err != nil {
+		log.Printf("system readiness check failed: %v", err)
 	}
 
 	emailWorker := email.NewWorker(database, cfg.EncryptionKey, 5*time.Second)
