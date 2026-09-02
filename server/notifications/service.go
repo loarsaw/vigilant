@@ -6,79 +6,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+
+	"vigilant/models"
 )
-
-type Severity string
-
-const (
-	SeverityInfo     Severity = "info"
-	SeveritySuccess  Severity = "success"
-	SeverityWarning  Severity = "warning"
-	SeverityCritical Severity = "critical"
-)
-
-// Event type constants — keep these in one place so hook call sites and
-// any future frontend filtering stay in sync.
-const (
-	TypeCandidateShortlisted       = "candidate_shortlisted"
-	TypeCandidateQualified         = "candidate_qualified"
-	TypeGithubInviteFailed         = "github_invite_failed"
-	TypeAssignmentGenerationFailed = "assignment_generation_failed"
-	TypeAIReviewFailed             = "ai_review_failed"
-	TypeEmailJobFailed             = "email_job_failed"
-	TypeInterviewScheduled         = "interview_scheduled"
-	TypeStaleAssignment            = "stale_assignment"
-	TypeSuspiciousActivity         = "suspicious_activity"
-	TypeNewApplication             = "new_application"
-)
-
-type Notification struct {
-	ID         int64
-	AdminID    *string
-	Type       string
-	Title      string
-	Message    sql.NullString
-	EntityType sql.NullString
-	EntityID   sql.NullString
-	Metadata   map[string]any
-	Severity   Severity
-	IsRead     bool
-	ReadAt     sql.NullString
-	CreatedAt  string
-}
-
-func (n Notification) MarshalJSON() ([]byte, error) {
-	type alias struct {
-		ID         int64          `json:"id"`
-		Type       string         `json:"type"`
-		Title      string         `json:"title"`
-		Message    *string        `json:"message"`
-		EntityType *string        `json:"entity_type"`
-		EntityID   *string        `json:"entity_id"`
-		Metadata   map[string]any `json:"metadata"`
-		Severity   Severity       `json:"severity"`
-		IsRead     bool           `json:"is_read"`
-		ReadAt     *string        `json:"read_at"`
-		CreatedAt  string         `json:"created_at"`
-	}
-	a := alias{
-		ID: n.ID, Type: n.Type, Title: n.Title, Metadata: n.Metadata,
-		Severity: n.Severity, IsRead: n.IsRead, CreatedAt: n.CreatedAt,
-	}
-	if n.Message.Valid {
-		a.Message = &n.Message.String
-	}
-	if n.EntityType.Valid {
-		a.EntityType = &n.EntityType.String
-	}
-	if n.EntityID.Valid {
-		a.EntityID = &n.EntityID.String
-	}
-	if n.ReadAt.Valid {
-		a.ReadAt = &n.ReadAt.String
-	}
-	return json.Marshal(a)
-}
 
 type Service struct {
 	db *sql.DB
@@ -86,11 +16,7 @@ type Service struct {
 	// whatever your existing admin SSE hub is (see AdminHandlers.SSEEvents).
 	// Nil-safe: if not wired, notifications are still persisted, just not
 	// pushed live.
-	Broadcaster func(adminID *string, n Notification)
-}
-
-func NewService(db *sql.DB) *Service {
-	return &Service{db: db}
+	Broadcaster func(adminID *string, n models.Notification)
 }
 
 type CreateInput struct {
@@ -101,7 +27,11 @@ type CreateInput struct {
 	EntityType string
 	EntityID   string
 	Metadata   map[string]any
-	Severity   Severity
+	Severity   models.Severity
+}
+
+func NewService(db *sql.DB) *Service {
+	return &Service{db: db}
 }
 
 func toNullString(s string) sql.NullString {
@@ -117,7 +47,7 @@ func toNullString(s string) sql.NullString {
 // the actual business flow (shortlisting, invites, etc.) it's reporting on.
 func (s *Service) Create(ctx context.Context, in CreateInput) error {
 	if in.Severity == "" {
-		in.Severity = SeverityInfo
+		in.Severity = models.SeverityInfo
 	}
 	metadataJSON, err := json.Marshal(in.Metadata)
 	if err != nil {
@@ -138,7 +68,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) error {
 	}
 
 	if s.Broadcaster != nil {
-		s.Broadcaster(in.AdminID, Notification{
+		s.Broadcaster(in.AdminID, models.Notification{
 			ID:         id,
 			AdminID:    in.AdminID,
 			Type:       in.Type,
@@ -156,7 +86,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) error {
 	return nil
 }
 
-func (s *Service) ListForAdmin(ctx context.Context, adminID string, unreadOnly bool, limit int) ([]Notification, int, int, error) {
+func (s *Service) ListForAdmin(ctx context.Context, adminID string, unreadOnly bool, limit int) ([]models.Notification, int, int, error) {
 	query := `
 		SELECT id, admin_id, type, title, message, entity_type, entity_id, metadata, severity, is_read, read_at, created_at
 		FROM admin_notifications
@@ -175,9 +105,9 @@ func (s *Service) ListForAdmin(ctx context.Context, adminID string, unreadOnly b
 	}
 	defer rows.Close()
 
-	out := []Notification{} // never nil -> frontend always gets [] not null
+	out := []models.Notification{} // never nil -> frontend always gets [] not null
 	for rows.Next() {
-		var n Notification
+		var n models.Notification
 		var metaBytes []byte
 		var adminIDNullable sql.NullString
 		if err := rows.Scan(&n.ID, &adminIDNullable, &n.Type, &n.Title, &n.Message,
