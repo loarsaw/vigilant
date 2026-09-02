@@ -1,17 +1,7 @@
 import { useState, useEffect } from "react";
 import { TEMPLATE_MANIFEST } from "@/data/template-manifest";
 import { SandpackTemplateType } from "@/types/types";
-
-export interface LoadedTemplate {
-  files: Record<string, string>;
-  template: SandpackTemplateType;
-}
-
-interface UseTemplateLoaderResult {
-  data: LoadedTemplate | null;
-  loading: boolean;
-  error: string | null;
-}
+import { LoadedTemplate, UseTemplateLoaderResult } from "./types";
 
 const cache = new Map<string, LoadedTemplate>();
 

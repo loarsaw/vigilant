@@ -1,43 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-export interface Admin {
-  id: string;
-  email: string;
-  full_name: string;
-  role: "hr" | "interviewer";
-  department: string;
-  designation: string;
-  phone_number: string;
-  is_active: boolean;
-  last_login: string | null;
-  created_at: string;
-}
-
-export interface AdminsResponse {
-  admins: Admin[];
-}
-
-export interface CreateAdminPayload {
-  email: string;
-  password: string;
-  full_name: string;
-  role: "hr" | "interviewer";
-  department?: string;
-  designation?: string;
-  phone_number?: string;
-}
-
-export interface UpdateAdminPayload {
-  full_name?: string;
-  department?: string;
-  designation?: string;
-  phone_number?: string;
-}
-
-export interface ResetPasswordPayload {
-  new_password: string;
-}
+import { Admin, AdminsResponse, CreateAdminPayload, ResetPasswordPayload, UpdateAdminPayload } from "./types";
 
 const fetchAdmins = async (): Promise<AdminsResponse> => {
   const response = await apiClient.get<AdminsResponse>("/admins");

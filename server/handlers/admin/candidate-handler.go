@@ -1,7 +1,9 @@
+// server/handlers/admin/candidate-handler.go
 package admin
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -9,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 	"vigilant/email"
 	"vigilant/models"
 	"vigilant/websocket"
@@ -35,7 +38,11 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
 		log.Printf("Error hashing password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
@@ -70,7 +77,6 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
 		log.Printf("CreateCandidate: failed to decode encryption key: %v", err)
-
 	} else {
 		sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
 		if err != nil {
@@ -146,10 +152,11 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	offsetPlaceholder := fmt.Sprintf("$%d", len(args)+2)
 	args = append(args, limit, offset)
 
+	// Only columns that actually exist on candidates.
 	rows, err := h.DB.Query(fmt.Sprintf(`
-		SELECT id, email, full_name, created_at, updated_at, is_active,
-		       resume_url, github_url, skills, phone_number, experience_years,
-		       onboarding_complete,last_login
+		SELECT id, email, full_name, phone_number, created_at, updated_at,
+		       is_active, onboarding_complete,
+		       COALESCE(last_login, '1970-01-01'::timestamptz) as last_login
 		FROM candidates %s
 		ORDER BY created_at DESC
 		LIMIT %s OFFSET %s
@@ -161,59 +168,85 @@ func (h *AdminHandlers) ListCandidates(c *gin.Context) {
 	}
 	defer rows.Close()
 
+	type ApplicationSummary struct {
+		ApplicationID string    `json:"application_id"`
+		PositionTitle string    `json:"position_title"`
+		Status        string    `json:"status"`
+		AppliedAt     time.Time `json:"applied_at"`
+	}
+
 	type CandidateWithPresence struct {
 		models.Candidate
-		IsOnline bool `json:"is_online"`
+		IsOnline     bool                 `json:"is_online"`
+		Applications []ApplicationSummary `json:"applications"`
 	}
 
 	candidates := []CandidateWithPresence{}
+	ids := []string{}
+
 	for rows.Next() {
 		var cand models.Candidate
-		var resumeUrl, githubUrl, skills, phoneNumber sql.NullString
-		var lastLogin sql.NullTime
-		var experienceYears sql.NullInt16
+		var lastLogin time.Time
 
 		if err := rows.Scan(
-			&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
-			&cand.IsActive,
-			&resumeUrl, &githubUrl, &skills, &phoneNumber, &experienceYears,
-			&cand.OnboardingComplete,
+			&cand.ID, &cand.Email, &cand.FullName, &cand.PhoneNumber,
+			&cand.CreatedAt, &cand.UpdatedAt,
+			&cand.IsActive, &cand.OnboardingComplete,
 			&lastLogin,
 		); err != nil {
 			log.Printf("Error scanning candidate: %v", err)
 			continue
 		}
-
-		if resumeUrl.Valid {
-			cand.ResumeUrl = resumeUrl.String
-		}
-		if githubUrl.Valid {
-			cand.GithubUrl = githubUrl.String
-		}
-		if skills.Valid {
-			cand.Skills = skills.String
-		}
-		if phoneNumber.Valid {
-			cand.PhoneNumber = phoneNumber.String
-		}
-
-		if lastLogin.Valid {
-			cand.LastLogin = &lastLogin.Time
-		}
-		if experienceYears.Valid {
-			cand.ExperienceYears = uint8(experienceYears.Int16)
-		}
+		cand.LastLogin = &lastLogin
 
 		candidates = append(candidates, CandidateWithPresence{
 			Candidate: cand,
 			IsOnline:  websocket.Manager.IsActive(cand.ID),
 		})
+		ids = append(ids, cand.ID)
 	}
 
 	if err := rows.Err(); err != nil {
 		log.Printf("Error iterating candidates: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidates"})
 		return
+	}
+
+	// Fetch applications (with position names) for this page of candidates in one query.
+	if len(ids) > 0 {
+		appRows, err := h.DB.Query(`
+			SELECT ja.candidate_id, ja.id, hp.position_title, ja.status, ja.applied_at
+			FROM job_applications ja
+			JOIN hiring_positions hp ON hp.id = ja.position_id
+			WHERE ja.candidate_id = ANY($1)
+			ORDER BY ja.applied_at DESC
+		`, pq.Array(ids))
+		if err != nil {
+			log.Printf("Error querying candidate applications: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+			return
+		}
+		defer appRows.Close()
+
+		byCandidate := make(map[string][]ApplicationSummary)
+		for appRows.Next() {
+			var candID string
+			var app ApplicationSummary
+			if err := appRows.Scan(&candID, &app.ApplicationID, &app.PositionTitle, &app.Status, &app.AppliedAt); err != nil {
+				log.Printf("Error scanning application: %v", err)
+				continue
+			}
+			byCandidate[candID] = append(byCandidate[candID], app)
+		}
+		if err := appRows.Err(); err != nil {
+			log.Printf("Error iterating applications: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+			return
+		}
+
+		for i := range candidates {
+			candidates[i].Applications = byCandidate[candidates[i].ID]
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -229,18 +262,18 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 	candidateID := c.Param("id")
 
 	var cand models.Candidate
+	var lastLogin time.Time
 
 	err := h.DB.QueryRow(`
-		SELECT id, email, full_name, created_at, updated_at, is_active,
-		       resume_url, github_url, skills, phone_number, experience_years,
-		       onboarding_complete,last_login
+		SELECT id, email, full_name, phone_number, created_at, updated_at,
+		       is_active, onboarding_complete,
+		       COALESCE(last_login, '1970-01-01'::timestamptz) as last_login
 		FROM candidates WHERE id = $1::uuid
 	`, candidateID).Scan(
-		&cand.ID, &cand.Email, &cand.FullName, &cand.CreatedAt, &cand.UpdatedAt,
-		&cand.IsActive,
-		&cand.ResumeUrl, &cand.GithubUrl, &cand.Skills, &cand.PhoneNumber, &cand.ExperienceYears,
-		&cand.OnboardingComplete,
-		&cand.LastLogin,
+		&cand.ID, &cand.Email, &cand.FullName, &cand.PhoneNumber,
+		&cand.CreatedAt, &cand.UpdatedAt,
+		&cand.IsActive, &cand.OnboardingComplete,
+		&lastLogin,
 	)
 	if err == sql.ErrNoRows {
 		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
@@ -251,10 +284,72 @@ func (h *AdminHandlers) GetCandidate(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve candidate"})
 		return
 	}
+	cand.LastLogin = &lastLogin
+
+	type ApplicationDetail struct {
+		ApplicationID   string    `json:"application_id"`
+		PositionID      string    `json:"position_id"`
+		PositionTitle   string    `json:"position_title"`
+		Status          string    `json:"status"`
+		FullName        string    `json:"full_name,omitempty"`
+		PhoneNumber     string    `json:"phone_number,omitempty"`
+		ResumeURL       string    `json:"resume_url,omitempty"`
+		GithubURLs      []string  `json:"github_urls,omitempty"`
+		Skills          string    `json:"skills,omitempty"`
+		ExperienceYears int       `json:"experience_years"`
+		IsQualified     bool      `json:"is_qualified"`
+		IsShortlisted   bool      `json:"is_shortlisted"`
+		AppliedAt       time.Time `json:"applied_at"`
+	}
+
+	appRows, err := h.DB.Query(`
+		SELECT ja.id, ja.position_id, hp.position_title, ja.status,
+		       COALESCE(ja.full_name, ''),
+		       COALESCE(ja.phone_number, ''),
+		       COALESCE(ja.resume_url, ''),
+		       ja.github_urls,
+		       COALESCE(ja.skills, ''),
+		       COALESCE(ja.experience_years, 0),
+		       ja.is_qualified, ja.is_shortlisted,
+		       ja.applied_at
+		FROM job_applications ja
+		JOIN hiring_positions hp ON hp.id = ja.position_id
+		WHERE ja.candidate_id = $1::uuid
+		ORDER BY ja.applied_at DESC
+	`, candidateID)
+	if err != nil {
+		log.Printf("Error querying candidate applications: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+		return
+	}
+	defer appRows.Close()
+
+	applications := []ApplicationDetail{}
+	for appRows.Next() {
+		var app ApplicationDetail
+		if err := appRows.Scan(
+			&app.ApplicationID, &app.PositionID, &app.PositionTitle, &app.Status,
+			&app.FullName, &app.PhoneNumber, &app.ResumeURL,
+			pq.Array(&app.GithubURLs),
+			&app.Skills, &app.ExperienceYears,
+			&app.IsQualified, &app.IsShortlisted,
+			&app.AppliedAt,
+		); err != nil {
+			log.Printf("Error scanning application: %v", err)
+			continue
+		}
+		applications = append(applications, app)
+	}
+	if err := appRows.Err(); err != nil {
+		log.Printf("Error iterating applications: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve applications"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"candidate": cand,
-		"is_online": websocket.Manager.IsActive(cand.ID),
+		"candidate":    cand,
+		"is_online":    websocket.Manager.IsActive(cand.ID),
+		"applications": applications,
 	})
 }
 
@@ -371,8 +466,12 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "candidate account is deactivated"})
 		return
 	}
-	// TODO - Move to Utility
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcryptCost)
 	if err != nil {
 		log.Printf("UpdateCandidatePassword: failed to hash password: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to process password"})
@@ -425,4 +524,56 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "password updated successfully"})
+}
+
+func (h *AdminHandlers) GetProcessReports(c *gin.Context) {
+	sessionID := c.Param("session_id")
+
+	query := `
+		SELECT id, session_id, reported_at, processes, alert_count, high_memory_alerts, unknown_electron_alerts
+		FROM process_reports
+		WHERE session_id = $1
+		ORDER BY reported_at DESC
+	`
+
+	rows, err := h.DB.Query(query, sessionID)
+	if err != nil {
+		log.Printf("Error querying process reports: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve reports"})
+		return
+	}
+	defer rows.Close()
+
+	reports := []gin.H{}
+
+	for rows.Next() {
+		var id int64
+		var sessID string
+		var reportedAt time.Time
+		var processesJSON []byte
+		var alertCount, highMemAlerts, electronAlerts int
+
+		if err := rows.Scan(&id, &sessID, &reportedAt, &processesJSON, &alertCount, &highMemAlerts, &electronAlerts); err != nil {
+			log.Printf("Error scanning row: %v", err)
+			continue
+		}
+
+		var processes []models.Process
+		if err := json.Unmarshal(processesJSON, &processes); err != nil {
+			log.Printf("Error unmarshaling processes: %v", err)
+			continue
+		}
+
+		reports = append(reports, gin.H{
+			"id":                      id,
+			"session_id":              sessID,
+			"timestamp":               reportedAt,
+			"processes":               processes,
+			"alert_count":             alertCount,
+			"high_memory_alerts":      highMemAlerts,
+			"unknown_electron_alerts": electronAlerts,
+		})
+	}
+
+	c.JSON(http.StatusOK, reports)
 }

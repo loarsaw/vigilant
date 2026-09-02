@@ -1,7 +1,7 @@
 {
   "name": "vigilant-admin",
   "productName": "vigilant-admin",
-  "version": "1.0.0-beta",
+  "version": "0.0.0",
   "description": "Vigilant candidate monitoring client",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -31,11 +31,11 @@
     "eslint": "^8.0.1",
     "eslint-plugin-import": "^2.25.0",
     "postcss": "^8.4.47",
+    "prettier": "^3.8.1",
     "tailwindcss": "^3.4.14",
     "ts-node": "^10.0.0",
     "typescript": "~4.5.4",
-    "vite": "^5.0.12",
-    "prettier": "^3.8.1"
+    "vite": "^5.0.12"
   },
   "keywords": [],
   "author": {
@@ -45,6 +45,8 @@
   "license": "MIT",
   "dependencies": {
     "@electron-forge/publisher-github": "^7.11.1",
+    "@livekit/components-react": "^2.9.24",
+    "@livekit/components-styles": "^1.2.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
@@ -58,11 +60,13 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-query-devtools": "^5.91.3",
+    "@twilio/voice-sdk": "^2.18.3",
     "axios": "^1.13.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "electron-squirrel-startup": "^1.0.1",
+    "livekit-client": "^2.22.0",
     "lucide-react": "^0.564.0",
     "react": "^18.3.1",
     "react-day-picker": "^9.14.0",

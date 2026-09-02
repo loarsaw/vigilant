@@ -1,18 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import WorkspaceEntry from "./workspace";
-import Credentials from "./creds";
 import Success from "./success";
 import { useAuth } from "@/hooks/use-auth";
-import { useNavigate } from "react-router-dom";
+import { LoginCodePanel } from "@/components/code-panel";
 
 export default function LoginPage() {
-  const { login, isLoggingIn, loginError, resetLogin, logout, setupPoller, setSessionMeta, user } =
+  const { verifyPasscode, isVerifyingPasscode, verifyPasscodeError, resetVerifyPasscode, interviewRoom } =
     useAuth();
-  const [step, setStep] = useState<"workspace" | "credentials" | "success" | "waiting">(
-    "workspace",
-  );
+  const [step, setStep] = useState<"workspace" | "code" | "success">("workspace");
   const [workspace, setWorkspace] = useState("");
-  const [username, setUsername] = useState("");
 
   const getErrorMessage = (error: any) => {
     if (!error) return undefined;
@@ -20,47 +16,33 @@ export default function LoginPage() {
     const status = error.response?.status;
 
     switch (status) {
-      case 401:
-        return "Invalid email or password. Please check your credentials.";
-      case 403:
-        return "Access denied. Your account may be restricted; please contact your administrator.";
+      case 400:
+        return "That passcode isn't valid yet — try again closer to your interview time.";
       case 404:
-        return "Workspace not found. Please go back and check the workspace ID.";
+        return "Invalid passcode. Please check the code from your invite email.";
+      case 410:
+        return "This passcode has expired. Please contact your recruiter for a new one.";
       default:
         return "An unexpected error occurred. Please try again later.";
     }
   };
 
-  const { data: setupStatus } = setupPoller(workspace, username, step === "waiting");
-
-  if (setupStatus?.assigned && setupStatus.setupPath && step === "waiting") {
-    setSessionMeta(workspace, setupStatus.setupPath);
-  }
-
   const handleWorkspaceSubmit = (value: string) => {
     setWorkspace(value);
-    setStep("credentials");
+    setStep("code");
   };
 
   const handleBackClick = () => {
-    resetLogin();
+    resetVerifyPasscode();
     setStep("workspace");
   };
 
-  const handleLoginSuccess = (user: string) => {
-    setUsername(user);
-    setStep("success");
-  };
-
-  const handleProceedToWaiting = () => {
-    setStep("waiting");
-  };
-
-  const handleCredentialsSubmit = async (creds: { username: string; password: string }) => {
+  const handleCodeSubmit = async (code: string) => {
     try {
-      const result = await login({ workspace, credentials: creds });
-      handleLoginSuccess(result.full_name);
-    } catch {}
+      await verifyPasscode({ workspace, passcode: code });
+      setStep("success");
+    } catch {
+    }
   };
 
   return (
@@ -83,21 +65,29 @@ export default function LoginPage() {
         </div>
 
         <div
-          className={`w-full transition-all duration-700 ease-out absolute ${step === "credentials" ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-8 pointer-events-none"}`}
+          className={`w-full transition-all duration-700 ease-out absolute ${step === "code" ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-8 pointer-events-none"}`}
         >
-          <Credentials
-            workspace={workspace}
-            onBack={handleBackClick}
-            onSubmit={handleCredentialsSubmit}
-            isLoading={isLoggingIn}
-            error={getErrorMessage(loginError)}
+          <LoginCodePanel
+            onSubmit={handleCodeSubmit}
+            isSubmitting={isVerifyingPasscode}
+            errorMessage={getErrorMessage(verifyPasscodeError)}
           />
+          <button
+            type="button"
+            onClick={handleBackClick}
+            className="mt-4 text-xs text-slate-400 hover:underline w-full text-center"
+          >
+            Back to workspace
+          </button>
         </div>
 
         <div
           className={`w-full transition-all duration-700 ease-out absolute ${step === "success" ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-8 pointer-events-none"}`}
         >
-          <Success workspace={workspace} username={username} onProceed={handleProceedToWaiting} />
+          <Success
+            workspace={workspace}
+            sessionId={interviewRoom?.sessionId ?? ""}
+          />
         </div>
       </div>
     </div>

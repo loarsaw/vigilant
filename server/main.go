@@ -1,3 +1,4 @@
+// server/main.go
 package main
 
 import (
@@ -5,6 +6,7 @@ import (
 	"log"
 	"time"
 	"vigilant/config"
+	vigilantcron "vigilant/cron"
 	"vigilant/db"
 	"vigilant/email"
 	"vigilant/middleware"
@@ -21,6 +23,8 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	middleware.InitLimiters(cfg)
+
 	database, err := db.InitDB(cfg)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -35,6 +39,9 @@ func main() {
 	go emailWorker.Start(context.Background())
 	defer emailWorker.Stop()
 
+	scheduler := vigilantcron.NewScheduler(database, cfg)
+	scheduler.Start()
+	defer scheduler.Stop()
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 

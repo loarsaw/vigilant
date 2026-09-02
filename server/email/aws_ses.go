@@ -1,3 +1,4 @@
+// server/email/aws_ses.go
 package email
 
 import (
@@ -34,12 +35,37 @@ func NewMailerFromConfig(ctx context.Context, cfg *SESConfig) (*Mailer, error) {
 }
 
 type EmailInput struct {
-	ToEmail string
-	Subject string
-	Body    string
+	ToEmail  string
+	Subject  string
+	Body     string
+	BodyHTML string
 }
 
 func (m *Mailer) Send(ctx context.Context, input EmailInput) error {
+	body := &types.Body{}
+
+	if input.BodyHTML != "" {
+		body.Html = &types.Content{
+			Data:    aws.String(input.BodyHTML),
+			Charset: aws.String("UTF-8"),
+		}
+	}
+
+	textFallback := input.Body
+	if textFallback == "" && input.BodyHTML != "" {
+		textFallback = "This email contains HTML content. Please view it in an HTML-capable email client."
+	}
+	if textFallback != "" {
+		body.Text = &types.Content{
+			Data:    aws.String(textFallback),
+			Charset: aws.String("UTF-8"),
+		}
+	}
+
+	if body.Html == nil && body.Text == nil {
+		return fmt.Errorf("email to %s has no body content", input.ToEmail)
+	}
+
 	_, err := m.client.SendEmail(ctx, &sesv2.SendEmailInput{
 		FromEmailAddress: aws.String(m.fromEmail),
 		Destination: &types.Destination{
@@ -51,12 +77,7 @@ func (m *Mailer) Send(ctx context.Context, input EmailInput) error {
 					Data:    aws.String(input.Subject),
 					Charset: aws.String("UTF-8"),
 				},
-				Body: &types.Body{
-					Text: &types.Content{
-						Data:    aws.String(input.Body),
-						Charset: aws.String("UTF-8"),
-					},
-				},
+				Body: body,
 			},
 		},
 	})

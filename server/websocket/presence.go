@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
+
+	"vigilant/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
-	"vigilant/config"
 )
 
 var upgrader = websocket.Upgrader{
@@ -29,13 +31,15 @@ type Client struct {
 }
 
 type PresenceManager struct {
-	clients map[string]*Client
-	mu      sync.RWMutex
-	Cfg     *config.Config
+	clients         map[string]*Client
+	mu              sync.RWMutex
+	Cfg             *config.Config
+	activeThreshold time.Duration
 }
 
 var Manager = &PresenceManager{
-	clients: make(map[string]*Client),
+	clients:         make(map[string]*Client),
+	activeThreshold: 30 * time.Second,
 }
 
 func (pm *PresenceManager) Register(userID string, conn *websocket.Conn) *Client {
@@ -65,7 +69,7 @@ func (pm *PresenceManager) IsActive(userID string) bool {
 	if !ok {
 		return false
 	}
-	return time.Since(client.LastSeen) < 30*time.Second
+	return time.Since(client.LastSeen) < pm.activeThreshold
 }
 
 func (pm *PresenceManager) UpdateLastSeen(userID string) {
@@ -82,7 +86,7 @@ func (pm *PresenceManager) ActiveUsers() []string {
 
 	active := []string{}
 	for userID, client := range pm.clients {
-		if time.Since(client.LastSeen) < 30*time.Second {
+		if time.Since(client.LastSeen) < pm.activeThreshold {
 			active = append(active, userID)
 		}
 	}
@@ -90,7 +94,6 @@ func (pm *PresenceManager) ActiveUsers() []string {
 }
 
 func (pm *PresenceManager) HandleConnection(c *gin.Context) {
-	// validate JWT from query param
 	tokenStr := c.Query("token")
 	if tokenStr == "" {
 		c.AbortWithStatus(http.StatusUnauthorized)
@@ -121,6 +124,20 @@ func (pm *PresenceManager) HandleConnection(c *gin.Context) {
 		return
 	}
 
+	updateInterval := 5
+	if pm.Cfg != nil {
+		if parsed, err := strconv.Atoi(pm.Cfg.ClientUpdateInterval); err == nil && parsed > 0 {
+			updateInterval = parsed
+		}
+	}
+	pingInterval := time.Duration(updateInterval) * time.Second
+	readDeadline := pingInterval * 3
+	activeThreshold := pingInterval * 6
+
+	pm.mu.Lock()
+	pm.activeThreshold = activeThreshold
+	pm.mu.Unlock()
+
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Printf("WebSocket upgrade error: %v", err)
@@ -131,14 +148,14 @@ func (pm *PresenceManager) HandleConnection(c *gin.Context) {
 	client := pm.Register(candidateID, conn)
 	defer pm.Unregister(candidateID)
 
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	conn.SetReadDeadline(time.Now().Add(readDeadline))
 	conn.SetPongHandler(func(string) error {
 		pm.UpdateLastSeen(candidateID)
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		conn.SetReadDeadline(time.Now().Add(readDeadline))
 		return nil
 	})
 
-	ticker := time.NewTicker(25 * time.Second)
+	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
 	go func() {

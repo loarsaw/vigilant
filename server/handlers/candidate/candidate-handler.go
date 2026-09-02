@@ -1,3 +1,4 @@
+// server/handlers/candidate/candidate-handler.go
 package candidate
 
 import (
@@ -8,13 +9,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
 	"vigilant/config"
+	"vigilant/utils"
+
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/lib/pq"
 )
 
 type Handlers struct {
@@ -30,38 +36,57 @@ func (h *Handlers) HealthCheck(c *gin.Context) {
 	})
 }
 
-func (h *Handlers) GetActiveInterview(c *gin.Context) {
-	candidateID := c.Param("candidate_id")
+// func (h *Handlers) GetLiveKitToken(c *gin.Context) {
+// 	roomName := c.Query("room_name")
+// 	identity := c.GetString("user_id") // From AuthMiddleware
 
-	var session models.InterviewSession
-	var position sql.NullString
+// 	if roomName == "" {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "room_name is required"})
+// 		return
+// 	}
 
-	query := `
-        SELECT id, session_id, status, position
-        FROM interview_sessions
-        WHERE candidate_id = $1 AND status IN ('scheduled', 'in_progress')
-        ORDER BY started_at DESC LIMIT 1`
+// 	// 1. Initialize LiveKit service passing the DB handle
+// 	lkService := livekit.NewService(h.DB)
 
-	err := h.DB.QueryRow(query, candidateID).Scan(
-		&session.ID,
-		&session.SessionID,
-		&session.Status,
-		&position,
-	)
+// 	// 2. Call GenerateToken on the service (it fetches the DB config internally)
+// 	token, host, err := lkService.GenerateToken(roomName, identity, false)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "LiveKit configuration error or token generation failed"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{
+// 		"token": token,
+// 		"host":  host,
+// 	})
+// }
+
+func (h *Handlers) GetInterviewSessionID(c *gin.Context) {
+	interviewID := c.Param("interview_id")
+	if interviewID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "interview_id is required"})
+		return
+	}
+
+	var sessionID string
+	err := h.DB.QueryRow(`
+		SELECT session_id
+		FROM interview_sessions
+		WHERE id = $1
+	`, interviewID).Scan(&sessionID)
 
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusNotFound, gin.H{"error": "no active interview found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "interview not found"})
 		return
 	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		log.Printf("Error fetching session_id for interview %s: %v", interviewID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve session"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":         session.ID,
-		"session_id": session.SessionID,
-		"status":     session.Status,
-		"position":   position.String,
+		"interview_id": interviewID,
+		"session_id":   sessionID,
 	})
 }
 
@@ -130,57 +155,7 @@ func (h *Handlers) CreateProcessReport(c *gin.Context) {
 		"alerts":     alertCount,
 	})
 }
-func (h *Handlers) GetProcessReports(c *gin.Context) {
-	sessionID := c.Param("session_id")
 
-	query := `
-		SELECT id, session_id, reported_at, processes, alert_count, high_memory_alerts, unknown_electron_alerts
-		FROM process_reports
-		WHERE session_id = $1
-		ORDER BY reported_at DESC
-	`
-
-	rows, err := h.DB.Query(query, sessionID)
-	if err != nil {
-		log.Printf("Error querying process reports: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve reports"})
-		return
-	}
-	defer rows.Close()
-
-	reports := []gin.H{}
-
-	for rows.Next() {
-		var id int64
-		var sessID string
-		var reportedAt time.Time
-		var processesJSON []byte
-		var alertCount, highMemAlerts, electronAlerts int
-
-		if err := rows.Scan(&id, &sessID, &reportedAt, &processesJSON, &alertCount, &highMemAlerts, &electronAlerts); err != nil {
-			log.Printf("Error scanning row: %v", err)
-			continue
-		}
-
-		var processes []models.Process
-		if err := json.Unmarshal(processesJSON, &processes); err != nil {
-			log.Printf("Error unmarshaling processes: %v", err)
-			continue
-		}
-
-		reports = append(reports, gin.H{
-			"id":                      id,
-			"session_id":              sessID,
-			"timestamp":               reportedAt,
-			"processes":               processes,
-			"alert_count":             alertCount,
-			"high_memory_alerts":      highMemAlerts,
-			"unknown_electron_alerts": electronAlerts,
-		})
-	}
-
-	c.JSON(http.StatusOK, reports)
-}
 func (h *Handlers) ListSessions(c *gin.Context) {
 	query := `
 		SELECT s.id, s.session_id, s.candidate_email, s.candidate_name, s.started_at, s.ended_at,
@@ -516,12 +491,11 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			hp.status, hp.created_at, hp.updated_at,
 			hp.created_by, hp.updated_by, hp.is_active,
 
-			-- application info
 			ja.id           AS application_id,
 			ja.status       AS application_status,
 			ja.applied_at   AS applied_at,
 
-			-- interview session info (only if exists)
+			is2.session_id     AS interview_session_id,
 			is2.scheduled_at   AS interview_scheduled_at,
 			is2.interview_url  AS interview_url,
 			is2.status         AS interview_status
@@ -530,7 +504,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 		LEFT JOIN job_applications ja
 			ON ja.position_id = hp.id AND ja.candidate_id = %s
 		LEFT JOIN LATERAL (
-			SELECT scheduled_at, interview_url, status
+			SELECT session_id, scheduled_at, interview_url, status
 			FROM interview_sessions
 			WHERE application_id = ja.id
 			ORDER BY created_at DESC
@@ -550,6 +524,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 	defer rows.Close()
 
 	type InterviewInfo struct {
+		SessionID    string    `json:"session_id"`
 		ScheduledAt  time.Time `json:"scheduled_at"`
 		InterviewURL string    `json:"interview_url"`
 		Status       string    `json:"status"`
@@ -572,6 +547,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 		var applicationID, applicationStatus sql.NullString
 		var appliedAt sql.NullTime
 
+		var interviewSessionID sql.NullString
 		var interviewScheduledAt sql.NullTime
 		var interviewURL, interviewStatus sql.NullString
 
@@ -583,7 +559,7 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			&pos.Status, &pos.CreatedAt, &pos.UpdatedAt,
 			&createdBy, &updatedBy, &pos.IsActive,
 			&applicationID, &applicationStatus, &appliedAt,
-			&interviewScheduledAt, &interviewURL, &interviewStatus,
+			&interviewSessionID, &interviewScheduledAt, &interviewURL, &interviewStatus,
 		); err != nil {
 			log.Printf("Error scanning position: %v", err)
 			continue
@@ -609,8 +585,9 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 			}
 		}
 
-		if interviewScheduledAt.Valid {
+		if interviewScheduledAt.Valid && interviewSessionID.Valid {
 			entry.Interview = &InterviewInfo{
+				SessionID:    interviewSessionID.String,
 				ScheduledAt:  interviewScheduledAt.Time,
 				InterviewURL: interviewURL.String,
 				Status:       interviewStatus.String,
@@ -635,34 +612,181 @@ func (h *Handlers) ListPositions(c *gin.Context) {
 	})
 }
 
-func (h *Handlers) ApplyForPosition(c *gin.Context) {
+func (h *Handlers) CreateAssignmentSubmission(c *gin.Context) {
+	applicationID := c.Param("id")
 
+	var req models.CreateAssignmentSubmissionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "validation failed",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Confirm the caller is authenticated as a candidate.
 	candidateIDVal, exists := c.Get("candidate_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
 		return
 	}
-	candidateID, ok := candidateIDVal.(string)
-	if !ok || candidateID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+	candidateID, _ := candidateIDVal.(string)
+	if candidateID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
 		return
 	}
 
-	positionID := c.Param("position_id")
+	// Look up the application, its owner, and its attached assignment (via position) in one query.
+	var ownerCandidateID string
+	var attachedAssignmentID sql.NullString
+
+	err := h.DB.QueryRow(`
+    SELECT ja.candidate_id, COALESCE(ja.assignment_id, p.assignment_id)
+    FROM job_applications ja
+    JOIN hiring_positions p ON ja.position_id = p.id
+    WHERE ja.id = $1::uuid
+`, applicationID).Scan(&ownerCandidateID, &attachedAssignmentID)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "job application not found"})
+		return
+	}
+	if err != nil {
+		log.Printf("Error verifying application/assignment link: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create submission"})
+		return
+	}
+
+	// Ownership check: this application must belong to the authenticated candidate.
+	if ownerCandidateID != candidateID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "you do not have access to this application"})
+		return
+	}
+
+	// The position tied to this application must actually have an assignment attached.
+	if !attachedAssignmentID.Valid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "this application has no assignment to submit against"})
+		return
+	}
+	assignmentID := attachedAssignmentID.String
+
+	// Determine next attempt number for this application+assignment pair.
+	var nextAttempt int
+	err = h.DB.QueryRow(`
+		SELECT COALESCE(MAX(attempt_number), 0) + 1
+		FROM assignment_submissions
+		WHERE job_application_id = $1::uuid AND assignment_id = $2::uuid
+	`, applicationID, assignmentID).Scan(&nextAttempt)
+
+	if err != nil {
+		log.Printf("Error computing attempt number: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create submission"})
+		return
+	}
+
+	var submission models.AssignmentSubmission
+	err = h.DB.QueryRow(`
+		INSERT INTO assignment_submissions (
+			job_application_id, assignment_id, attempt_number,
+			submission_text, submission_files, submission_links, status
+		) VALUES ($1, $2, $3, $4, $5, $6, 'submitted')
+		RETURNING id, job_application_id, assignment_id, attempt_number,
+			submission_text, submission_files, submission_links, status,
+			score, feedback, submitted_at, reviewed_at, reviewed_by,
+			created_at, updated_at
+	`,
+		applicationID,
+		assignmentID,
+		nextAttempt,
+		req.SubmissionText,
+		pq.Array(req.SubmissionFiles),
+		pq.Array(req.SubmissionLinks),
+	).Scan(
+		&submission.ID, &submission.JobApplicationID, &submission.AssignmentID,
+		&submission.AttemptNumber, &submission.SubmissionText,
+		pq.Array(&submission.SubmissionFiles), pq.Array(&submission.SubmissionLinks),
+		&submission.Status, &submission.Score, &submission.Feedback,
+		&submission.SubmittedAt, &submission.ReviewedAt, &submission.ReviewedBy,
+		&submission.CreatedAt, &submission.UpdatedAt,
+	)
+
+	if err != nil {
+		log.Printf("Error creating assignment submission: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create submission"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "submission received successfully",
+		"data":    submission,
+	})
+}
+
+// parseGithubOwnerRepo extracts the owner and repo name from a github.com URL
+// and rejects anything that isn't a github.com repo link.
+func parseGithubOwnerRepo(rawURL string) (owner, repo string, err error) {
+	u, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil {
+		return "", "", fmt.Errorf("invalid url")
+	}
+	host := strings.ToLower(u.Host)
+	if host != "github.com" && host != "www.github.com" {
+		return "", "", fmt.Errorf("must be a github.com url")
+	}
+	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("must look like github.com/<owner>/<repo>")
+	}
+	return parts[0], strings.TrimSuffix(parts[1], ".git"), nil
+}
+
+func (h *Handlers) ApplyForPosition(c *gin.Context) {
+	positionID := c.Param("id")
 	if positionID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "position_id is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "position id is required"})
 		return
 	}
 
 	var req models.CreateJobApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		req = models.CreateJobApplicationRequest{}
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "validation failed",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Belt-and-suspenders check on top of the binding tag, since the JSON
+	// binder rejects malformed requests but it's cheap to double-check the
+	// bound count here too before it ever reaches the DB constraint.
+	if len(req.GithubUrls) < 1 || len(req.GithubUrls) > 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "github_urls must contain between 1 and 3 URLs"})
+		return
+	}
+
+	// Parse + validate every URL, normalize to a canonical form, and make
+	// sure they all belong to the same GitHub account.
+	var owner string
+	normalizedURLs := make([]string, len(req.GithubUrls))
+	for i, raw := range req.GithubUrls {
+		o, repo, err := parseGithubOwnerRepo(raw)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("github_urls[%d]: %v", i, err)})
+			return
+		}
+		if i == 0 {
+			owner = o
+		} else if !strings.EqualFold(o, owner) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "all github_urls must belong to the same GitHub account"})
+			return
+		}
+		normalizedURLs[i] = fmt.Sprintf("https://github.com/%s/%s", o, repo)
 	}
 
 	var positionExists bool
 	err := h.DB.QueryRow(`
         SELECT EXISTS(
-            SELECT 1 FROM hiring_positions 
+            SELECT 1 FROM hiring_positions
             WHERE id = $1 AND is_active = TRUE AND status = 'active'
         )
     `, positionID).Scan(&positionExists)
@@ -676,19 +800,52 @@ func (h *Handlers) ApplyForPosition(c *gin.Context) {
 		return
 	}
 
+	tx, err := h.DB.Begin()
+	if err != nil {
+		log.Printf("Error starting transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+		return
+	}
+	defer tx.Rollback()
+
+	// find-or-create candidate by email
+	var candidateID string
+	err = tx.QueryRow(`
+        INSERT INTO candidates (email, full_name, phone_number)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+        RETURNING id
+    `, req.Email, req.FullName, req.PhoneNumber).Scan(&candidateID)
+	if err != nil {
+		log.Printf("Error upserting candidate: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+		return
+	}
+
 	var app models.JobApplication
 	var coverLetter sql.NullString
-	err = h.DB.QueryRow(`
-        INSERT INTO job_applications (candidate_id, position_id, cover_letter)
-        VALUES ($1, $2, $3)
-        RETURNING id, candidate_id, position_id, status, applied_at, updated_at, cover_letter
-    `, candidateID, positionID, req.CoverLetter).Scan(
-		&app.ID, &app.CandidateID, &app.PositionID,
+	var githubURLs pq.StringArray
+
+	err = tx.QueryRow(`
+    INSERT INTO job_applications (
+        candidate_id, position_id, full_name, phone_number,
+        resume_url, github_urls, skills, experience_years, cover_letter
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    RETURNING id, candidate_id, position_id, full_name, phone_number,
+              resume_url, github_urls, skills, experience_years,
+              status, applied_at, updated_at, cover_letter
+`, candidateID, positionID, req.FullName, req.PhoneNumber,
+		req.ResumeUrl, pq.Array(normalizedURLs), req.Skills, req.ExperienceYears, req.CoverLetter,
+	).Scan(
+		&app.ID, &app.CandidateID, &app.PositionID, &app.FullName, &app.PhoneNumber,
+		&app.ResumeUrl, &githubURLs, &app.Skills, &app.ExperienceYears,
 		&app.Status, &app.AppliedAt, &app.UpdatedAt, &coverLetter,
 	)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
-			c.JSON(http.StatusConflict, gin.H{"error": "you have already applied for this position"})
+			c.JSON(http.StatusConflict, gin.H{"error": "you have already submitted an application"})
 			return
 		}
 		log.Printf("Error creating application: %v", err)
@@ -696,8 +853,34 @@ func (h *Handlers) ApplyForPosition(c *gin.Context) {
 		return
 	}
 
+	// Record each repo in the junction table. The (position_id, repo_url)
+	// primary key makes this atomic and race-safe -- if another transaction
+	// commits the same repo for this position first, this INSERT fails and
+	// the whole application is rolled back.
+	_, err = tx.Exec(`
+        INSERT INTO job_application_repos (repo_url, position_id, application_id)
+        SELECT unnest($1::varchar[]), $2, $3
+    `, pq.Array(normalizedURLs), positionID, app.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "unique constraint") || strings.Contains(err.Error(), "duplicate key") {
+			c.JSON(http.StatusConflict, gin.H{"error": "one or more of these repositories has already been submitted for this position"})
+			return
+		}
+		log.Printf("Error recording application repos: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+		return
+	}
+
+	app.GithubUrls = normalizedURLs
+
 	if coverLetter.Valid {
 		app.CoverLetter = coverLetter.String
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Printf("Error committing transaction: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": app})
@@ -738,4 +921,178 @@ func (h *Handlers) JoinInterviewSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "joined session", "session_id": sessionID})
+}
+
+func (h *Handlers) UpdateMe(c *gin.Context) {
+	candidateIDVal, exists := c.Get("candidate_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
+	candidateID := candidateIDVal.(string)
+
+	var req struct {
+		FullName        *string `json:"full_name"`
+		GithubUrl       *string `json:"github_url"`
+		PhoneNumber     *string `json:"phone_number"`
+		ResumeUrl       *string `json:"resume_url"`
+		Skills          *string `json:"skills"`
+		ExperienceYears *int    `json:"experience_years"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	updates := []string{}
+	args := []interface{}{}
+	argID := 1
+
+	if req.FullName != nil {
+		updates = append(updates, fmt.Sprintf("full_name = $%d", argID))
+		args = append(args, *req.FullName)
+		argID++
+	}
+	if req.GithubUrl != nil {
+		updates = append(updates, fmt.Sprintf("github_url = $%d", argID))
+		args = append(args, *req.GithubUrl)
+		argID++
+	}
+	if req.PhoneNumber != nil {
+		updates = append(updates, fmt.Sprintf("phone_number = $%d", argID))
+		args = append(args, *req.PhoneNumber)
+		argID++
+	}
+	if req.ResumeUrl != nil {
+		updates = append(updates, fmt.Sprintf("resume_url = $%d", argID))
+		args = append(args, *req.ResumeUrl)
+		argID++
+	}
+	if req.Skills != nil {
+		updates = append(updates, fmt.Sprintf("skills = $%d", argID))
+		args = append(args, *req.Skills)
+		argID++
+	}
+	if req.ExperienceYears != nil {
+		updates = append(updates, fmt.Sprintf("experience_years = $%d", argID))
+		args = append(args, *req.ExperienceYears)
+		argID++
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no fields to update"})
+		return
+	}
+
+	updates = append(updates, "updated_at = NOW()")
+	args = append(args, candidateID)
+
+	query := fmt.Sprintf(
+		"UPDATE candidates SET %s WHERE id = $%d::uuid AND is_active = true",
+		strings.Join(updates, ", "),
+		argID,
+	)
+
+	result, err := h.DB.Exec(query, args...)
+	if err != nil {
+		log.Printf("Error updating candidate profile: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update profile"})
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "candidate not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "updated"})
+}
+
+func (h *Handlers) VerifyRoomPasscode(c *gin.Context) {
+	var req struct {
+		Passcode string `json:"passcode" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format", "details": err.Error()})
+		return
+	}
+
+	passcode := strings.TrimSpace(req.Passcode)
+	if passcode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "passcode is required"})
+		return
+	}
+
+	ctx := c.Request.Context()
+
+	var (
+		sessionID         string
+		roomToken         string
+		roomHost          sql.NullString
+		expiresAt         time.Time
+		interviewStartsAt time.Time
+		candidateID       string
+		candidateEmail    string
+	)
+
+	err := h.DB.QueryRowContext(ctx, `
+		SELECT p.session_id, p.room_token, p.room_host, p.expires_at, p.interview_starts_at,
+		       s.candidate_id, c.email
+		FROM interview_room_passcodes p
+		JOIN interview_sessions s ON s.session_id = p.session_id
+		JOIN candidates c ON c.id = s.candidate_id
+		WHERE p.passcode = $1
+	`, passcode).Scan(&sessionID, &roomToken, &roomHost, &expiresAt, &interviewStartsAt, &candidateID, &candidateEmail)
+
+	if err == sql.ErrNoRows {
+		c.JSON(http.StatusNotFound, gin.H{"error": "invalid passcode"})
+		return
+	}
+	if err != nil {
+		log.Printf("VerifyRoomPasscode: failed to fetch passcode: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		return
+	}
+
+	now := time.Now().UTC()
+
+	if now.After(expiresAt) {
+		c.JSON(http.StatusGone, gin.H{"error": "passcode has expired"})
+		return
+	}
+
+	// Only allow joining within 5 minutes of the scheduled interview start
+	if time.Until(interviewStartsAt) > 5*time.Minute {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "passcode not valid yet,  please try again closer to your scheduled interview time"})
+		return
+	}
+
+	_, err = h.DB.ExecContext(ctx, `
+		UPDATE interview_room_passcodes
+		SET used_at = NOW()
+		WHERE passcode = $1
+	`, passcode)
+	if err != nil {
+		log.Printf("VerifyRoomPasscode: failed to update used_at for passcode: %v", err)
+	}
+
+	accessValidFor := time.Until(expiresAt)
+	if accessValidFor < 0 {
+		accessValidFor = 0
+	}
+	accessToken, err := utils.IssueCandidateJWT(h.Cfg, candidateID, candidateEmail, sessionID, accessValidFor)
+	if err != nil {
+		log.Printf("VerifyRoomPasscode: failed to issue access token for session %s: %v", sessionID, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to issue session token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"session_id":   sessionID,
+		"room_token":   roomToken,
+		"room_host":    roomHost.String,
+		"access_token": accessToken,
+	})
 }

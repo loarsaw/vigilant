@@ -13,6 +13,13 @@ const config: ForgeConfig = {
     asar: true,
     icon: "./assets/icons/icon",
     executableName: "vigilant-code",
+
+    protocols: [
+      {
+        name: "Vigilant Code",
+        schemes: ["vigilant-code"],
+      },
+    ],
   },
   rebuildConfig: {},
   makers: [
@@ -26,6 +33,7 @@ const config: ForgeConfig = {
         maintainer: "loarsaw",
         homepage: "https://github.com/loarsaw/vigilant",
         icon: "./assets/icons/png/512x512.png",
+        mimeType: ["x-scheme-handler/vigilant-code"],
       },
     }),
   ],

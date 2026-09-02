@@ -59,7 +59,11 @@ export default function LoginPage() {
 
   const handleTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tokenData.workspaceName || !tokenData.authToken) return;
+
+    if (!tokenData.workspaceName || !tokenData.authToken) {
+      console.error("Workspace name and token are required");
+      return;
+    }
 
     try {
       await loginWithToken({
@@ -70,10 +74,10 @@ export default function LoginPage() {
       });
 
       setTokenData({ workspaceName: "", authToken: "" });
-
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Token login failed:", error);
+      setTokenData({ ...tokenData, authToken: "" });
     }
   };
 
@@ -91,7 +95,7 @@ export default function LoginPage() {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold text-primary">Vigilant Admin</CardTitle>
-          <CardDescription className="text-muted-foreground">Employer Dashboard</CardDescription>
+          <CardDescription className="text-muted-foreground">Admin Dashboard</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -107,7 +111,7 @@ export default function LoginPage() {
                   <Label htmlFor="employer-workspace">Workspace Name</Label>
                   <Input
                     id="employer-workspace"
-                    placeholder="com.abc.server"
+                    placeholder="com.yourcompany.app"
                     value={emailData.workspaceName}
                     onChange={(e) =>
                       setEmailData({
@@ -169,7 +173,7 @@ export default function LoginPage() {
                   <Label htmlFor="token-workspace">Workspace Name</Label>
                   <Input
                     id="token-workspace"
-                    placeholder="com.abc.server"
+                    placeholder="com.yourcompany.app"
                     value={tokenData.workspaceName}
                     onChange={(e) =>
                       setTokenData({
@@ -218,7 +222,7 @@ export default function LoginPage() {
           </Tabs>
 
           <p className="text-xs text-muted-foreground text-center mt-4">
-            Secure employer portal for candidate management
+            Admin portal for candidate management
           </p>
         </CardContent>
       </Card>

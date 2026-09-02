@@ -8,7 +8,6 @@ import {
   SandpackFileExplorer,
 } from "@codesandbox/sandpack-react";
 import { atomDark } from "@codesandbox/sandpack-themes";
-
 import { FrameworkConfig, PanelId, SandpackTemplateType } from "@/types/types";
 import { PANELS } from "../data/frameworks";
 import { useTemplateLoader } from "@/hooks/use-template-loader";

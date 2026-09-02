@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { HiringPosition, CreatePositionPayload } from "@/hooks/use-hiring";
+import { CreatePositionPayload, HiringPosition } from "@/hooks/types";
 
 interface PositionDialogProps {
   open: boolean;
@@ -116,7 +116,7 @@ export function PositionDialog({
             </div>
             <div>
               <Label>Experience Required *</Label>
-              <Input
+              <Inputm
                 placeholder="3-5 years"
                 value={formData.experience_required}
                 onChange={(e) =>

@@ -1,62 +1,34 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
 import { useState } from "react";
+import {
+  CreateInterviewFeedbackPayload,
+  CreateInterviewPayload,
+  InterviewersResponse,
+  InterviewFeedback,
+  InterviewSessionsParams,
+  InterviewSessionsResponse,
+  InterviewSessionStatusResponse,
+  StartEndInterviewResponse,
+  SendEmailPayload,
+  SendEmailResponse,
+} from "./types";
 
-export interface Interview {
-  id: string;
-  candidate_id: string;
-  candidate_name: string;
-  interview_type: string;
-  scheduled_date: string;
-  scheduled_time: string;
-  status: "scheduled" | "in-progress" | "completed" | "cancelled";
+interface InterviewRoomTokenResponse {
+  session_id: string;
+  room_token: string;
+  room_host: string;
 }
 
-export interface CandidateApplication {
-  application_id: string;
-  application_status: string;
-  applied_at: string;
-  position_id: string;
-  position_title: string;
-  candidate_name: string;
-  candidate_email: string;
-  interview_url?: string;
-}
-
-export interface CandidateApplicationsResponse {
-  candidate_id: string;
-  data: CandidateApplication[];
-  total: number;
-}
-
-export interface CreateInterviewPayload {
-  candidate_id: string;
-  application_id: string;
-  interviewer_email: string;
-  position: string;
-  interview_type: string;
-  scheduled_at: string;
-  scheduled_duration: number;
-  interview_url: string;
-  timezone: string;
-}
-
-export interface SendCustomEmailPayload {
-  to_email: string;
-  candidate_name: string;
-  subject: string;
-  message: string;
-}
-
-const fetchInterviews = async (params: any) => {
+const fetchInterviewSessions = async (
+  params: InterviewSessionsParams,
+): Promise<InterviewSessionsResponse> => {
   const response = await apiClient.get("/interviews", { params });
   return response.data;
 };
 
-const fetchCandidateApplications = async (
-  candidateId: string,
-): Promise<CandidateApplicationsResponse> => {
-  const response = await apiClient.get(`/candidates/${candidateId}/applications`);
+const fetchInterviewers = async (): Promise<InterviewersResponse> => {
+  const response = await apiClient.get("/interviewers");
   return response.data;
 };
 
@@ -65,91 +37,212 @@ const createInterview = async (payload: CreateInterviewPayload) => {
   return response.data;
 };
 
-const sendCustomEmail = async (payload: SendCustomEmailPayload) => {
-  const response = await apiClient.post("/emails/send", payload);
+const createInterviewFeedback = async (
+  payload: CreateInterviewFeedbackPayload,
+): Promise<InterviewFeedback> => {
+  const response = await apiClient.post("/interview-session/feeback", payload);
   return response.data;
 };
 
-const updateApplicationStatus = async ({ id, payload }: any) => {
-  await apiClient.patch(`/applications/${id}/status`, payload);
+const startInterviewSession = async (sessionId: string): Promise<StartEndInterviewResponse> => {
+  const response = await apiClient.patch(`/interview-session/${sessionId}/start`);
+  return response.data;
 };
 
-export function useInterview(candidateId?: string) {
-  const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
+const endInterviewSession = async (sessionId: string): Promise<StartEndInterviewResponse> => {
+  const response = await apiClient.patch(`/interview-session/${sessionId}/end`);
+  return response.data;
+};
 
-  const { data: interviewData, isLoading: isLoadingInterviews } = useQuery({
-    queryKey: ["interviews", { page, candidateId }],
-    queryFn: () => fetchInterviews({ page, candidate_id: candidateId }),
-    staleTime: 1000 * 60 * 5,
+const fetchInterviewSessionStatus = async (
+  sessionId: string,
+): Promise<InterviewSessionStatusResponse> => {
+  const response = await apiClient.get(`/interview-sessions/${sessionId}/status`);
+  return response.data;
+};
+
+const sendInterviewEmail = async (
+  sessionId: string,
+  payload: SendEmailPayload,
+): Promise<SendEmailResponse> => {
+  const response = await apiClient.post(`/interview-session/${sessionId}/send-email`, payload);
+  return response.data;
+};
+
+// Fetches a LiveKit room token for the interviewer/admin to join the same
+// room as the candidate — see AdminHandlers.GetInterviewerRoomToken.
+const fetchInterviewerRoomToken = async (
+  sessionId: string,
+): Promise<InterviewRoomTokenResponse> => {
+  const response = await apiClient.get(`/interview-session/${sessionId}/room-token`);
+  return response.data;
+};
+
+export function useInterview(candidateId?: string, sessionIdForStatus?: string) {
+  const queryClient = useQueryClient();
+
+  const [sessionParams, setSessionParams] = useState<InterviewSessionsParams>({
+    page: 1,
+    limit: 20,
+    filter: "all",
+    ...(candidateId ? { candidate_id: candidateId } : {}),
   });
 
-  const { data: appData, isLoading: isLoadingApps } = useQuery({
-    queryKey: ["candidate-applications", candidateId],
-    queryFn: () => fetchCandidateApplications(candidateId!),
-    enabled: !!candidateId,
+  const {
+    data: sessionData,
+    isLoading: isLoadingSessions,
+    isFetching: isFetchingSessions,
+  } = useQuery({
+    queryKey: ["interview-sessions", sessionParams],
+    queryFn: () => fetchInterviewSessions(sessionParams),
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const { data: interviewersData, isLoading: isLoadingInterviewers } = useQuery({
+    queryKey: ["interviewers"],
+    queryFn: fetchInterviewers,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const {
+    data: sessionStatusData,
+    isLoading: isLoadingSessionStatus,
+    isFetching: isFetchingSessionStatus,
+    isError: isSessionStatusError,
+    error: sessionStatusError,
+    refetch: refetchSessionStatus,
+  } = useQuery({
+    queryKey: ["interview-session-status", sessionIdForStatus],
+    queryFn: () => fetchInterviewSessionStatus(sessionIdForStatus!),
+    enabled: !!sessionIdForStatus,
   });
 
   const scheduleMutation = useMutation({
     mutationFn: createInterview,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["interview-sessions"] });
       if (candidateId) {
-        queryClient.invalidateQueries({
-          queryKey: ["candidate-applications", candidateId],
-        });
+        queryClient.invalidateQueries({ queryKey: ["candidate-applications", candidateId] });
       }
     },
   });
 
-  const emailMutation = useMutation({
-    mutationFn: sendCustomEmail,
-  });
-
-  const statusMutation = useMutation({
-    mutationFn: updateApplicationStatus,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["candidate-applications"] });
-      queryClient.invalidateQueries({ queryKey: ["candidates"] });
+  const feedbackMutation = useMutation({
+    mutationFn: createInterviewFeedback,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["interview-feedback", variables.interview_session_id],
+      });
+      queryClient.invalidateQueries({ queryKey: ["interview-sessions"] });
     },
   });
 
-  // const applicationOptions = appData?.data.map((app) => ({
-  //   value: app.application_id,
-  //   label: app.position_title,
-  // })) ?? [];
+  const startSessionMutation = useMutation({
+    mutationFn: startInterviewSession,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interview-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["interview-session-status", sessionIdForStatus] });
+      if (candidateId) {
+        queryClient.invalidateQueries({ queryKey: ["candidate-applications", candidateId] });
+      }
+    },
+  });
 
-  const applicationOptions =
-    appData?.data.map((app) => ({
-      application_id: app.application_id,
-      position: app.position_title,
-    })) ?? [];
+  const endSessionMutation = useMutation({
+    mutationFn: endInterviewSession,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interview-sessions"] });
+      queryClient.invalidateQueries({ queryKey: ["interview-session-status", sessionIdForStatus] });
+      if (candidateId) {
+        queryClient.invalidateQueries({ queryKey: ["candidate-applications", candidateId] });
+      }
+    },
+  });
+
+  const sendEmailMutation = useMutation({
+    mutationFn: ({ sessionId, payload }: { sessionId: string; payload: SendEmailPayload }) =>
+      sendInterviewEmail(sessionId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["interview-sessions"] });
+    },
+  });
+
+  // On-demand fetch of the interviewer's own LiveKit room token — call this
+  // right before navigating into the room (mirrors the candidate's
+  // verify-passcode flow, but authenticated via normal admin auth instead
+  // of a passcode). Stashed under ["interview", "admin-room"] so a room
+  // page can read it the same way the candidate flow reads
+  // ["interview", "room"].
+  const roomTokenMutation = useMutation({
+    mutationFn: fetchInterviewerRoomToken,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["interview", "admin-room"], {
+        sessionId: data.session_id,
+        roomToken: data.room_token,
+        roomHost: data.room_host,
+      });
+    },
+  });
 
   return {
-    interviews: interviewData?.data ?? [],
-    applications: appData?.data ?? [],
-    applicationOptions,
-    totalInterviews: interviewData?.total ?? 0,
+    sessions: sessionData?.data ?? [],
+    totalSessions: sessionData?.total ?? 0,
+    sessionPagination: {
+      page: sessionData?.page ?? 1,
+      limit: sessionData?.limit ?? 20,
+      totalPages: sessionData?.total_pages ?? 1,
+    },
+    sessionParams,
+    setSessionParams,
 
-    isLoading: isLoadingInterviews || isLoadingApps,
+    setSessionPage: (page: number) => setSessionParams((prev) => ({ ...prev, page })),
+    setSessionFilter: (filter: InterviewSessionsParams["filter"]) =>
+      setSessionParams((prev) => ({ ...prev, filter, page: 1 })),
+    setSessionStatus: (status: string) =>
+      setSessionParams((prev) => ({ ...prev, status, page: 1 })),
+
+    isLoading: isLoadingSessions,
+    isFetchingSessions,
     isScheduling: scheduleMutation.isPending,
-    isSendingEmail: emailMutation.isPending,
-    isUpdatingStatus: statusMutation.isPending,
+    isSubmittingFeedback: feedbackMutation.isPending,
+    isStartingSession: startSessionMutation.isPending,
+    isEndingSession: endSessionMutation.isPending,
+    isSendingEmail: sendEmailMutation.isPending,
+    isFetchingRoomToken: roomTokenMutation.isPending,
 
-    setPage,
     scheduleInterview: scheduleMutation.mutate,
     scheduleInterviewAsync: scheduleMutation.mutateAsync,
 
-    sendEmail: emailMutation.mutate,
-    sendEmailAsync: emailMutation.mutateAsync,
+    submitFeedback: feedbackMutation.mutate,
+    submitFeedbackAsync: feedbackMutation.mutateAsync,
 
-    approveApplication: (id: string, notes?: string) =>
-      statusMutation.mutate({ id, payload: { status: "offered", notes } }),
+    startSession: startSessionMutation.mutate,
+    startSessionAsync: startSessionMutation.mutateAsync,
 
-    rejectApplication: (id: string, notes?: string) =>
-      statusMutation.mutate({ id, payload: { status: "rejected", notes } }),
+    endSession: endSessionMutation.mutate,
+    endSessionAsync: endSessionMutation.mutateAsync,
+
+    sendEmail: sendEmailMutation.mutate,
+    sendEmailAsync: sendEmailMutation.mutateAsync,
+
+    getRoomToken: roomTokenMutation.mutate,
+    getRoomTokenAsync: roomTokenMutation.mutateAsync,
+
+    interviewers: interviewersData?.interviewers ?? [],
+    isLoadingInterviewers,
 
     scheduleError: scheduleMutation.error?.message ?? null,
-    emailError: emailMutation.error?.message ?? null,
+    feedbackError: feedbackMutation.error?.message ?? null,
+    startSessionError: startSessionMutation.error?.message ?? null,
+    endSessionError: endSessionMutation.error?.message ?? null,
+    sendEmailError: sendEmailMutation.error?.message ?? null,
+    roomTokenError: roomTokenMutation.error?.message ?? null,
+
+    sessionStatus: sessionStatusData?.status ?? null,
+    isLoadingSessionStatus,
+    isFetchingSessionStatus,
+    isSessionStatusError,
+    sessionStatusErrorMessage: sessionStatusError?.message ?? null,
+    refetchSessionStatus,
   };
 }

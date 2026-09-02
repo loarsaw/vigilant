@@ -1,11 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-interface UploadResponse {
-  count: number;
-  data: any[];
-  success: boolean;
-}
+import { UploadResponse } from "./types";
 
 export function useUploadCsv() {
   const queryClient = useQueryClient();

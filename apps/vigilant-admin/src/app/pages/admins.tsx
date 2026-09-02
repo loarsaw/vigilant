@@ -19,17 +19,11 @@ import {
   Trash2,
   KeyRound,
 } from "lucide-react";
-
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
-
 import { Badge } from "@/components/ui/badge";
-
 import { Card } from "@/components/ui/card";
-
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
 import {
   Select,
   SelectContent,
@@ -37,7 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,56 +63,12 @@ export function AdminList() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetTargetId, setResetTargetId] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    full_name: "",
-    role: "hr" as "hr" | "interviewer",
-    department: "",
-    designation: "",
-    phone_number: "",
-  });
-
-  const handleAddAdmin = () => {
-    if (!formData.email || !formData.password || !formData.full_name || !formData.role) return;
-    addAdmin(formData, {
-      onSuccess: () => {
-        setFormData({
-          email: "",
-          password: "",
-          full_name: "",
-          role: "hr",
-          department: "",
-          designation: "",
-          phone_number: "",
-        });
-        setShowAddDialog(false);
-      },
-    });
-  };
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this admin?")) {
       deleteAdmin(id);
     }
-  };
-
-  const handleResetPassword = () => {
-    if (!resetTargetId || newPassword.length < 8) return;
-    resetPassword(
-      { id: resetTargetId, payload: { new_password: newPassword } },
-      {
-        onSuccess: () => {
-          setShowResetDialog(false);
-          setNewPassword("");
-          setResetTargetId(null);
-        },
-      },
-    );
   };
 
   const getRoleBadge = (role: string) =>
@@ -155,62 +104,61 @@ export function AdminList() {
       }`}
     >
       <div className="flex items-start justify-between gap-4">
-        <Link to={`/admins/${admin.id}`} className="flex-1 min-w-0">
-          <div className="flex items-center gap-4 mb-4">
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                admin.is_active ? "bg-cyan-400/10" : "bg-gray-700/30"
-              }`}
-            >
-              <span className="text-cyan-400 font-bold text-lg">
-                {admin.full_name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors truncate">
-                  {admin.full_name}
-                </h3>
-              </div>
-              <p className="text-gray-400 text-sm flex items-center gap-1.5 mt-0.5">
-                <Mail className="h-3.5 w-3.5 shrink-0" />
-                {admin.email}
-              </p>
-            </div>
+        {/* <Link to={`/admins/${admin.id}`} className="flex-1 min-w-0"> */}
+        <div className="flex items-center gap-4 mb-4">
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+              admin.is_active ? "bg-cyan-400/10" : "bg-gray-700/30"
+            }`}
+          >
+            <span className="text-cyan-400 font-bold text-lg">
+              {admin.full_name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")}
+            </span>
           </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors truncate">
+                {admin.full_name}
+              </h3>
+            </div>
+            <p className="text-gray-400 text-sm flex items-center gap-1.5 mt-0.5">
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              {admin.email}
+            </p>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
-            {admin.designation && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-400">
+          {admin.designation && (
+            <span className="flex items-center gap-1.5">
+              <Briefcase className="h-4 w-4 text-cyan-400" />
+              {admin.designation}
+            </span>
+          )}
+          {admin.department && (
+            <>
+              <span>·</span>
               <span className="flex items-center gap-1.5">
-                <Briefcase className="h-4 w-4 text-cyan-400" />
-                {admin.designation}
+                <Building2 className="h-4 w-4 text-cyan-400" />
+                {admin.department}
               </span>
-            )}
-            {admin.department && (
-              <>
-                <span>·</span>
-                <span className="flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-cyan-400" />
-                  {admin.department}
-                </span>
-              </>
-            )}
-            {admin.phone_number && (
-              <>
-                <span>·</span>
-                <span className="flex items-center gap-1.5">
-                  <Phone className="h-4 w-4 text-cyan-400" />
-                  {admin.phone_number}
-                </span>
-              </>
-            )}
-          </div>
-        </Link>
+            </>
+          )}
+          {admin.phone_number && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-1.5">
+                <Phone className="h-4 w-4 text-cyan-400" />
+                {admin.phone_number}
+              </span>
+            </>
+          )}
+        </div>
+        {/* </Link> */}
 
-        {/* Right — badges + actions */}
         <div className="flex flex-col items-end gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <Badge className={`${getRoleBadge(admin.role)} border`}>
@@ -252,7 +200,6 @@ export function AdminList() {
               <DropdownMenuItem
                 onClick={() => {
                   setResetTargetId(admin.id);
-                  setShowResetDialog(true);
                 }}
                 className="text-gray-300 hover:text-white hover:bg-gray-800 cursor-pointer"
               >

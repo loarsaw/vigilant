@@ -1,7 +1,7 @@
 {
   "name": "vigilant-code",
   "productName": "Vigilant Code",
-  "version": "1.0.0-beta",
+  "version": "0.0.0",
   "description": "Vigilant code assessment platform for candidates",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -63,6 +63,8 @@
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",
     "@codesandbox/sandpack-themes": "^2.0.21",
+    "@livekit/components-react": "^2.9.24",
+    "@livekit/components-styles": "^1.2.0",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.8",
@@ -74,6 +76,8 @@
     "clsx": "^2.1.1",
     "electron-rebuild": "^3.2.9",
     "electron-squirrel-startup": "^1.0.1",
+    "electron-store": "^11.0.2",
+    "livekit-client": "^2.22.0",
     "lucide-react": "^0.563.0",
     "node-addon-api": "^8.5.0",
     "react": "^18.3.1",

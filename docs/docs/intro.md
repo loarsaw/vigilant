@@ -2,46 +2,50 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# Vigilant
 
-Let's discover **Docusaurus in less than 5 minutes**.
+:::warning
+**UNDER DEVELOPMENT**: This project is currently under development and **not ready for use**. This documentation serves as a development guide and project tracking resource.
+:::
 
-## Getting Started
+## Overview
+**Vigilant** is an advanced interview integrity and management suite designed to provide high-performance monitoring and secure technical assessment environments.
 
-Get started by **creating a new site**.
+## Tech Stack
+The platform is built using a robust, high-performance stack:
+* **Electron**: For the native desktop monitoring interface.
+* **Go**: Powering the high-concurrency backend and system-level workers.
+* **Docker & Docker Compose**: Used for seamless service orchestration and sandboxing.
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+## Server Requirements
+To deploy the backend infrastructure, ensure your **VPS** has the following installed:
+* **Docker**: Required for running containerized workers.
+* **Docker Compose**: Required to manage the multi-container environment.
 
-### What you'll need
+## Integration Progress
+Communication and notifications are handled via:
+* **Amazon SES**: Fully integrated for transactional emails.
+* **Twilio**: Integration in progress.
 
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+## VPS Minimum Requirements
+To ensure **Vigilant** runs smoothly in a production or staging environment, we recommend the following minimum specifications:
 
-## Generate a new site
+| Component | Minimum | Recommended |
+| :--- | :--- | :--- |
+| **CPU** | 2 vCPU | 4 vCPU (for concurrent executions) |
+| **RAM** | 2 GB | 4 GB+ (to handle Docker & sandboxed workers) |
+| **Storage** | 20 GB SSD | 50 GB NVMe (for fast Docker image I/O) |
+| **OS** | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS |
+| **Network** | 100 Mbps | 1 Gbps (for real-time SSE & monitoring) |
 
-Generate a new Docusaurus site using the **classic template**.
+> **Note:** Since Go binaries are statically linked, you don't need to install the Go compiler on the VPS. Just ensure **Docker** and **Docker Compose** are active.
 
-The classic template will automatically be added to your project after you run the command:
+## Upcoming Features & Roadmap
+- [x] Initial system monitoring engine
+- [x] Go-based execution workers
+- [x] Amazon SES email integration
+- [ ] ~**Twilio Integration**~
+- [x] **Livkit Integration**
+- [x] Process-level heuristics
 
-```bash
-npm init docusaurus@latest my-website classic
-```
-
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+---

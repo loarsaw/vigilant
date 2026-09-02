@@ -1,22 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-export interface ImportCandidate {
-  full_name: string;
-  email: string;
-  password: string;
-}
-
-export interface ImportResult {
-  success: boolean;
-  total_parsed: number;
-  inserted: number;
-  skipped: number;
-  emails_sent: number;
-  failed_count: number;
-  failed_emails: { email: string; error: string }[];
-  timestamp: string;
-}
+import { ImportResult } from "./types";
 
 const importCandidatesCSV = async (file: File): Promise<ImportResult> => {
   const formData = new FormData();

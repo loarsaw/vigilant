@@ -1,105 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-
-export interface JobApplication {
-  id: string;
-  candidate_id: string;
-  candidate_email: string;
-  candidate_name: string;
-  candidate_phone: string;
-  resume_url: string;
-  skills: string;
-  experience_years: number;
-  position_id: string;
-  position_title: string;
-  department: string;
-  location: string;
-  status: ApplicationStatus;
-  cover_letter: string;
-  notes: string;
-  applied_at: string;
-  updated_at: string;
-}
-
-export interface PositionDetails {
-  id: string;
-  title: string;
-  department: string;
-  location: string;
-  status: string;
-}
-
-export interface StatusBreakdown {
-  applied?: number;
-  screening?: number;
-  interviewing?: number;
-  offered?: number;
-  hired?: number;
-  rejected?: number;
-  withdrawn?: number;
-}
-
-export interface ApplicationStatistics {
-  total_applications: number;
-  status_breakdown: StatusBreakdown;
-}
-
-export interface Pagination {
-  current_page: number;
-  per_page: number;
-  total_count: number;
-  total_pages: number;
-  has_next: boolean;
-  has_prev: boolean;
-}
-
-export type ApplicationStatus =
-  | "applied"
-  | "screening"
-  | "interviewing"
-  | "offered"
-  | "hired"
-  | "rejected"
-  | "withdrawn";
-
-export type SortBy = "applied_at" | "updated_at" | "candidate_name" | "position_title" | "status";
-
-export type SortOrder = "asc" | "desc";
-
-export interface JobApplicationsFilters {
-  status?: ApplicationStatus;
-  position_id?: string;
-  candidate_id?: string;
-  department?: string;
-  page?: number;
-  limit?: number;
-  sort_by?: SortBy;
-  sort_order?: SortOrder;
-  include_position?: boolean;
-  include_stats?: boolean;
-}
-
-export interface JobApplicationsResponse {
-  applications: JobApplication[];
-  filters: {
-    status: string;
-    position_id: string;
-    candidate_id: string;
-    department: string;
-  };
-  pagination: Pagination;
-  sort: {
-    sort_by: string;
-    sort_order: string;
-  };
-  position?: PositionDetails;
-  statistics?: ApplicationStatistics;
-}
-
-export interface UpdateApplicationStatusPayload {
-  status: ApplicationStatus;
-  notes?: string;
-}
+import {
+  JobApplication,
+  JobApplicationsFilters,
+  JobApplicationsResponse,
+  UpdateApplicationStatusPayload,
+} from "./types";
 
 const fetchJobApplications = async (
   filters: JobApplicationsFilters,
@@ -118,6 +24,13 @@ const fetchJobApplications = async (
   if (filters.include_stats) params.set("include_stats", "true");
 
   const response = await apiClient.get(`/applications?${params.toString()}`);
+
+  // console.log(params.toString() , "params");
+
+  if (Array.isArray(response.data)) {
+    return { applications: response.data } as JobApplicationsResponse;
+  }
+
   return response.data;
 };
 

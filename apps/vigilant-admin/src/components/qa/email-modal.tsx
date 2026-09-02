@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useInterview } from "@/hooks/use-interview";
 import { toast } from "sonner";
+import { useEmail } from "@/hooks/use-email";
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ export function EmailModal({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
 
-  const { sendEmailAsync, isSendingEmail } = useInterview(candidateId);
+  const { sendEmailAsync, isSendingEmail } = useEmail();
 
   useEffect(() => {
     if (!isOpen) {

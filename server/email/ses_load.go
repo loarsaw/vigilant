@@ -9,11 +9,11 @@ import (
 
 // SESConfig holds the decrypted SES credentials.
 type SESConfig struct {
-	AWSRegion           string
-	AWSAccessKeyID      string
-	AWSSecretAccessKey  string
-	SESFromEmail        string
-	SESLoginURL         string
+	AWSRegion          string
+	AWSAccessKeyID     string
+	AWSSecretAccessKey string
+	SESFromEmail       string
+	SESLoginURL        string
 }
 
 // SaveSESConfig encrypts and upserts SES credentials into the email_config table.
@@ -22,7 +22,6 @@ func SaveSESConfig(ctx context.Context, db *sql.DB, cfg SESConfig, encryptionKey
 	encrypt := func(val string) (string, error) {
 		return Encrypt(val, encryptionKey)
 	}
-
 	region, err := encrypt(cfg.AWSRegion)
 	if err != nil {
 		return fmt.Errorf("encrypt region: %w", err)

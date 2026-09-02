@@ -1,0 +1,11 @@
+{$DOMAIN} {
+    reverse_proxy server:3333
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+    }
+    log {
+        output file /data/access.log
+    }
+}

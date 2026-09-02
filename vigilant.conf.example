@@ -1,0 +1,85 @@
+# ============================================================
+#                   VIGILANT CONFIGURATION
+#   Copy this file to `vigilant.conf` and fill in real values.
+#   NEVER commit the real `vigilant.conf` — it holds secrets.
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Server
+# ------------------------------------------------------------
+SERVER_PORT=3333
+SERVER_HOST=0.0.0.0
+
+
+# ------------------------------------------------------------
+# Database (PostgreSQL)
+# ------------------------------------------------------------
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+POSTGRES_DB=vigilant
+POSTGRES_USER=vigilant
+# generate: openssl rand -base64 24
+POSTGRES_PASSWORD=changeme
+
+
+# ------------------------------------------------------------
+# Authentication
+# ------------------------------------------------------------
+# generate: openssl rand -hex 32
+AUTHN_TOKEN=changeme
+
+
+# ------------------------------------------------------------
+# Admin
+# ------------------------------------------------------------
+# generate: openssl rand -hex 32
+ADMIN_AUTH_TOKEN=changeme
+# optional: restrict admin routes to a specific IP. Leave blank to allow any.
+ADMIN_IP_ADDRESS=
+ADMIN_SESSION_TIMEOUT=24
+
+
+# ------------------------------------------------------------
+# Security
+# ------------------------------------------------------------
+# generate: openssl rand -hex 32
+JWT_SECRET=changeme
+BCRYPT_COST=10
+
+
+# ------------------------------------------------------------
+# Performance & Limits
+# ------------------------------------------------------------
+DATA_RETENTION_HOURS=72
+RATE_LIMIT_PER_MINUTE=120
+CLIENT_UPDATE_INTERVAL=5
+HIGH_MEMORY_THRESHOLD=500
+
+
+# ------------------------------------------------------------
+# Network & CORS
+# ------------------------------------------------------------
+ENABLE_WEBSOCKETS=true
+# In production, set this to your actual frontend origin, e.g.
+# https://app.your-domain.com.
+ALLOW_ORIGIN=*
+
+
+# ------------------------------------------------------------
+# Encryption
+# ------------------------------------------------------------
+# generate: openssl rand -base64 32
+ENCRYPTION_KEY=
+
+
+# ------------------------------------------------------------
+# Minimum Admin App Version
+# ------------------------------------------------------------
+MINIMUM_ADMIN_APP=v0.0.0
+
+
+# ------------------------------------------------------------
+# Minimum Code App Version
+# ------------------------------------------------------------
+MINIMUM_CODE_APP=v0.0.0

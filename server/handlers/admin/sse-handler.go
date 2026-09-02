@@ -26,7 +26,7 @@ func (h *AdminHandlers) SSEEvents(c *gin.Context) {
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
-	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Origin", h.Cfg.AllowOrigin)
 
 	clientChan := make(chan any, 10)
 	sse.Global.AddAdmin(clientChan)

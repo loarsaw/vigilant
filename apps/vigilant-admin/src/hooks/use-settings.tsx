@@ -1,41 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
+import {
+  GoogleCredentialPayload,
+  GoogleCredentialResponse,
+  SESConfigPayload,
+  SESConfigResponse,
+} from "./types";
 
-export interface SESConfigPayload {
-  aws_region: string;
-  aws_access_key_id: string;
-  aws_secret_access_key: string;
-  ses_from_email: string;
-  ses_login_url: string;
-}
-
-export interface SESConfigResponse {
-  aws_region: string;
-  aws_access_key_id: string;
-  ses_from_email: string;
-  ses_login_url: string;
-}
-
-export interface GoogleCredentialPayload {
-  credential_name: string;
-  organization_id?: string;
-  user_id?: string;
-  credentials_json: string;
-  is_default: boolean;
-  delegated_admin_email?: string;
-  subject_email?: string;
-  scopes?: string[];
-}
-
-export interface GoogleCredentialResponse {
-  id: number;
-  credential_name: string;
-  client_email: string;
-  project_id: string;
-  is_default: boolean;
-  is_active: boolean;
-  created_at: string;
-}
 async function fetchEmailConfig(): Promise<SESConfigResponse> {
   const response = await apiClient.get<SESConfigResponse>("/email-config");
   return response.data;

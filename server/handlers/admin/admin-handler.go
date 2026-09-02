@@ -1,16 +1,83 @@
+// server//handlers/admin/admin-handler.go
 package admin
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"vigilant/email"
 	"vigilant/middleware"
+	"vigilant/utils"
 
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
+
+func (h *AdminHandlers) CreateAccessLink(c *gin.Context) {
+	adminIDVal, _ := c.Get("admin_id")
+	adminID, _ := adminIDVal.(string)
+
+	var req struct {
+		Email      string `json:"email" validate:"required,email"`
+		PositionID string `json:"position_id,omitempty"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "valid email is required"})
+		return
+	}
+	toEmail := strings.ToLower(strings.TrimSpace(req.Email))
+
+	rawToken, tokenHash, err := utils.GenerateToken()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate link"})
+		return
+	}
+
+	var linkID string
+	err = h.DB.QueryRow(`
+		INSERT INTO candidate_access_links (email, position_id, token_hash, created_by)
+		VALUES ($1, NULLIF($2, ''), $3, $4)
+		RETURNING id
+	`, toEmail, req.PositionID, tokenHash, adminID).Scan(&linkID)
+	if err != nil {
+		log.Printf("Error storing access link: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate link"})
+		return
+	}
+
+	link := fmt.Sprintf("%s/apply?token=%s", h.Cfg.DomainName, rawToken)
+
+	var fromEmail string
+	err = h.DB.QueryRow(`SELECT ses_from_email FROM email_config LIMIT 1`).Scan(&fromEmail)
+	if err != nil {
+		log.Printf("Warning: failed to load ses_from_email, using fallback: %v", err)
+		fromEmail = "no-reply@localhost"
+	}
+
+	body, err := email.Render(email.TemplateCandidateInvite, email.CandidateInviteData{
+		ApplyURL: link,
+	})
+	if err != nil {
+		log.Printf("Error rendering invite email: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate link"})
+		return
+	}
+
+	_, err = h.DB.Exec(`
+		INSERT INTO email_jobs (to_email, from_email, subject, body_html, template, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5, 'access_link', $6)
+	`, toEmail, fromEmail, "You've been invited to apply", body, email.TemplateCandidateInvite, linkID)
+	if err != nil {
+		log.Printf("Error queuing invite email: %v", err)
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"link": link, "expires_in_days": 10})
+}
 
 func (h *AdminHandlers) CreateAdmin(c *gin.Context) {
 	callerRole := c.GetString("admin_role")
@@ -44,13 +111,16 @@ func (h *AdminHandlers) CreateAdmin(c *gin.Context) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcryptCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
 	}
 
-	// SuperAdminUUID is not in administrators table pass NULL
 	var createdBy *string
 	if callerID != middleware.SuperAdminUUID {
 		createdBy = &callerID
@@ -365,7 +435,11 @@ func (h *AdminHandlers) ResetAdminPassword(c *gin.Context) {
 		return
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	bcryptCost := bcrypt.DefaultCost
+	if parsed, err := strconv.Atoi(h.Cfg.BcryptCost); err == nil && parsed >= bcrypt.MinCost && parsed <= bcrypt.MaxCost {
+		bcryptCost = parsed
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcryptCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to hash password"})
 		return
@@ -378,111 +452,6 @@ func (h *AdminHandlers) ResetAdminPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "password reset successfully"})
-}
-
-// Issues a JWT for HR and interviewers
-
-func (h *AdminHandlers) AdminLogin(c *gin.Context) {
-	var req struct {
-		Email    string `json:"email"    binding:"required,email"`
-		Password string `json:"password" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	var adminID, passwordHash, role, fullName string
-	var isActive bool
-
-	err := h.DB.QueryRow(`
-		SELECT id, password_hash, role, full_name, is_active
-		FROM administrators WHERE email = $1
-	`, req.Email).Scan(&adminID, &passwordHash, &role, &fullName, &isActive)
-
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	if !isActive {
-		c.JSON(http.StatusForbidden, gin.H{"error": "account is deactivated"})
-		return
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-		return
-	}
-
-	// Update last_login
-	h.DB.Exec("UPDATE administrators SET last_login = NOW() WHERE id = $1", adminID)
-
-	token, err := middleware.IssueAdminJWT(h.Cfg, adminID, req.Email, role, fullName)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to issue token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"token":     token,
-		"id":        adminID,
-		"email":     req.Email,
-		"full_name": fullName,
-		"role":      role,
-	})
-}
-
-func (h *AdminHandlers) GetAdminMe(c *gin.Context) {
-	adminID := c.GetString("admin_id")
-	adminRole := c.GetString("admin_role")
-
-	// Super admin has no DB row
-	if adminRole == "superadmin" {
-		c.JSON(http.StatusOK, gin.H{
-			"id":        middleware.SuperAdminUUID,
-			"email":     "superadmin@system",
-			"full_name": "Super Admin",
-			"role":      "superadmin",
-		})
-		return
-	}
-
-	var id, email, fullName, role string
-	var department, designation sql.NullString
-	var isActive bool
-	var lastLogin sql.NullTime
-	var createdAt time.Time
-
-	err := h.DB.QueryRow(`
-		SELECT id, email, full_name, role, department, designation,
-		       is_active, last_login, created_at
-		FROM administrators WHERE id = $1
-	`, adminID).Scan(&id, &email, &fullName, &role, &department,
-		&designation, &isActive, &lastLogin, &createdAt)
-
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusNotFound, gin.H{"error": "admin not found"})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"id":          id,
-		"email":       email,
-		"full_name":   fullName,
-		"role":        role,
-		"department":  department.String,
-		"designation": designation.String,
-		"is_active":   isActive,
-		"last_login":  lastLogin.Time,
-		"created_at":  createdAt,
-	})
 }
 
 func nullableString(s string) *string {

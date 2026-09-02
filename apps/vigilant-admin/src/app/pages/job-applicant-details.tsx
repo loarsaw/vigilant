@@ -9,106 +9,66 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Send,
   Loader2,
-  Zap,
-  Code2,
-  Layers,
-  Terminal,
+  Github,
+  Briefcase,
+  MapPin,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useCandidate } from "@/hooks/use-candidates";
-import { Interview, useInterview } from "@/hooks/use-interview";
+import { useInterview } from "@/hooks/use-interview";
 import { useJobApplications } from "@/hooks/use-job-applications";
 import { UpcomingInterview } from "@/components/upcoming-interview";
 import { EmailModal } from "@/components/qa/email-modal";
 import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
-import { pushToCandidate } from "@/lib/axios";
-import { CandidateLevel, Framework } from "@/types/types";
+import { useJobApplicationStatus } from "@/hooks/use-job-application-status";
+// import { useApplicationInterviewFeedback } from "@/hooks/use-application-interview-session";
+import { InterviewHistory } from "@/components/interview-history";
 
-type SessionType = "dsa" | "framework" | "";
-type DSALanguage = "C" | "C++" | "Python" | "Java";
+// Badge color per application status, matching the app's status vocabulary.
+const STATUS_STYLES: Record<string, string> = {
+  applied: "bg-gray-700 text-gray-200",
+  screening: "bg-blue-500/20 text-blue-300",
+  interviewing: "bg-cyan-500/20 text-cyan-300",
+  offered: "bg-purple-500/20 text-purple-300",
+  hired: "bg-green-500/20 text-green-300",
+  rejected: "bg-red-500/20 text-red-300",
+  withdrawn: "bg-gray-600/20 text-gray-400",
+};
+
+// Badge color per github invite status (invited / accepted / failed / pending).
+const GITHUB_STATUS_STYLES: Record<string, string> = {
+  invited: "bg-blue-500/20 text-blue-300",
+  accepted: "bg-green-500/20 text-green-300",
+  failed: "bg-red-500/20 text-red-300",
+  pending: "bg-gray-700 text-gray-300",
+};
 
 export function JobApplicationDetails() {
   const { candidateId, applicationId } = useParams();
+  const { status } = useJobApplicationStatus(applicationId);
   const navigate = useNavigate();
-
   const { data, isLoading, isError, error } = useCandidate(candidateId);
-  const { interviews } = useInterview(candidateId);
-  const { approveApplication, rejectApplication, isApprovingOrRejecting } = useJobApplications();
-
+  const { sessions } = useInterview(candidateId);
+  const {
+    applications,
+    isLoading: isLoadingApplications,
+    approveApplication,
+    rejectApplication,
+    isApprovingOrRejecting,
+  } = useJobApplications({ candidate_id: candidateId });
   const candidateData = data?.candidate;
   const isOnline = data?.is_online;
-  const interviewHistory = interviews.filter((i: Interview) => i.status === "completed");
-  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | "">("");
-  const [sessionType, setSessionType] = useState<SessionType>("");
-  const [level, setLevel] = useState<CandidateLevel | "">("");
-  const [framework, setFramework] = useState<Framework | "">("");
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [isDispatching, setIsDispatching] = useState(false);
-  const [dispatched, setDispatched] = useState(false);
-  const [emailFormData, setEmailFormData] = useState({
-    to: "",
-    subject: "",
-    body: "",
-  });
 
-  useEffect(() => {
-    if (candidateData) {
-      setEmailFormData((prev) => ({ ...prev, to: candidateData.email }));
-    }
-  }, [candidateData]);
+  // The specific application being viewed on this page — applications is
+  // scoped to this candidate but can include more than one job posting.
+  const currentApplication = applications?.find((app) => app.id === applicationId);
 
-  const canDispatch =
-    sessionType === "framework"
-      ? level !== "" && framework !== ""
-      : sessionType === "dsa"
-        ? dsaLanguage !== ""
-        : false;
-
-  const handleSessionTypeChange = (value: SessionType) => {
-    setSessionType(value);
-    setDispatched(false);
-    setLevel("");
-    setFramework("");
-    setDsaLanguage("");
-  };
-
-  const handleDispatch = async () => {
-    if (!canDispatch || !candidateId) return;
-    setIsDispatching(true);
-    try {
-      if (sessionType === "framework") {
-        await pushToCandidate(candidateId, "session_config", {
-          type: "framework",
-          framework,
-          level,
-        });
-      } else if (sessionType === "dsa") {
-        await pushToCandidate(candidateId, "session_config", {
-          type: "dsa",
-          language: dsaLanguage,
-        });
-      }
-      setDispatched(true);
-    } catch (err) {
-      console.error("Failed to dispatch:", err);
-    } finally {
-      setIsDispatching(false);
-    }
-  };
-
-  // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -137,10 +97,16 @@ export function JobApplicationDetails() {
   const skillsArray = candidateData.skills
     ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
-  console.log(candidateData, "ca");
+
+  const statusBadgeClass = currentApplication
+    ? (STATUS_STYLES[currentApplication.status] ?? "bg-gray-700 text-gray-200")
+    : "";
+  const githubBadgeClass = currentApplication?.github_invite_status
+    ? (GITHUB_STATUS_STYLES[currentApplication.github_invite_status] ?? "bg-gray-700 text-gray-300")
+    : "";
+
   return (
     <div className="space-y-6 p-5">
-      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
@@ -166,37 +132,169 @@ export function JobApplicationDetails() {
         </div>
 
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-            disabled={isApprovingOrRejecting}
-            onClick={() => rejectApplication(applicationId!)}
-          >
-            {isApprovingOrRejecting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <XCircle className="h-4 w-4 mr-2" />
-            )}
-            Reject
-          </Button>
-          <Button
-            className="bg-green-500 hover:bg-green-600 text-white"
-            disabled={isApprovingOrRejecting}
-            onClick={() => approveApplication(applicationId!)}
-          >
-            {isApprovingOrRejecting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <CheckCircle className="h-4 w-4 mr-2" />
-            )}
-            Approve
-          </Button>
+          {status == "applied" || status == "interviewing" || status == "screening" ? (
+            <>
+              <Button
+                variant="outline"
+                className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                disabled={isApprovingOrRejecting}
+                onClick={() => rejectApplication(applicationId!)}
+              >
+                {isApprovingOrRejecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-2" />
+                )}
+                Reject
+              </Button>
+              <Button
+                className="bg-green-500 hover:bg-green-600 text-white"
+                disabled={isApprovingOrRejecting}
+                onClick={() => approveApplication(applicationId!)}
+              >
+                {isApprovingOrRejecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Approve
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button className="bg-green-500 hover:bg-green-600 text-white" disabled={true}>
+                {isApprovingOrRejecting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Hired
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Left Column ── */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Application Overview — data specific to THIS application, not
+              the candidate's general profile (position, status, scores,
+              github repo state, cover letter). */}
+          {currentApplication && (
+            <Card className="bg-[#1a1f2e] border-gray-800">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-cyan-400" />
+                  Application Overview
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-white font-medium">{currentApplication.position_title}</p>
+                    <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
+                      <span>{currentApplication.department}</span>
+                      {currentApplication.location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {currentApplication.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Badge className={statusBadgeClass}>{currentApplication.status}</Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-gray-400 text-sm">Applied</p>
+                    <p className="text-white mt-1">
+                      {new Date(currentApplication.applied_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Last Updated</p>
+                    <p className="text-white mt-1">
+                      {new Date(currentApplication.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Scores */}
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-800">
+                  <div>
+                    <p className="text-gray-400 text-sm flex items-center gap-1">
+                      <Star className="h-3.5 w-3.5" />
+                      Overall Score
+                    </p>
+                    <p className="text-white mt-1">
+                      {currentApplication.overall_score != null
+                        ? `${currentApplication.overall_score.toFixed(1)} (${currentApplication.overall_tier || "—"})`
+                        : "Not analyzed yet"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-400 text-sm">Assignment Score</p>
+                    <p className="text-white mt-1">
+                      {currentApplication.assignment_overall_score != null
+                        ? `${currentApplication.assignment_overall_score.toFixed(1)} (${currentApplication.assignment_overall_tier || "—"})`
+                        : "Not scored yet"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {currentApplication.is_shortlisted && (
+                    <Badge className="bg-cyan-500/20 text-cyan-300">Shortlisted</Badge>
+                  )}
+                </div>
+
+                {/* Assignment GitHub repo */}
+                {currentApplication.github_repo_url && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm mb-2">Assignment Repo</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div
+                        onClick={() => window.api.openExternal(currentApplication.github_repo_url)}
+                        // target="_blank"
+                        // rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                      >
+                        <Github className="h-4 w-4" />
+                        View Repository
+                      </div>
+                      {currentApplication.github_invite_status && (
+                        <Badge className={githubBadgeClass}>
+                          {currentApplication.github_invite_status}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cover letter */}
+                {currentApplication.cover_letter && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm mb-2">Cover Letter</p>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                      {currentApplication.cover_letter}
+                    </p>
+                  </div>
+                )}
+
+                {/* Internal notes */}
+                {currentApplication.notes && (
+                  <div className="pt-2 border-t border-gray-800">
+                    <p className="text-gray-400 text-sm mb-2">Notes</p>
+                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                      {currentApplication.notes}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="bg-[#1a1f2e] border-gray-800">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
@@ -264,25 +362,24 @@ export function JobApplicationDetails() {
                   <p className="text-gray-400 text-sm mb-2">Links</p>
                   <div className="space-y-2">
                     {candidateData.github_url && (
-                      <a
-                        target="_blank"
+                      <div
+                        onClick={() => window.api.openExternal(candidateData.github_url)}
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
                       >
                         <FileText className="h-4 w-4" />
                         GitHub Profile
-                      </a>
+                      </div>
                     )}
                     {candidateData.resume_url && (
-                      <a
-                        href={candidateData.resume_url}
-                        target="_blank"
+                      <div
+                        onClick={() => window.api.openExternal(candidateData.resume_url)}
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
                       >
                         <FileText className="h-4 w-4" />
                         View Resume
-                      </a>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -305,28 +402,10 @@ export function JobApplicationDetails() {
             </CardContent>
           </Card>
 
-          {/* System Diagnostics */}
-          <Card className="bg-[#1a1f2e] border-gray-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Terminal className="h-5 w-5 text-cyan-400" />
-                System Diagnostics
-              </CardTitle>
-              <CardDescription>Real-time telemetry from candidate client</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center p-8 border-2 border-dashed border-border rounded-lg">
-                <p className="text-muted-foreground italic text-sm text-center">
-                  Waiting for candidate to connect to session...
-                  <br />
-                  (Telemetry will appear once session is initialized)
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Interview History */}
+          {applicationId && <InterviewHistory applicationID={applicationId} />}
         </div>
 
-        {/* ── Right Column ── */}
         <div className="space-y-6">
           {/* Quick Actions */}
           <Card className="bg-[#1a1f2e] border-gray-800">
@@ -349,11 +428,16 @@ export function JobApplicationDetails() {
                 <Mail className="h-4 w-4 mr-2" />
                 Send Email
               </Button>
-              {candidateData.resume_url && (
+              {(currentApplication?.resume_url || candidateData.resume_url) && (
                 <Button
                   variant="outline"
                   className="w-full border-gray-700 text-gray-300"
-                  onClick={() => window.open(candidateData.resume_url, "_blank")}
+                  onClick={() =>
+                    window.open(
+                      currentApplication?.resume_url || candidateData.resume_url,
+                      "_blank",
+                    )
+                  }
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   View Resume
@@ -363,170 +447,6 @@ export function JobApplicationDetails() {
           </Card>
 
           <UpcomingInterview candidateId={candidateId!} candidateName={candidateData.full_name} />
-
-          {/* Session Configuration */}
-          <Card className="border-border/50 bg-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-primary">
-                <Zap className="w-5 h-5" />
-                Session Configuration
-              </CardTitle>
-              <CardDescription>
-                Choose a session type, configure options, then dispatch to candidate
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {/* Session Type Toggle */}
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase text-muted-foreground">
-                  Session Type
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => handleSessionTypeChange("dsa")}
-                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      sessionType === "dsa"
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground"
-                    }`}
-                  >
-                    <Code2 className="w-5 h-5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold">DSA</p>
-                      <p className="text-xs opacity-70">Data Structures & Algorithms</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSessionTypeChange("framework")}
-                    className={`flex items-center gap-3 p-3 rounded-lg border text-left transition-all ${
-                      sessionType === "framework"
-                        ? "border-accent bg-accent/10 text-accent"
-                        : "border-border/50 bg-secondary/30 text-muted-foreground hover:border-accent/50 hover:text-foreground"
-                    }`}
-                  >
-                    <Layers className="w-5 h-5 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold">Framework</p>
-                      <p className="text-xs opacity-70">React / Next.js assessment</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* DSA Options */}
-              {sessionType === "dsa" && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Programming Language
-                  </p>
-                  <Select
-                    value={dsaLanguage}
-                    onValueChange={(v) => {
-                      setDsaLanguage(v as DSALanguage);
-                      setDispatched(false);
-                    }}
-                  >
-                    <SelectTrigger className="bg-secondary/50">
-                      <SelectValue placeholder="Select language..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="C">C</SelectItem>
-                      <SelectItem value="C++">C++</SelectItem>
-                      <SelectItem value="Python">Python</SelectItem>
-                      <SelectItem value="Java">Java</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Framework Options */}
-              {sessionType === "framework" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Target Framework
-                    </p>
-                    <Select
-                      value={framework}
-                      onValueChange={(v) => {
-                        setFramework(v as Framework);
-                        setDispatched(false);
-                      }}
-                    >
-                      <SelectTrigger className="bg-secondary/50">
-                        <SelectValue placeholder="Select framework..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="React">React</SelectItem>
-                        <SelectItem value="Nextjs">Next.js</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase text-muted-foreground">
-                      Difficulty Level
-                    </p>
-                    <Select
-                      value={level}
-                      onValueChange={(v) => {
-                        setLevel(v as CandidateLevel);
-                        setDispatched(false);
-                      }}
-                    >
-                      <SelectTrigger className="bg-secondary/50">
-                        <SelectValue placeholder="Select level..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Intern">Intern</SelectItem>
-                        <SelectItem value="Junior">Junior</SelectItem>
-                        <SelectItem value="Senior">Senior</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
-
-              {/* Dispatch Row */}
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  onClick={handleDispatch}
-                  disabled={!canDispatch || isDispatching}
-                  className="flex items-center gap-2"
-                >
-                  {isDispatching ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                  {isDispatching ? "Dispatching..." : "Dispatch to Candidate"}
-                </Button>
-
-                {!canDispatch && sessionType !== "" && (
-                  <p className="text-xs text-muted-foreground">
-                    {sessionType === "dsa"
-                      ? "Select a language to dispatch"
-                      : "Select both framework and level to dispatch"}
-                  </p>
-                )}
-
-                {!sessionType && (
-                  <p className="text-xs text-muted-foreground">Select a session type to begin</p>
-                )}
-
-                {dispatched && canDispatch && (
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    {sessionType === "dsa"
-                      ? `✓ Dispatched — DSA / ${dsaLanguage}`
-                      : `✓ Dispatched — ${framework} / ${level}`}
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <EmailModal
@@ -542,6 +462,8 @@ export function JobApplicationDetails() {
           onClose={() => setShowScheduleDialog(false)}
           candidateName={candidateData.full_name}
           candidateId={candidateId!}
+          applications={applications ?? []}
+          isLoadingApplications={isLoadingApplications}
           onSchedule={() => {}}
         />
       </div>

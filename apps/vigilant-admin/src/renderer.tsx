@@ -8,10 +8,14 @@ import { SidebarLayout } from "./app/layout/app-layout";
 import { Settings } from "./app/pages/settings";
 import { CandidatesList } from "./app/pages/candidates";
 import { HiringPositions } from "./app/pages/hiring";
-import { CandidateDetail } from "./app/pages/candidate-detailts";
+import { CandidateDetail } from "./app/pages/candidate-details";
 import { JobApplicationsList } from "./app/pages/applications";
 import { JobApplicationDetails } from "./app/pages/job-applicant-details";
 import { AdminList } from "./app/pages/admins";
+import { InterviewDetail } from "./app/pages/interview-details";
+import { InterviewList } from "./app/pages/interviews";
+import AdminInterviewRoomPage from "./app/pages/interview-room";
+import { NotificationsPage } from "./app/pages/notifications";
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 
@@ -22,19 +26,22 @@ root.render(
     <HashRouter>
       <Routes>
         <Route path="/" Component={Login} />
+        <Route path="/interview/:sessionId/room" Component={AdminInterviewRoomPage} />
         <Route element={<SidebarLayout />}>
           <Route path="/dashboard" Component={Dashboard} />
           <Route path="/candidates" Component={CandidatesList} />
+          <Route path="/candidates/:candidateId" Component={CandidateDetail} />
           <Route path="/applications" Component={JobApplicationsList} />
+          <Route path="/notifications" Component={NotificationsPage} />
+         
           <Route path="/team" Component={AdminList} />
           <Route
             path="/applications/:candidateId/:applicationId"
             Component={JobApplicationDetails}
           />
-          Upcoming Interviews
-          <Route path="/interviews" Component={JobApplicationsList} />
+          <Route path="/interviews" Component={InterviewList} />
+          <Route path="/interviews/:candidateId/:sessionId" Component={InterviewDetail} />
           <Route path="/hiring" Component={HiringPositions} />
-          <Route path="/candidates/:candidateId" Component={CandidateDetail} />
           <Route path="/settings" Component={Settings} />
         </Route>
       </Routes>

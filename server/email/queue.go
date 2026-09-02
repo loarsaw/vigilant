@@ -1,3 +1,4 @@
+// server/email/queue.go
 package email
 
 import (
@@ -31,6 +32,15 @@ type EmailJob struct {
 }
 
 func Enqueue(ctx context.Context, db *sql.DB, job EmailJob) (int64, error) {
+	if job.Template != "" && job.BodyText == "" && job.BodyHTML == "" {
+		rendered, err := Render(job.Template, job.TemplateData)
+		if err != nil {
+			return 0, fmt.Errorf("render template %q: %w", job.Template, err)
+		}
+		job.BodyText = rendered
+		job.BodyHTML = rendered
+	}
+
 	templateData, err := json.Marshal(job.TemplateData)
 	if err != nil {
 		return 0, fmt.Errorf("marshal template data: %w", err)

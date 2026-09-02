@@ -1,13 +1,15 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, safeStorage, session, desktopCapturer } from "electron";
 import path from "path";
+import Store from "electron-store";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
 import started from "electron-squirrel-startup";
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
-
+app.commandLine.appendSwitch('ignore-certificate-errors');
 let nativeAddon: any;
 try {
   nativeAddon = require(path.join(__dirname, "../../build/Release/process_monitor.node"));
@@ -15,12 +17,117 @@ try {
   console.error("❌ Failed to load native addon:", error);
 }
 
+const PROTOCOL = "vigilant-code";
+let pendingDeepLink: string | null = null;
+
+if (process.platform === "win32" || process.platform === "linux") {
+  if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+      app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
+    }
+  } else {
+    app.setAsDefaultProtocolClient(PROTOCOL);
+  }
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (event, commandLine) => {
+    const url = commandLine.find((arg) => arg.startsWith(`${PROTOCOL}://`));
+
+    if (url) {
+      handleDeepLink(url);
+    }
+
+    const windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+      const mainWindow = windows[0];
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
+const store = new Store();
+
+ipcMain.handle("auth:setToken", (_event, token: string) => {
+  const encrypted = safeStorage.encryptString(token);
+  store.set("authToken", encrypted.toString("base64"));
+});
+
+ipcMain.handle("auth:getToken", () => {
+  const stored = store.get("authToken") as string | undefined;
+  if (!stored) return null;
+  return safeStorage.decryptString(Buffer.from(stored, "base64"));
+});
+
+ipcMain.handle("auth:clearToken", () => {
+  store.delete("authToken");
+});
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  console.log("Opened from URL (open-url):", url);
+
+  const windows = BrowserWindow.getAllWindows();
+  if (windows.length > 0) {
+    handleDeepLink(url);
+  } else {
+    // Window not ready yet, store for later
+    pendingDeepLink = url;
+  }
+});
+
+function handleDeepLink(url: string) {
+  console.log("Handling deep link:", url);
+
+  try {
+    const urlObj = new URL(url);
+    const action = urlObj.hostname;
+    const params = Object.fromEntries(urlObj.searchParams);
+
+    console.log("Action:", action);
+    console.log("Params:", params);
+
+    const windows = BrowserWindow.getAllWindows();
+    if (windows.length > 0) {
+      windows[0].webContents.send("deep-link", { action, params, fullUrl: url });
+    }
+  } catch (error) {
+    console.error("Error parsing deep link URL:", error);
+  }
+}
+
 ipcMain.handle("dev:isDev", async (_event) => {
   return { isDev: !app.isPackaged };
 });
 
+function setupDisplayMediaHandler() {
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (_request, callback) => {
+      desktopCapturer
+        .getSources({ types: ["window", "screen"] })
+        .then((sources) => {
+          if (!sources.length) {
+            console.error("[main] setDisplayMediaRequestHandler: no sources found");
+            callback({});
+            return;
+          }
+          callback({ video: sources[0], audio: "loopback" });
+        })
+        .catch((err) => {
+          console.error("[main] setDisplayMediaRequestHandler: desktopCapturer failed:", err);
+          callback({});
+        });
+    },
+    { useSystemPicker: true },
+  );
+}
+
 const createWindow = () => {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -31,7 +138,6 @@ const createWindow = () => {
 
   mainWindow.setMenuBarVisibility(false);
 
-  // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
@@ -39,16 +145,31 @@ const createWindow = () => {
   }
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
-  if (!app.isPackaged) {
-    mainWindow.webContents.openDevTools();
-  }
+  // if (!app.isPackaged) {
+  mainWindow.webContents.openDevTools();
+  // }
+
+  // Handle pending deep link or command line args
+  mainWindow.webContents.once("did-finish-load", () => {
+    if (pendingDeepLink) {
+      handleDeepLink(pendingDeepLink);
+      pendingDeepLink = null;
+    } else if (process.platform === "win32" || process.platform === "linux") {
+      const url = process.argv.find((arg) => arg.startsWith(`${PROTOCOL}://`));
+      if (url) {
+        handleDeepLink(url);
+      }
+    }
+  });
 };
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  setupDisplayMediaHandler();
+  createWindow();
+});
 
 ipcMain.handle("get-all-processes", async () => {
   try {
@@ -56,14 +177,13 @@ ipcMain.handle("get-all-processes", async () => {
       throw new Error("Native addon not loaded");
     }
     const processes = nativeAddon.getProcesses();
-    // const values = findApps(processes);
-    // console.log(values, "values");
     return { success: true, data: processes };
   } catch (error: any) {
     console.error("Error getting processes:", error);
     return { success: false, error: error.message };
   }
 });
+
 ipcMain.handle("shutdown-app", () => {
   console.log("Shutting down application...");
   app.quit();
@@ -85,6 +205,3 @@ app.on("activate", () => {
     createWindow();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.

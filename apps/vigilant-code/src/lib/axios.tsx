@@ -5,9 +5,29 @@ async function getIsDev(): Promise<boolean> {
   return isDev;
 }
 
-async function getBaseUrl(): Promise<string> {
+// Bullshot
+async function getBaseUrl(domain?: string): Promise<string> {
   const isDev = await getIsDev();
-  return isDev ? "http://localhost:3333/api/v1" : "";
+
+  if (isDev) {
+    return "http://localhost:3333/api/v1";
+  }
+
+  if (domain) {
+    const formattedDomain = domain.includes(".") ? domain : domain.split(".").reverse().join(".");
+    return `http://${formattedDomain}/api/v1`;
+  }
+
+  const storedDomain = localStorage.getItem("domain");
+  if (storedDomain) {
+    const formattedDomain = storedDomain.includes(".")
+      ? storedDomain
+      : storedDomain.split(".").reverse().join(".");
+    return `http://${formattedDomain}/api/v1`;
+  }
+
+  console.warn("No domain configured for production environment");
+  return "";
 }
 
 async function getWsBaseUrl(): Promise<string> {
@@ -15,7 +35,12 @@ async function getWsBaseUrl(): Promise<string> {
   if (isDev) return "ws://localhost:3333/api/v1";
 
   const httpBase = apiClient.defaults.baseURL ?? "";
-  return httpBase.replace(/^https/, "wss").replace(/^http/, "ws");
+  if (!httpBase) {
+    console.error("Cannot create WebSocket URL: No base URL configured");
+    return "";
+  }
+
+  return httpBase.replace(/^http/, "ws").replace(/^http/, "ws");
 }
 
 export const apiClient = axios.create({
@@ -25,14 +50,50 @@ export const apiClient = axios.create({
 });
 
 let __authToken: string | null = null;
+let __domain: string | null = null;
 
 export function setAuthToken(token: string) {
   __authToken = token;
   apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  localStorage.setItem("authToken", token);
 }
 
 export function getAuthToken(): string | null {
-  return __authToken;
+  if (__authToken) return __authToken;
+
+  const storedToken = localStorage.getItem("authToken");
+  if (storedToken) {
+    __authToken = storedToken;
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    return storedToken;
+  }
+
+  return null;
+}
+
+export function setDomain(domain: string) {
+  __domain = domain;
+  localStorage.setItem("domain", domain);
+}
+
+export function getDomain(): string | null {
+  if (__domain) return __domain;
+
+  const storedDomain = localStorage.getItem("domain");
+  if (storedDomain) {
+    __domain = storedDomain;
+    return storedDomain;
+  }
+
+  return null;
+}
+
+export function clearAuth() {
+  __authToken = null;
+  __domain = null;
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("domain");
+  delete apiClient.defaults.headers.common["Authorization"];
 }
 
 apiClient.interceptors.request.use((config) => {
@@ -43,17 +104,55 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const initApiClient = async () => {
-  apiClient.defaults.baseURL = await getBaseUrl();
+  const storedToken = localStorage.getItem("authToken");
+  const storedDomain = localStorage.getItem("domain");
+
+  if (storedToken) {
+    setAuthToken(storedToken);
+  }
+
+  if (storedDomain) {
+    __domain = storedDomain;
+    await setBaseURL(storedDomain);
+  } else {
+    apiClient.defaults.baseURL = await getBaseUrl();
+  }
+
+  console.log("API Client initialized");
+  console.log("Base URL:", apiClient.defaults.baseURL);
+  console.log("Domain:", __domain);
+  console.log("Has Auth Token:", !!__authToken);
 };
 
-export const setBaseURL = async (workspaceName: string) => {
+export const setBaseURL = async (domain: string) => {
   const isDev = await getIsDev();
+
   if (!isDev) {
-    const reversedDomain = workspaceName.split(".").reverse().join(".");
-    apiClient.defaults.baseURL = `https://${reversedDomain}/api/v1`;
+    setDomain(domain);
+    const formattedDomain = domain.includes(".") ? domain : domain.split(".").reverse().join(".");
+    apiClient.defaults.baseURL = `http://${formattedDomain}/api/v1`;
+
+    console.log("API Base URL set to:", apiClient.defaults.baseURL);
+    console.log("Domain stored:", domain);
   } else {
     apiClient.defaults.baseURL = "http://localhost:3333/api/v1";
+    console.log("Development mode - using localhost");
   }
+};
+
+// Helper to check if API is ready
+export const isApiReady = (): boolean => {
+  return !!apiClient.defaults.baseURL && apiClient.defaults.baseURL !== "";
+};
+
+// Helper to get current configuration
+export const getApiConfig = () => {
+  return {
+    baseURL: apiClient.defaults.baseURL,
+    domain: __domain,
+    hasAuthToken: !!__authToken,
+    isReady: isApiReady(),
+  };
 };
 
 type PresenceStatus = "connected" | "disconnected" | "reconnecting";
@@ -78,6 +177,13 @@ class PresenceSocket {
     this.shouldReconnect = true;
 
     const wsBase = await getWsBaseUrl();
+
+    if (!wsBase) {
+      console.error("[WS] Cannot connect: No WebSocket URL available");
+      this.onStatusChange?.("disconnected");
+      return;
+    }
+
     const url = `${wsBase}/ws/presence?token=${this.token}`;
 
     this.createSocket(url);
@@ -120,6 +226,7 @@ class PresenceSocket {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "pong") {
+          // Heartbeat received
         }
       } catch {}
     };
@@ -181,6 +288,13 @@ export function createSSEConnection(
   onError?: () => void,
 ): () => void {
   const baseURL = apiClient.defaults.baseURL ?? "";
+
+  if (!baseURL) {
+    console.error("[SSE] Cannot create connection: No base URL configured");
+    onError?.();
+    return () => {};
+  }
+
   const token = getAuthToken() ?? "";
   const url = `${baseURL}${path}?token=${encodeURIComponent(token)}`;
 

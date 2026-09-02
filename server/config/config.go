@@ -40,6 +40,17 @@ type Config struct {
 
 	// Encryption
 	EncryptionKey string
+
+	// Email
+	EmailFromAddress string
+
+	TwilioAccountSID string
+	TwilioAuthToken  string
+	TwilioFromNumber string
+
+	TwilioAPIKeySID    string
+	TwilioAPIKeySecret string
+	TwilioTwiMLAppSID  string
 }
 
 func Load() (*Config, error) {
@@ -108,10 +119,6 @@ func Load() (*Config, error) {
 			config.AuthToken = value
 		case "ADMIN_AUTH_TOKEN":
 			config.AdminAuthToken = value
-		case "ADMIN_EMAIL":
-			config.AdminEmail = value
-		case "ADMIN_PASSWORD":
-			config.AdminPassword = value
 		case "ADMIN_IP_ADDRESS":
 			config.AdminIPAddress = value
 		case "ADMIN_SESSION_TIMEOUT":
@@ -134,6 +141,23 @@ func Load() (*Config, error) {
 			config.AllowOrigin = value
 		case "ENCRYPTION_KEY":
 			config.EncryptionKey = value
+		case "EMAIL_FROM_ADDRESS":
+			config.EmailFromAddress = value
+
+		case "TWILIO_ACCOUNT_SID":
+			config.TwilioAccountSID = value
+		case "TWILIO_AUTH_TOKEN":
+			config.TwilioAuthToken = value
+		case "TWILIO_FROM_NUMBER":
+			config.TwilioFromNumber = value
+
+		case "TWILIO_API_KEY_SID":
+			config.TwilioAPIKeySID = value
+		case "TWILIO_API_KEY_SECRET":
+			config.TwilioAPIKeySecret = value
+		case "TWILIO_TWIML_APP_SID":
+			config.TwilioTwiMLAppSID = value
+
 		}
 	}
 
