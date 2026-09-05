@@ -70,7 +70,7 @@ To let Vigilant push generated code to a GitHub organization, navigate to **Sett
 
 | Field | Description |
 |---|---|
-| **Organization Name** | The target GitHub organization (e.g., `quickcourse-xyz`) |
+| **Organization Name** | The target GitHub organization (e.g., `Oraganization-Name`) |
 | **Personal Access Token** | A PAT with `repo` scope for the target organization |
 
 :::info

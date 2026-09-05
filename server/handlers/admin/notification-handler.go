@@ -4,6 +4,7 @@ package admin
 import (
 	"net/http"
 	"strconv"
+	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,8 +39,33 @@ func (h *AdminHandlers) ListNotifications(c *gin.Context) {
 		return
 	}
 
+	response := make([]models.NotificationResponse, len(notifs))
+	for i, n := range notifs {
+		resp := models.NotificationResponse{
+			ID:        n.ID,
+			Type:      n.Type,
+			Title:     n.Title,
+			Severity:  string(n.Severity),
+			IsRead:    n.IsRead,
+			CreatedAt: n.CreatedAt,
+		}
+		if n.Message.Valid {
+			resp.Message = n.Message.String
+		}
+		if n.EntityType.Valid {
+			resp.EntityType = n.EntityType.String
+		}
+		if n.EntityID.Valid {
+			resp.EntityID = n.EntityID.String
+		}
+		if n.ReadAt.Valid {
+			resp.ReadAt = &n.ReadAt.String
+		}
+		response[i] = resp
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"notifications": notifs,
+		"notifications": response,
 		"total":         total,
 		"unread_count":  unreadCount,
 	})

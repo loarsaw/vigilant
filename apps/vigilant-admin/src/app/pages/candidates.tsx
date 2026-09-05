@@ -108,34 +108,33 @@ export function CandidatesList() {
     if (filterStatus === "all") return true;
     if (filterStatus === "active") return c.is_active;
     if (filterStatus === "inactive") return !c.is_active;
-    if (filterStatus === "shortlisted")
-      return c.applications?.some((a) => a.is_shortlisted);
+    if (filterStatus === "shortlisted") return c.applications?.some((a) => a.is_shortlisted);
     return true;
   });
 
   return (
-    <div className="space-y-6 p-10">
+    <div className="space-y-6 p-10 bg-background min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-white">Candidates</h2>
-          <p className="text-gray-400 mt-1">
+          <h2 className="font-display text-3xl font-bold tracking-wide text-foreground">
+            Candidates
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
             Total of {total} candidates tracked
             {activeUserCount > 0 && (
-              <span className="text-cyan-400 ml-2">• {activeUserCount} online</span>
+              <span className="text-[hsl(var(--chart-4))] ml-2">• {activeUserCount} online</span>
             )}
           </p>
         </div>
         {/* <div className="flex gap-3">
           <Button
             variant="outline"
-            className="border-gray-700 text-gray-300 hover:bg-gray-800"
             onClick={() => setShowImportDialog(true)}
           >
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
           <Button
-            className="bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
             onClick={() => setShowAddDialog(true)}
             disabled={isAdding}
           >
@@ -147,26 +146,26 @@ export function CandidatesList() {
 
       {/* Error Display */}
       {isError && (
-        <div className="p-4 bg-red-400/10 border border-red-400/20 rounded text-red-400 text-sm flex items-center gap-2">
+        <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm flex items-center gap-2">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>
       )}
 
       {/* Filters */}
-      <Card className="bg-[#1a1f2e] border-gray-800 p-6">
+      <Card className="bg-card border-border p-6">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 bg-[#0f1419] border-gray-700 text-white"
+              className="pl-10 bg-input border-border text-foreground focus-visible:ring-ring"
             />
           </div>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-full md:w-56 bg-[#0f1419] border-gray-700 text-white">
+            <SelectTrigger className="w-full md:w-56 bg-input border-border text-foreground">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter Status" />
             </SelectTrigger>
@@ -182,7 +181,7 @@ export function CandidatesList() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="bg-[#1a1f2e] border border-gray-800">
+        <TabsList className="bg-card border border-border font-display font-semibold tracking-wide">
           <TabsTrigger value="all">List View</TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
         </TabsList>
@@ -190,12 +189,12 @@ export function CandidatesList() {
         <TabsContent value="all" className="space-y-4">
           {isLoading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-6 w-6 animate-spin text-cyan-400" />
-              <span className="ml-2 text-gray-400">Loading candidates...</span>
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="ml-2 text-muted-foreground">Loading candidates...</span>
             </div>
           ) : filteredCandidates.length === 0 ? (
-            <Card className="bg-[#1a1f2e] border-gray-800 p-8 text-center">
-              <p className="text-gray-400">No candidates match your criteria</p>
+            <Card className="bg-card border-border p-8 text-center">
+              <p className="text-muted-foreground">No candidates match your criteria</p>
             </Card>
           ) : (
             filteredCandidates.map((candidate) => {
@@ -204,22 +203,36 @@ export function CandidatesList() {
               const otherApplicationsCount = Math.max(applications.length - 1, 0);
               const displayName = latest?.full_name || candidate.full_name;
               const skills = latest?.skills
-                ? latest.skills.split(",").map((s) => s.trim()).filter(Boolean)
+                ? latest.skills
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
                 : [];
 
+              // left accent bar reflects the candidate's furthest-along status —
+              // steel by default, amber once shortlisted/offered signals real progress
+              const isFlagged = latest?.is_shortlisted || !candidate.is_active;
+              const accentClass = !candidate.is_active
+                ? "border-l-destructive"
+                : latest?.is_shortlisted
+                  ? "border-l-primary"
+                  : "border-l-border";
+
               const cardContent = (
-                <Card className="bg-[#1a1f2e] border-gray-800 mt-3 hover:border-cyan-400/30 transition-all p-6 cursor-pointer group">
+                <Card
+                  className={`bg-card border-border border-l-[3px] ${accentClass} mt-3 hover:border-primary/40 transition-all p-6 cursor-pointer group`}
+                >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-4 mb-4">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                          className={`w-11 h-11 rounded-md flex items-center justify-center flex-shrink-0 border transition-all ${
                             candidate.is_online
-                              ? "bg-green-400/20 ring-2 ring-green-400/50"
-                              : "bg-cyan-400/10"
+                              ? "bg-[hsl(var(--chart-4)/0.12)] border-[hsl(var(--chart-4)/0.4)] shadow-[0_0_0_3px_hsl(var(--chart-4)/0.15)]"
+                              : "bg-input border-border"
                           }`}
                         >
-                          <span className="text-cyan-400 font-bold text-lg">
+                          <span className="font-display text-primary font-bold text-base">
                             {displayName
                               .split(" ")
                               .filter(Boolean)
@@ -230,31 +243,31 @@ export function CandidatesList() {
 
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-lg font-semibold text-white group-hover:text-cyan-400 transition-colors">
+                            <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
                               {displayName}
                             </h3>
                             {candidate.is_online && (
-                              <Badge className="bg-green-400/10 text-green-400 border-green-400/20 text-[10px] h-5">
+                              <Badge className="bg-[hsl(var(--chart-4)/0.12)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] text-[10px] h-5 font-display font-semibold tracking-wide">
                                 Live
                               </Badge>
                             )}
                           </div>
-                          <p className="text-gray-400 text-sm">{candidate.email}</p>
+                          <p className="text-muted-foreground text-sm">{candidate.email}</p>
                         </div>
                       </div>
 
                       <div className="space-y-3">
                         {/* Applied position + meta */}
                         {latest && (
-                          <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
-                            <span className="flex items-center gap-1.5 text-gray-300">
-                              <Briefcase className="h-3.5 w-3.5 text-cyan-400" />
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                            <span className="flex items-center gap-1.5 text-foreground/80">
+                              <Briefcase className="h-3.5 w-3.5 text-[hsl(var(--chart-2))]" />
                               {latest.position_title}
                             </span>
                             {otherApplicationsCount > 0 && (
                               <Badge
                                 variant="outline"
-                                className="border-gray-700 text-gray-400 text-[10px]"
+                                className="border-border text-muted-foreground text-[10px]"
                               >
                                 +{otherApplicationsCount} more application
                                 {otherApplicationsCount > 1 ? "s" : ""}
@@ -264,7 +277,7 @@ export function CandidatesList() {
                               <>
                                 <span>•</span>
                                 <span className="flex items-center gap-1">
-                                  <span className="text-cyan-400 font-medium">
+                                  <span className="text-primary font-medium">
                                     {latest.experience_years}
                                   </span>
                                   yrs exp
@@ -286,7 +299,7 @@ export function CandidatesList() {
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  <Github className="h-4 w-4 hover:text-white transition-colors" />
+                                  <Github className="h-4 w-4 hover:text-foreground transition-colors" />
                                 </a>
                               ))}
                               {latest.resume_url && (
@@ -296,7 +309,7 @@ export function CandidatesList() {
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  <FileText className="h-4 w-4 hover:text-white transition-colors" />
+                                  <FileText className="h-4 w-4 hover:text-foreground transition-colors" />
                                 </a>
                               )}
                             </span>
@@ -309,7 +322,7 @@ export function CandidatesList() {
                             {skills.map((skill) => (
                               <span
                                 key={skill}
-                                className="text-xs bg-gray-800/40 border border-gray-700/50 px-2.5 py-1 rounded text-gray-300"
+                                className="text-xs bg-input border border-border px-2.5 py-1 rounded-md text-muted-foreground"
                               >
                                 {skill}
                               </span>
@@ -318,7 +331,7 @@ export function CandidatesList() {
                         )}
 
                         {applications.length === 0 && (
-                          <p className="text-xs text-gray-500">No applications yet</p>
+                          <p className="text-xs text-muted-foreground/60">No applications yet</p>
                         )}
                       </div>
                     </div>
@@ -326,14 +339,14 @@ export function CandidatesList() {
                     {/* Status Section */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       {latest?.is_shortlisted && (
-                        <Badge className="bg-cyan-400/10 text-cyan-400 border-cyan-400/20 border">
+                        <Badge className="bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide">
                           Shortlisted
                         </Badge>
                       )}
                       {latest && (
                         <Badge
                           variant="outline"
-                          className="border-gray-700 text-gray-300 text-[10px] capitalize"
+                          className="border-border text-muted-foreground text-[10px] capitalize"
                         >
                           {latest.status}
                         </Badge>
@@ -341,12 +354,12 @@ export function CandidatesList() {
                       {!candidate.is_active && (
                         <Badge
                           variant="outline"
-                          className="border-red-400/20 text-red-400 text-[10px]"
+                          className="border-destructive/30 text-destructive text-[10px]"
                         >
                           Inactive Account
                         </Badge>
                       )}
-                      <span className="text-[11px] text-gray-500 mt-2">
+                      <span className="text-[11px] text-muted-foreground/70 mt-2">
                         Added {new Date(candidate.created_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -364,15 +377,15 @@ export function CandidatesList() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 bg-[#1a1f2e] border border-gray-800 rounded mt-6">
-              <div className="text-sm text-gray-400">
+            <div className="flex items-center justify-between p-4 bg-card border border-border rounded-md mt-6">
+              <div className="text-sm text-muted-foreground">
                 Page {page} of {totalPages}
               </div>
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-gray-700 text-white"
+                  className="font-display font-semibold tracking-wide"
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
                 >
@@ -381,7 +394,7 @@ export function CandidatesList() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-gray-700 text-white"
+                  className="font-display font-semibold tracking-wide"
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
                 >
@@ -393,14 +406,14 @@ export function CandidatesList() {
         </TabsContent>
       </Tabs>
 
-      <AddCandidateDialog
+      {/* <AddCandidateDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onAdd={handleAddCandidate}
         isLoading={isAdding}
-      />
+      /> */}
 
-      <ImportCandidatesDialog
+      {/* <ImportCandidatesDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         onImport={importCSV}
@@ -409,7 +422,7 @@ export function CandidatesList() {
         result={importResult}
         error={importError}
         onReset={resetImport}
-      />
+      /> */}
     </div>
   );
 }

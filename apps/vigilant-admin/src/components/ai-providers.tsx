@@ -91,8 +91,8 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
 
   if (isLoadingProvider) {
     return (
-      <div className="flex items-center gap-3 text-gray-400 py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+      <div className="flex items-center gap-3 text-muted-foreground py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
         <span className="text-sm">Loading {meta.label} configuration...</span>
       </div>
     );
@@ -103,7 +103,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           {isProviderConfigured && !isEditingLocal
             ? "Configured • Click Edit to modify"
             : `Add your ${meta.label} API credentials`}
@@ -111,7 +111,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
         {isProviderConfigured && (
           <button
             onClick={() => setIsEditingLocal((p) => !p)}
-            className="px-3 py-1.5 text-sm bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-400 rounded-lg transition-colors flex items-center gap-2 shrink-0"
+            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 shrink-0 font-display font-semibold tracking-wide"
           >
             <Edit3 className="h-4 w-4" />
             {isEditingLocal ? "Cancel" : "Edit"}
@@ -122,7 +122,10 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
       {isEditing ? (
         <>
           <div>
-            <Label htmlFor={`${providerKey}-api-key`} className="text-sm font-medium text-gray-200">
+            <Label
+              htmlFor={`${providerKey}-api-key`}
+              className="text-sm font-medium text-foreground"
+            >
               API Key
             </Label>
             <div className="relative mt-2">
@@ -132,12 +135,12 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
                 placeholder={meta.placeholder}
                 value={form.apiKey}
                 onChange={(e) => handleChange("apiKey", e.target.value)}
-                className="w-full bg-[#0f1419] border border-gray-700 text-white placeholder:text-gray-600 text-sm pr-10 py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors"
+                className="w-full bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm pr-10 py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
               />
               <button
                 type="button"
                 onClick={() => setShowSecret((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -145,7 +148,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
           </div>
 
           <div>
-            <Label htmlFor={`${providerKey}-model`} className="text-sm font-medium text-gray-200">
+            <Label htmlFor={`${providerKey}-model`} className="text-sm font-medium text-foreground">
               Default Model
             </Label>
             <Input
@@ -154,16 +157,16 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
               placeholder={meta.defaultModel}
               value={form.model}
               onChange={(e) => handleChange("model", e.target.value)}
-              className="w-full mt-2 bg-[#0f1419] border border-gray-700 text-white placeholder:text-gray-600 text-sm py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors"
+              className="w-full mt-2 bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
           </div>
 
           <div>
             <Label
               htmlFor={`${providerKey}-base-url`}
-              className="text-sm font-medium text-gray-200"
+              className="text-sm font-medium text-foreground"
             >
-              Base URL <span className="text-gray-500 font-normal">(optional)</span>
+              Base URL <span className="text-muted-foreground/70 font-normal">(optional)</span>
             </Label>
             <Input
               id={`${providerKey}-base-url`}
@@ -171,39 +174,39 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
               placeholder="Leave blank to use the default endpoint"
               value={form.baseUrl}
               onChange={(e) => handleChange("baseUrl", e.target.value)}
-              className="w-full mt-2 bg-[#0f1419] border border-gray-700 text-white placeholder:text-gray-600 text-sm py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors"
+              className="w-full mt-2 bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
             />
           </div>
         </>
       ) : (
         <>
           <div>
-            <Label className="text-sm font-medium text-gray-200">API Key</Label>
+            <Label className="text-sm font-medium text-foreground">API Key</Label>
             <div className="relative mt-2">
               <Input
                 type={showSecret ? "text" : "password"}
                 value="••••••••••••••••"
                 readOnly
-                className="w-full bg-[#0f1419]/50 border border-gray-700 text-white text-sm py-2.5 px-3.5 rounded-lg pr-10 cursor-default"
+                className="w-full bg-input/50 border border-border text-foreground text-sm py-2.5 px-3.5 rounded-md pr-10 cursor-default"
               />
               <button
                 type="button"
                 onClick={() => setShowSecret((p) => !p)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               >
                 {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-200">Default Model</Label>
-            <div className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419]/50 border border-gray-700 rounded-lg text-white text-sm">
+            <Label className="text-sm font-medium text-foreground">Default Model</Label>
+            <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
               {form.model || "—"}
             </div>
           </div>
           <div>
-            <Label className="text-sm font-medium text-gray-200">Base URL</Label>
-            <div className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419]/50 border border-gray-700 rounded-lg text-white text-sm">
+            <Label className="text-sm font-medium text-foreground">Base URL</Label>
+            <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
               {form.baseUrl || "Default"}
             </div>
           </div>
@@ -211,7 +214,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
       )}
 
       {saveProviderError && (
-        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {saveProviderError}
         </div>
@@ -221,7 +224,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
         <button
           onClick={handleSave}
           disabled={isSavingProvider || !form.apiKey || !form.model}
-          className="w-full mt-2 px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 disabled:bg-cyan-400/50 disabled:cursor-not-allowed text-black font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-wide text-sm rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.5)]"
         >
           {isSavingProvider ? (
             <>
@@ -256,21 +259,23 @@ export function AIProvidersCard() {
   };
 
   return (
-    <Card className="backdrop-blur-sm border rounded-xl p-6 bg-[#1a1f2e]/80 border-gray-700/50">
+    <Card className="border rounded-xl p-6 bg-card/80 border-border">
       <div className="flex items-start gap-4 mb-6">
-        <div className="p-2.5 bg-cyan-400/10 rounded-lg shrink-0">
-          <Bot className="h-6 w-6 text-cyan-400" />
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0 border border-primary/20">
+          <Bot className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-white">AI Provider</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+            AI Provider
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
             Choose which LLM powers scenario prompts, and store its credentials
           </p>
         </div>
       </div>
 
       {/* Provider tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-700/50">
+      <div className="flex gap-1 mb-6 border-b border-border">
         {PROVIDERS.map(({ key, label }) => {
           const isActive = activeProvider === key;
           const isConfigured = statusMap[key];
@@ -278,17 +283,17 @@ export function AIProvidersCard() {
             <button
               key={key}
               onClick={() => setActiveProvider(key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold tracking-wide border-b-2 -mb-px transition-colors ${
                 isActive
-                  ? "border-cyan-400 text-cyan-400"
-                  : "border-transparent text-gray-400 hover:text-gray-200"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {label}
               {isConfigured ? (
-                <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
               ) : (
-                <Circle className="h-3.5 w-3.5 text-gray-600" />
+                <Circle className="h-3.5 w-3.5 text-muted-foreground/40" />
               )}
             </button>
           );

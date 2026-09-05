@@ -64,29 +64,31 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
 
   if (isLoadingGithub) {
     return (
-      <div className="flex items-center gap-3 text-gray-400 py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+      <div className="flex items-center gap-3 text-muted-foreground py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
         <span className="text-sm">Loading GitHub configuration...</span>
       </div>
     );
   }
 
   return (
-    <Card className="backdrop-blur-sm border rounded-xl p-6 bg-[#1a1f2e]/80 border-gray-700/50">
+    <Card className="border rounded-xl p-6 bg-card/80 border-border">
       <div className="flex items-start gap-4 mb-6">
-        <div className="p-2.5 bg-cyan-400/10 rounded-lg shrink-0">
-          <Github className="h-6 w-6 text-cyan-400" />
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0 border border-primary/20">
+          <Github className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-white">GitHub</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+            GitHub
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
             Connect a GitHub organization to push generated code
           </p>
         </div>
         {isGithubConfigured && (
           <button
             onClick={() => setEditMode((prev) => ({ ...prev, github: !prev.github }))}
-            className="px-3 py-1.5 text-sm bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-400 rounded-lg transition-colors flex items-center gap-2 shrink-0"
+            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 shrink-0 font-display font-semibold tracking-wide"
           >
             <Edit3 className="h-4 w-4" />
             {editMode.github ? "Cancel" : "Edit"}
@@ -98,28 +100,28 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
         {isEditing ? (
           <>
             <div>
-              <Label htmlFor="github-org-name" className="text-sm font-medium text-gray-200">
+              <Label htmlFor="github-org-name" className="text-sm font-medium text-foreground">
                 Organization Name
               </Label>
               <Input
                 id="github-org-name"
                 type="text"
-                placeholder="quickcourse-xyz"
+                placeholder="Oraganization Name"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 onBlur={() => setOrgTouched(true)}
                 aria-invalid={!!orgError}
-                className={`w-full mt-2 bg-[#0f1419] border text-white placeholder:text-gray-600 text-sm py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                className={`w-full mt-2 bg-input border text-foreground placeholder:text-muted-foreground/60 text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 transition-colors ${
                   orgError
-                    ? "border-red-500/50 focus:ring-red-400 focus:border-red-400"
-                    : "border-gray-700 focus:ring-cyan-400 focus:border-cyan-400"
+                    ? "border-destructive/50 focus:ring-destructive focus:border-destructive"
+                    : "border-border focus:ring-ring focus:border-primary"
                 }`}
               />
-              {orgError && <p className="text-xs text-red-400 mt-1.5">{orgError}</p>}
+              {orgError && <p className="text-xs text-destructive mt-1.5">{orgError}</p>}
             </div>
 
             <div>
-              <Label htmlFor="github-token" className="text-sm font-medium text-gray-200">
+              <Label htmlFor="github-token" className="text-sm font-medium text-foreground">
                 Personal Access Token
               </Label>
               <div className="relative mt-2">
@@ -135,25 +137,26 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
                   onChange={(e) => setToken(e.target.value)}
                   onBlur={() => setTokenTouched(true)}
                   aria-invalid={!!tokenError}
-                  className={`w-full bg-[#0f1419] border text-white placeholder:text-gray-600 text-sm pr-10 py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full bg-input border text-foreground placeholder:text-muted-foreground/60 text-sm pr-10 py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 transition-colors ${
                     tokenError
-                      ? "border-red-500/50 focus:ring-red-400 focus:border-red-400"
-                      : "border-gray-700 focus:ring-cyan-400 focus:border-cyan-400"
+                      ? "border-destructive/50 focus:ring-destructive focus:border-destructive"
+                      : "border-border focus:ring-ring focus:border-primary"
                   }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowToken((p) => !p)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
               {tokenError ? (
-                <p className="text-xs text-red-400 mt-1.5">{tokenError}</p>
+                <p className="text-xs text-destructive mt-1.5">{tokenError}</p>
               ) : (
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Requires <code className="text-gray-400">repo</code> scope for the target org.
+                <p className="text-xs text-muted-foreground/70 mt-1.5">
+                  Requires <code className="text-muted-foreground mono">repo</code> scope for the
+                  target org.
                 </p>
               )}
             </div>
@@ -161,19 +164,19 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
         ) : (
           <>
             <div>
-              <Label className="text-sm font-medium text-gray-200">Organization Name</Label>
-              <div className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419]/50 border border-gray-700 rounded-lg text-white text-sm">
+              <Label className="text-sm font-medium text-foreground">Organization Name</Label>
+              <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
                 {orgName || "—"}
               </div>
             </div>
             <div>
-              <Label className="text-sm font-medium text-gray-200">Personal Access Token</Label>
-              <div className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419]/50 border border-gray-700 rounded-lg text-white text-sm">
+              <Label className="text-sm font-medium text-foreground">Personal Access Token</Label>
+              <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
                 {githubConfig?.has_token ? "••••••••••••••••" : "Not set"}
               </div>
             </div>
             {githubConfig?.updated_at && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground/70">
                 Last updated {new Date(githubConfig.updated_at).toLocaleString()}
               </p>
             )}
@@ -181,7 +184,7 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
         )}
 
         {saveGithubError && (
-          <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <div className="flex items-center gap-2 px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {saveGithubError}
           </div>
@@ -191,7 +194,7 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
           <button
             onClick={handleSave}
             disabled={isSavingGithub || !orgName || !token}
-            className="w-full mt-2 px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 disabled:bg-cyan-400/50 disabled:cursor-not-allowed text-black font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-wide text-sm rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.5)]"
           >
             {isSavingGithub ? (
               <>
