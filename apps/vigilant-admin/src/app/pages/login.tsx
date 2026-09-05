@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/use-auth";
+
 export default function LoginPage() {
   const [isDev, setIsDev] = useState(false);
   const navigate = useNavigate();
@@ -82,25 +83,43 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
-      <Card className="w-full max-w-md border-border/50 shadow-2xl animate-fade-in">
+    <div className="relative flex items-center justify-center min-h-screen bg-background overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 900px 700px at 50% 38%, hsl(var(--primary)/0.10), transparent 60%)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.4]"
+        style={{
+          backgroundImage:
+            "linear-gradient(hsl(var(--border)/0.15) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)/0.15) 1px, transparent 1px)",
+          backgroundSize: "42px 42px",
+        }}
+      />
+
+      <Card className="relative w-full max-w-md border-border shadow-2xl animate-fade-in">
         <CardHeader className="text-center space-y-2">
           <div className="flex items-center justify-center mb-2">
-            <div className="w-10 h-10 rounded-lg  flex items-center justify-center shadow-md">
+            <div className="w-16 h-16 flex items-center justify-center">
               <img
                 src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
                 alt="Vigilant Logo"
-                className="w-7 h-7 object-contain"
+                className="w-14 h-14 object-contain drop-shadow-[0_0_16px_hsl(var(--primary)/0.55)]"
               />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">Vigilant Admin</CardTitle>
+          <CardTitle className="font-display text-3xl font-bold tracking-wide text-foreground">
+            Vigilant <span className="text-primary">Admin</span>
+          </CardTitle>
           <CardDescription className="text-muted-foreground">Admin Dashboard</CardDescription>
         </CardHeader>
 
         <CardContent>
           <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsList className="grid w-full grid-cols-2 mb-4 font-display font-semibold tracking-wide">
               <TabsTrigger value="email">Email Login</TabsTrigger>
               <TabsTrigger value="token">Token Login</TabsTrigger>
             </TabsList>
@@ -119,7 +138,7 @@ export default function LoginPage() {
                         workspaceName: e.target.value,
                       })
                     }
-                    className="bg-secondary/50 border-border"
+                    className="bg-input border-border focus-visible:ring-ring"
                     disabled={isLoggingIn}
                     required
                   />
@@ -132,7 +151,7 @@ export default function LoginPage() {
                     placeholder="your.email@company.com"
                     value={emailData.email}
                     onChange={(e) => setEmailData({ ...emailData, email: e.target.value })}
-                    className="bg-secondary/50 border-border"
+                    className="bg-input border-border focus-visible:ring-ring"
                     disabled={isLoggingIn}
                     required
                   />
@@ -145,7 +164,7 @@ export default function LoginPage() {
                     placeholder="Enter your password"
                     value={emailData.password}
                     onChange={(e) => setEmailData({ ...emailData, password: e.target.value })}
-                    className="bg-secondary/50 border-border"
+                    className="bg-input border-border focus-visible:ring-ring"
                     disabled={isLoggingIn}
                     required
                   />
@@ -161,7 +180,11 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full font-semibold mt-6" disabled={isLoggingIn}>
+                <Button
+                  type="submit"
+                  className="w-full font-display font-bold tracking-wide mt-6 shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.55)]"
+                  disabled={isLoggingIn}
+                >
                   {isLoggingIn ? "Logging in..." : "Login"}
                 </Button>
               </form>
@@ -181,7 +204,7 @@ export default function LoginPage() {
                         workspaceName: e.target.value,
                       })
                     }
-                    className="bg-secondary/50 border-border"
+                    className="bg-input border-border focus-visible:ring-ring"
                     disabled={isLoggingInWithToken}
                     required
                   />
@@ -194,7 +217,7 @@ export default function LoginPage() {
                     placeholder="Paste your auth token"
                     value={tokenData.authToken}
                     onChange={(e) => setTokenData({ ...tokenData, authToken: e.target.value })}
-                    className="bg-secondary/50 border-border"
+                    className="bg-input border-border focus-visible:ring-ring"
                     disabled={isLoggingInWithToken}
                     required
                   />
@@ -212,7 +235,7 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full font-semibold mt-6"
+                  className="w-full font-display font-bold tracking-wide mt-6 shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.55)]"
                   disabled={isLoggingInWithToken}
                 >
                   {isLoggingInWithToken ? "Logging in..." : "Login with Token"}

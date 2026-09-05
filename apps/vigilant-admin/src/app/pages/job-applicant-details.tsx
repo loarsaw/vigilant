@@ -27,29 +27,11 @@ import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal
 import { useJobApplicationStatus } from "@/hooks/use-job-application-status";
 // import { useApplicationInterviewFeedback } from "@/hooks/use-application-interview-session";
 import { InterviewHistory } from "@/components/interview-history";
-
-// Badge color per application status, matching the app's status vocabulary.
-const STATUS_STYLES: Record<string, string> = {
-  applied: "bg-gray-700 text-gray-200",
-  screening: "bg-blue-500/20 text-blue-300",
-  interviewing: "bg-cyan-500/20 text-cyan-300",
-  offered: "bg-purple-500/20 text-purple-300",
-  hired: "bg-green-500/20 text-green-300",
-  rejected: "bg-red-500/20 text-red-300",
-  withdrawn: "bg-gray-600/20 text-gray-400",
-};
-
-// Badge color per github invite status (invited / accepted / failed / pending).
-const GITHUB_STATUS_STYLES: Record<string, string> = {
-  invited: "bg-blue-500/20 text-blue-300",
-  accepted: "bg-green-500/20 text-green-300",
-  failed: "bg-red-500/20 text-red-300",
-  pending: "bg-gray-700 text-gray-300",
-};
+import { STATUS_STYLES, GITHUB_STATUS_STYLES } from "@/lib/utils";
 
 export function JobApplicationDetails() {
   const { candidateId, applicationId } = useParams();
-  const { status } = useJobApplicationStatus(applicationId);
+  const { status } = useJobApplicationStatus(applicationId ?? "");
   const navigate = useNavigate();
   const { data, isLoading, isError, error } = useCandidate(candidateId);
   const { sessions } = useInterview(candidateId);
@@ -71,25 +53,25 @@ export function JobApplicationDetails() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-6 w-6 animate-spin text-cyan-400 mr-2" />
-        <span className="text-white text-lg">Loading candidate details...</span>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+        <span className="text-foreground text-lg">Loading candidate details...</span>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-400 text-lg">Error: {error?.message}</div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-destructive text-lg">Error: {error?.message}</div>
       </div>
     );
   }
 
   if (!candidateData) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-white text-lg">Candidate not found</div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-foreground text-lg">Candidate not found</div>
       </div>
     );
   }
@@ -99,31 +81,34 @@ export function JobApplicationDetails() {
     : [];
 
   const statusBadgeClass = currentApplication
-    ? (STATUS_STYLES[currentApplication.status] ?? "bg-gray-700 text-gray-200")
+    ? (STATUS_STYLES[currentApplication.status] ?? STATUS_STYLES.applied)
     : "";
   const githubBadgeClass = currentApplication?.github_invite_status
-    ? (GITHUB_STATUS_STYLES[currentApplication.github_invite_status] ?? "bg-gray-700 text-gray-300")
+    ? (GITHUB_STATUS_STYLES[currentApplication.github_invite_status] ??
+      GITHUB_STATUS_STYLES.pending)
     : "";
 
   return (
-    <div className="space-y-6 p-5">
+    <div className="space-y-6 p-5 bg-background min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/applications")}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="text-3xl font-bold text-white">{candidateData.full_name}</h2>
+            <h2 className="font-display text-3xl font-bold tracking-wide text-foreground">
+              {candidateData.full_name}
+            </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-gray-400">{candidateData.email}</p>
+              <p className="text-muted-foreground">{candidateData.email}</p>
               {isOnline && (
-                <span className="flex items-center gap-1 text-green-400 text-sm">
-                  <div className="h-2 w-2 rounded-full bg-green-400" />
+                <span className="flex items-center gap-1 text-[hsl(var(--chart-4))] text-sm">
+                  <div className="h-2 w-2 rounded-full bg-[hsl(var(--chart-4))] shadow-[0_0_6px_hsl(var(--chart-4)/0.7)]" />
                   Online
                 </span>
               )}
@@ -136,7 +121,7 @@ export function JobApplicationDetails() {
             <>
               <Button
                 variant="outline"
-                className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 font-display font-semibold tracking-wide"
                 disabled={isApprovingOrRejecting}
                 onClick={() => rejectApplication(applicationId!)}
               >
@@ -148,7 +133,7 @@ export function JobApplicationDetails() {
                 Reject
               </Button>
               <Button
-                className="bg-green-500 hover:bg-green-600 text-white"
+                className="bg-[hsl(var(--chart-4))] hover:bg-[hsl(var(--chart-4)/0.85)] text-background font-display font-semibold tracking-wide"
                 disabled={isApprovingOrRejecting}
                 onClick={() => approveApplication(applicationId!)}
               >
@@ -162,7 +147,10 @@ export function JobApplicationDetails() {
             </>
           ) : (
             <>
-              <Button className="bg-green-500 hover:bg-green-600 text-white" disabled={true}>
+              <Button
+                className="bg-[hsl(var(--chart-4))] text-background font-display font-semibold tracking-wide"
+                disabled={true}
+              >
                 {isApprovingOrRejecting ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
@@ -181,18 +169,20 @@ export function JobApplicationDetails() {
               the candidate's general profile (position, status, scores,
               github repo state, cover letter). */}
           {currentApplication && (
-            <Card className="bg-[#1a1f2e] border-gray-800">
+            <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Briefcase className="h-5 w-5 text-cyan-400" />
+                <CardTitle className="font-display tracking-wide text-foreground flex items-center gap-2">
+                  <Briefcase className="h-5 w-5 text-primary" />
                   Application Overview
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-white font-medium">{currentApplication.position_title}</p>
-                    <div className="flex items-center gap-3 mt-1 text-gray-400 text-sm">
+                    <p className="text-foreground font-medium">
+                      {currentApplication.position_title}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1 text-muted-foreground text-sm">
                       <span>{currentApplication.department}</span>
                       {currentApplication.location && (
                         <span className="flex items-center gap-1">
@@ -202,40 +192,44 @@ export function JobApplicationDetails() {
                       )}
                     </div>
                   </div>
-                  <Badge className={statusBadgeClass}>{currentApplication.status}</Badge>
+                  <Badge
+                    className={`font-display font-semibold tracking-wide capitalize ${statusBadgeClass}`}
+                  >
+                    {currentApplication.status}
+                  </Badge>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-gray-400 text-sm">Applied</p>
-                    <p className="text-white mt-1">
+                    <p className="text-muted-foreground text-sm">Applied</p>
+                    <p className="text-foreground mt-1">
                       {new Date(currentApplication.applied_at).toLocaleDateString()}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Last Updated</p>
-                    <p className="text-white mt-1">
+                    <p className="text-muted-foreground text-sm">Last Updated</p>
+                    <p className="text-foreground mt-1">
                       {new Date(currentApplication.updated_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
                 {/* Scores */}
-                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-800">
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
                   <div>
-                    <p className="text-gray-400 text-sm flex items-center gap-1">
+                    <p className="text-muted-foreground text-sm flex items-center gap-1">
                       <Star className="h-3.5 w-3.5" />
                       Overall Score
                     </p>
-                    <p className="text-white mt-1">
+                    <p className="text-foreground mt-1">
                       {currentApplication.overall_score != null
                         ? `${currentApplication.overall_score.toFixed(1)} (${currentApplication.overall_tier || "—"})`
                         : "Not analyzed yet"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-400 text-sm">Assignment Score</p>
-                    <p className="text-white mt-1">
+                    <p className="text-muted-foreground text-sm">Assignment Score</p>
+                    <p className="text-foreground mt-1">
                       {currentApplication.assignment_overall_score != null
                         ? `${currentApplication.assignment_overall_score.toFixed(1)} (${currentApplication.assignment_overall_tier || "—"})`
                         : "Not scored yet"}
@@ -245,26 +239,36 @@ export function JobApplicationDetails() {
 
                 <div className="flex items-center gap-2">
                   {currentApplication.is_shortlisted && (
-                    <Badge className="bg-cyan-500/20 text-cyan-300">Shortlisted</Badge>
+                    <Badge className="bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide">
+                      Shortlisted
+                    </Badge>
                   )}
                 </div>
 
                 {/* Assignment GitHub repo */}
                 {currentApplication.github_repo_url && (
-                  <div className="pt-2 border-t border-gray-800">
-                    <p className="text-gray-400 text-sm mb-2">Assignment Repo</p>
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-muted-foreground text-sm mb-2">Assignment Repo</p>
                     <div className="flex items-center justify-between gap-2">
                       <div
-                        onClick={() => window.api.openExternal(currentApplication.github_repo_url)}
-                        // target="_blank"
-                        // rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                        onClick={() => {
+                          if (!currentApplication.github_repo_url) {
+                            window.alert(
+                              "No GitHub repository URL is available for this application.",
+                            );
+                            return;
+                          }
+                          window.api.openExternal(currentApplication.github_repo_url);
+                        }}
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm cursor-pointer"
                       >
                         <Github className="h-4 w-4" />
                         View Repository
                       </div>
                       {currentApplication.github_invite_status && (
-                        <Badge className={githubBadgeClass}>
+                        <Badge
+                          className={`font-display font-semibold tracking-wide capitalize ${githubBadgeClass}`}
+                        >
                           {currentApplication.github_invite_status}
                         </Badge>
                       )}
@@ -274,9 +278,9 @@ export function JobApplicationDetails() {
 
                 {/* Cover letter */}
                 {currentApplication.cover_letter && (
-                  <div className="pt-2 border-t border-gray-800">
-                    <p className="text-gray-400 text-sm mb-2">Cover Letter</p>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-muted-foreground text-sm mb-2">Cover Letter</p>
+                    <p className="text-foreground/80 text-sm whitespace-pre-wrap">
                       {currentApplication.cover_letter}
                     </p>
                   </div>
@@ -284,9 +288,9 @@ export function JobApplicationDetails() {
 
                 {/* Internal notes */}
                 {currentApplication.notes && (
-                  <div className="pt-2 border-t border-gray-800">
-                    <p className="text-gray-400 text-sm mb-2">Notes</p>
-                    <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-muted-foreground text-sm mb-2">Notes</p>
+                    <p className="text-foreground/80 text-sm whitespace-pre-wrap">
                       {currentApplication.notes}
                     </p>
                   </div>
@@ -295,26 +299,26 @@ export function JobApplicationDetails() {
             </Card>
           )}
 
-          <Card className="bg-[#1a1f2e] border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Award className="h-5 w-5 text-cyan-400" />
+              <CardTitle className="font-display tracking-wide text-foreground flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
                 Profile Overview
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Experience</p>
-                  <p className="text-white mt-1">
+                  <p className="text-muted-foreground text-sm">Experience</p>
+                  <p className="text-foreground mt-1">
                     {candidateData.experience_years
                       ? `${candidateData.experience_years} years`
                       : "Not specified"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Member Since</p>
-                  <p className="text-white mt-1">
+                  <p className="text-muted-foreground text-sm">Member Since</p>
+                  <p className="text-foreground mt-1">
                     {new Date(candidateData.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -322,34 +326,34 @@ export function JobApplicationDetails() {
 
               {/* Skills */}
               <div>
-                <p className="text-gray-400 text-sm mb-2">Skills</p>
+                <p className="text-muted-foreground text-sm mb-2">Skills</p>
                 <div className="flex flex-wrap gap-2">
                   {skillsArray.length > 0 ? (
                     skillsArray.map((skill) => (
                       <span
                         key={skill}
-                        className="bg-gray-800 px-3 py-1 rounded-full text-gray-300 text-sm"
+                        className="bg-input border border-border px-3 py-1 rounded-md text-muted-foreground text-sm"
                       >
                         {skill}
                       </span>
                     ))
                   ) : (
-                    <span className="text-gray-500 text-sm">No skills listed</span>
+                    <span className="text-muted-foreground/60 text-sm">No skills listed</span>
                   )}
                 </div>
               </div>
 
               {/* Contact */}
               <div>
-                <p className="text-gray-400 text-sm mb-2">Contact Information</p>
+                <p className="text-muted-foreground text-sm mb-2">Contact Information</p>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-300">
-                    <Mail className="h-4 w-4 text-gray-400" />
+                  <div className="flex items-center gap-2 text-foreground/80">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <span>{candidateData.email}</span>
                   </div>
                   {candidateData.phone_number && (
-                    <div className="flex items-center gap-2 text-gray-300">
-                      <Phone className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-foreground/80">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{candidateData.phone_number}</span>
                     </div>
                   )}
@@ -358,14 +362,19 @@ export function JobApplicationDetails() {
 
               {/* Links */}
               {(candidateData.github_url || candidateData.resume_url) && (
-                <div className="pt-2 border-t border-gray-800">
-                  <p className="text-gray-400 text-sm mb-2">Links</p>
+                <div className="pt-2 border-t border-border">
+                  <p className="text-muted-foreground text-sm mb-2">Links</p>
                   <div className="space-y-2">
                     {candidateData.github_url && (
                       <div
-                        onClick={() => window.api.openExternal(candidateData.github_url)}
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                        onClick={() => {
+                          if (!candidateData.github_url) {
+                            window.alert("No GitHub profile URL is available for this candidate.");
+                            return;
+                          }
+                          window.api.openExternal(candidateData.github_url);
+                        }}
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm cursor-pointer"
                       >
                         <FileText className="h-4 w-4" />
                         GitHub Profile
@@ -373,9 +382,14 @@ export function JobApplicationDetails() {
                     )}
                     {candidateData.resume_url && (
                       <div
-                        onClick={() => window.api.openExternal(candidateData.resume_url)}
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                        onClick={() => {
+                          if (!candidateData.resume_url) {
+                            window.alert("No resume URL is available for this candidate.");
+                            return;
+                          }
+                          window.api.openExternal(candidateData.resume_url);
+                        }}
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm cursor-pointer"
                       >
                         <FileText className="h-4 w-4" />
                         View Resume
@@ -386,18 +400,24 @@ export function JobApplicationDetails() {
               )}
 
               {/* Account Status */}
-              <div className="pt-2 border-t border-gray-800">
+              <div className="pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Account Status</span>
-                  <Badge variant={candidateData.is_active ? "default" : "secondary"}>
+                  <span className="text-muted-foreground text-sm">Account Status</span>
+                  <Badge
+                    className={
+                      candidateData.is_active
+                        ? "bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide"
+                        : "bg-muted text-muted-foreground border border-border font-display font-semibold tracking-wide"
+                    }
+                  >
                     {candidateData.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                {candidateData.last_login && (
-                  <p className="text-gray-500 text-xs mt-1">
+                {/* {candidateData.last_login && (
+                  <p className="text-muted-foreground/60 text-xs mt-1">
                     Last login: {new Date(candidateData.last_login).toLocaleString()}
                   </p>
-                )}
+                )} */}
               </div>
             </CardContent>
           </Card>
@@ -408,13 +428,15 @@ export function JobApplicationDetails() {
 
         <div className="space-y-6">
           {/* Quick Actions */}
-          <Card className="bg-[#1a1f2e] border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Quick Actions</CardTitle>
+              <CardTitle className="font-display tracking-wide text-foreground">
+                Quick Actions
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+                className="w-full font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
                 onClick={() => setShowScheduleDialog(true)}
               >
                 <Calendar className="h-4 w-4 mr-2" />
@@ -422,7 +444,7 @@ export function JobApplicationDetails() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-gray-700 text-gray-300"
+                className="w-full font-display font-semibold tracking-wide"
                 onClick={() => setShowEmailModal(true)}
               >
                 <Mail className="h-4 w-4 mr-2" />
@@ -431,7 +453,7 @@ export function JobApplicationDetails() {
               {(currentApplication?.resume_url || candidateData.resume_url) && (
                 <Button
                   variant="outline"
-                  className="w-full border-gray-700 text-gray-300"
+                  className="w-full font-display font-semibold tracking-wide"
                   onClick={() =>
                     window.open(
                       currentApplication?.resume_url || candidateData.resume_url,

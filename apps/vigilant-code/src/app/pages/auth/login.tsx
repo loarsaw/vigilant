@@ -46,14 +46,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 relative overflow-hidden">
-      <div className="absolute top-10 left-10 w-80 h-80 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse" />
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+      <div className="absolute top-10 left-10 w-80 h-80 bg-[hsl(var(--chart-1))] rounded-full mix-blend-screen filter blur-3xl opacity-15 animate-pulse" />
       <div
-        className="absolute bottom-10 right-10 w-96 h-96 bg-cyan-600 rounded-full mix-blend-multiply filter blur-3xl opacity-15 animate-pulse"
+        className="absolute bottom-10 right-10 w-96 h-96 bg-[hsl(var(--chart-2))] rounded-full mix-blend-screen filter blur-3xl opacity-15 animate-pulse"
         style={{ animationDelay: "2s" }}
       />
       <div
-        className="absolute top-1/2 right-1/4 w-72 h-72 bg-blue-700 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse"
+        className="absolute top-1/2 right-1/4 w-72 h-72 bg-primary rounded-full mix-blend-screen filter blur-3xl opacity-10 animate-pulse"
         style={{ animationDelay: "1s" }}
       />
 
@@ -75,7 +75,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={handleBackClick}
-            className="mt-4 text-xs text-slate-400 hover:underline w-full text-center"
+            className="mt-4 text-xs font-display font-semibold tracking-wide text-muted-foreground hover:text-foreground hover:underline w-full text-center"
           >
             Back to workspace
           </button>

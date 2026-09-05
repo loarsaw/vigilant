@@ -104,7 +104,7 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
               <Input
                 id="github-org-name"
                 type="text"
-                placeholder="quickcourse-xyz"
+                placeholder="Oraganization Name"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
                 onBlur={() => setOrgTouched(true)}

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -20,39 +20,37 @@ export function SidebarLayout() {
   const navigate = useNavigate();
   const { role, logout } = useAdminAuth();
 
-  // console.log(role);
   const [NAV_ITEMS] = useState([
     { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
     { label: "Candidate List", to: "/candidates", icon: Users },
     { label: "Applications", to: "/applications", icon: AppWindowMacIcon },
     { label: "Interviews", to: "/interviews", icon: UserCheck2 },
     { label: "Notifications", to: "/notifications", icon: BellIcon },
-
     { label: "Hiring", to: "/hiring", icon: BrickWallShieldIcon },
     { label: "Settings", to: "/settings", icon: Settings },
   ]);
 
   return (
-    <div className="flex h-screen  overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-background">
       <aside
-        className={`relative z-10 flex flex-col bg-slate-900 shadow-xl transition-all duration-200 ease-in-out flex-shrink-0
+        className={`relative z-10 flex flex-col bg-sidebar border-r border-sidebar-border shadow-xl transition-all duration-200 ease-in-out flex-shrink-0
         ${collapsed ? "w-[72px]" : "w-60"}`}
       >
         {/* Logo */}
         <div
-          className={`flex items-center gap-2.5 border-b border-white/[0.07] py-7 overflow-hidden
+          className={`flex items-center gap-2.5 border-b border-sidebar-border py-6 overflow-hidden
           ${collapsed ? "justify-center px-0" : "px-6"}`}
         >
-          <div className="flex-shrink-0 w-8 h-8 rounded-lg  flex items-center justify-center shadow-lg shadow-indigo-500/40">
+          <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
             <img
               src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
               alt="Vigilant Logo"
-              className="w-6 h-6 object-contain"
+              className="w-8 h-8 object-contain drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]"
             />
           </div>
           {!collapsed && (
-            <span className="text-white font-semibold text-base tracking-tight whitespace-nowrap">
-              Vigilant Admin
+            <span className="font-display font-bold text-base tracking-wide text-sidebar-foreground whitespace-nowrap">
+              Vigilant
             </span>
           )}
         </div>
@@ -63,12 +61,12 @@ export function SidebarLayout() {
               key={to}
               to={to}
               className={({ isActive }) => `
-                flex items-center gap-3 mx-2 rounded-lg text-sm transition-all duration-150 border-l-2
+                flex items-center gap-3 mx-2 rounded-md text-sm transition-all duration-150 border-l-2
                 ${collapsed ? "justify-center px-0 py-3" : "px-4 py-2.5"}
                 ${
                   isActive
-                    ? "bg-indigo-500/20 text-white font-semibold border-indigo-500"
-                    : "text-white/50 hover:text-white/80 hover:bg-white/5 border-transparent font-normal"
+                    ? "bg-primary/15 text-sidebar-foreground font-semibold border-primary"
+                    : "text-sidebar-foreground/50 hover:text-sidebar-foreground/85 hover:bg-sidebar-accent/60 border-transparent font-normal"
                 }
               `}
             >
@@ -76,7 +74,11 @@ export function SidebarLayout() {
                 <>
                   <Icon
                     size={18}
-                    className={`flex-shrink-0 transition-colors ${isActive ? "text-indigo-400" : "text-white/40"}`}
+                    className={`flex-shrink-0 transition-colors ${
+                      isActive
+                        ? "text-primary drop-shadow-[0_0_4px_hsl(var(--primary)/0.6)]"
+                        : "text-sidebar-foreground/40"
+                    }`}
                   />
                   {!collapsed && <span className="whitespace-nowrap">{label}</span>}
                 </>
@@ -85,7 +87,7 @@ export function SidebarLayout() {
           ))}
         </nav>
 
-        <div className="p-2 border-t border-white/[0.07]">
+        <div className="p-2 border-t border-sidebar-border">
           <Button
             variant="ghost"
             onClick={() => {
@@ -93,7 +95,7 @@ export function SidebarLayout() {
                 navigate("/");
               });
             }}
-            className={`w-full flex items-center gap-3 text-white/40 hover:bg-red-500/10 hover:text-red-300 h-auto
+            className={`w-full flex items-center gap-3 text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive h-auto
               ${collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"}`}
           >
             <LogOut size={18} className="flex-shrink-0" />
@@ -104,8 +106,8 @@ export function SidebarLayout() {
         <button
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="absolute top-1/2 -right-3 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-slate-800
-            border border-white/10 text-white/60 hover:bg-slate-700 flex items-center justify-center transition-colors"
+          className="absolute top-1/2 -right-3 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-sidebar-accent
+            border border-sidebar-border text-sidebar-foreground/60 hover:bg-sidebar-accent/70 flex items-center justify-center transition-colors"
         >
           {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>

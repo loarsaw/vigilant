@@ -506,8 +506,14 @@ export interface JobApplication {
   notes: string;
   applied_at: string;
   updated_at: string;
+  overall_score?: number;
+  overall_tier?: string;
+  assignment_overall_score?: number;
+  assignment_overall_tier?: string;
+  is_shortlisted?: boolean;
+  github_invite_status?: string;
+  github_repo_url?: string;
 }
-
 export interface PositionDetails {
   id: string;
   title: string;

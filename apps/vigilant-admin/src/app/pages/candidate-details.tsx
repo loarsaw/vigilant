@@ -40,25 +40,25 @@ export function CandidateDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-6 w-6 animate-spin text-cyan-400 mr-2" />
-        <span className="text-white text-lg">Loading candidate details...</span>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+        <span className="text-foreground text-lg">Loading candidate details...</span>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-400 text-lg">Error: {error?.message}</div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-destructive text-lg">Error: {error?.message}</div>
       </div>
     );
   }
 
   if (!candidateData) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-white text-lg">Candidate not found</div>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="text-foreground text-lg">Candidate not found</div>
       </div>
     );
   }
@@ -67,24 +67,26 @@ export function CandidateDetail() {
     ? candidateData.skills.split(",").map((s) => s.trim())
     : [];
   return (
-    <div className="space-y-6 p-5">
+    <div className="space-y-6 p-5 bg-background min-h-screen">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="text-gray-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="text-3xl font-bold text-white">{candidateData.full_name}</h2>
+            <h2 className="font-display text-3xl font-bold tracking-wide text-foreground">
+              {candidateData.full_name}
+            </h2>
             <div className="flex items-center gap-2 mt-1">
-              <p className="text-gray-400">{candidateData.email}</p>
+              <p className="text-muted-foreground">{candidateData.email}</p>
               {isOnline && (
-                <span className="flex items-center gap-1 text-green-400 text-sm">
-                  <div className="h-2 w-2 rounded-full bg-green-400" />
+                <span className="flex items-center gap-1 text-[hsl(var(--chart-4))] text-sm">
+                  <div className="h-2 w-2 rounded-full bg-[hsl(var(--chart-4))] shadow-[0_0_6px_hsl(var(--chart-4)/0.7)]" />
                   Online
                 </span>
               )}
@@ -96,26 +98,26 @@ export function CandidateDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Left Column ── */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="bg-[#1a1f2e] border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Award className="h-5 w-5 text-cyan-400" />
+              <CardTitle className="font-display tracking-wide text-foreground flex items-center gap-2">
+                <Award className="h-5 w-5 text-primary" />
                 Profile Overview
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Experience</p>
-                  <p className="text-white mt-1">
+                  <p className="text-muted-foreground text-sm">Experience</p>
+                  <p className="text-foreground mt-1">
                     {candidateData.experience_years
                       ? `${candidateData.experience_years} years`
                       : "Not specified"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Member Since</p>
-                  <p className="text-white mt-1">
+                  <p className="text-muted-foreground text-sm">Member Since</p>
+                  <p className="text-foreground mt-1">
                     {new Date(candidateData.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -123,34 +125,34 @@ export function CandidateDetail() {
 
               {/* Skills */}
               <div>
-                <p className="text-gray-400 text-sm mb-2">Skills</p>
+                <p className="text-muted-foreground text-sm mb-2">Skills</p>
                 <div className="flex flex-wrap gap-2">
                   {skillsArray.length > 0 ? (
                     skillsArray.map((skill) => (
                       <span
                         key={skill}
-                        className="bg-gray-800 px-3 py-1 rounded-full text-gray-300 text-sm"
+                        className="bg-input border border-border px-3 py-1 rounded-md text-muted-foreground text-sm"
                       >
                         {skill}
                       </span>
                     ))
                   ) : (
-                    <span className="text-gray-500 text-sm">No skills listed</span>
+                    <span className="text-muted-foreground/60 text-sm">No skills listed</span>
                   )}
                 </div>
               </div>
 
               {/* Contact */}
               <div>
-                <p className="text-gray-400 text-sm mb-2">Contact Information</p>
+                <p className="text-muted-foreground text-sm mb-2">Contact Information</p>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-gray-300">
-                    <Mail className="h-4 w-4 text-gray-400" />
+                  <div className="flex items-center gap-2 text-foreground/80">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
                     <span>{candidateData.email}</span>
                   </div>
                   {candidateData.phone_number && (
-                    <div className="flex items-center gap-2 text-gray-300">
-                      <Phone className="h-4 w-4 text-gray-400" />
+                    <div className="flex items-center gap-2 text-foreground/80">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
                       <span>{candidateData.phone_number}</span>
                     </div>
                   )}
@@ -159,15 +161,15 @@ export function CandidateDetail() {
 
               {/* Links */}
               {(candidateData.github_url || candidateData.resume_url) && (
-                <div className="pt-2 border-t border-gray-800">
-                  <p className="text-gray-400 text-sm mb-2">Links</p>
+                <div className="pt-2 border-t border-border">
+                  <p className="text-muted-foreground text-sm mb-2">Links</p>
                   <div className="space-y-2">
                     {candidateData.github_url && (
                       <a
                         href={candidateData.github_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm"
                       >
                         <FileText className="h-4 w-4" />
                         GitHub Profile
@@ -178,7 +180,7 @@ export function CandidateDetail() {
                         href={candidateData.resume_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 text-sm"
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 text-sm"
                       >
                         <FileText className="h-4 w-4" />
                         View Resume
@@ -189,15 +191,21 @@ export function CandidateDetail() {
               )}
 
               {/* Account Status */}
-              <div className="pt-2 border-t border-gray-800">
+              <div className="pt-2 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Account Status</span>
-                  <Badge variant={candidateData.is_active ? "default" : "secondary"}>
+                  <span className="text-muted-foreground text-sm">Account Status</span>
+                  <Badge
+                    className={
+                      candidateData.is_active
+                        ? "bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide"
+                        : "bg-muted text-muted-foreground border border-border font-display font-semibold tracking-wide"
+                    }
+                  >
                     {candidateData.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 {/* {candidateData.last_login && (
-                  <p className="text-gray-500 text-xs mt-1">
+                  <p className="text-muted-foreground/60 text-xs mt-1">
                     Last login: {new Date(candidateData.last_login).toLocaleString()}
                   </p>
                 )} */}
@@ -212,14 +220,16 @@ export function CandidateDetail() {
         {/* ── Right Column ── */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <Card className="bg-[#1a1f2e] border-gray-800">
+          <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="text-white">Quick Actions</CardTitle>
+              <CardTitle className="font-display tracking-wide text-foreground">
+                Quick Actions
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
                 disabled={!data.candidate.onboarding_complete}
-                className="w-full bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+                className="w-full font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
                 onClick={() => setShowScheduleDialog(true)}
               >
                 <Calendar className="h-4 w-4 mr-2" />
@@ -227,7 +237,7 @@ export function CandidateDetail() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-gray-700 text-gray-300"
+                className="w-full font-display font-semibold tracking-wide"
                 onClick={() => setShowEmailModal(true)}
               >
                 <Mail className="h-4 w-4 mr-2" />
@@ -236,7 +246,7 @@ export function CandidateDetail() {
               {candidateData.resume_url && (
                 <Button
                   variant="outline"
-                  className="w-full border-gray-700 text-gray-300"
+                  className="w-full font-display font-semibold tracking-wide"
                   onClick={() => window.open(candidateData.resume_url, "_blank")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
@@ -247,24 +257,24 @@ export function CandidateDetail() {
               {/* {candidateData.phone_number && ( */}
               {/* <Button
                 variant="outline"
-                className={`w-full border-gray-700 text-gray-300 ${isCalling ? "border-red-600 text-red-400" : ""}`}
+                className={`w-full ${isCalling ? "border-destructive text-destructive" : ""}`}
                 onClick={() => (isCalling ? hangUp() : makeCall(HARDCODED_NUMBER))}
                 disabled={!isReady}
               >
                 {isCalling ? (
                   <>
-                    <Phone className="h-4 w-4 text-red-400 mr-2 animate-pulse" />
+                    <Phone className="h-4 w-4 text-destructive mr-2 animate-pulse" />
                     Hang Up
                   </>
                 ) : (
                   <>
-                    <Phone className="h-4 w-4 text-gray-400 mr-2" />
+                    <Phone className="h-4 w-4 text-muted-foreground mr-2" />
                     {isReady ? "Call" : "Connecting..."}
                   </>
                 )}
               </Button> */}
 
-              {/* {twError && <p className="text-red-400 text-xs text-center">{twError}</p>} */}
+              {/* {twError && <p className="text-destructive text-xs text-center">{twError}</p>} */}
               {/* )} */}
             </CardContent>
           </Card>

@@ -11,10 +11,8 @@ import AppLayout, {
   ProtectedLayout,
 } from "./components/layout/app-layout";
 import Dashboard from "./app/pages/dashboard/dashboard";
-import { Profile } from "./app/pages/auth/profile";
 import { useDeepLink } from "./hooks/use-link";
 import DeepLinkHandler from "./app/pages/auth/link-handler";
-import InterviewRoom from "./app/pages/interview/page";
 import LoginPage from "./app/pages/auth/login";
 import InterviewRoomPage from "./app/pages/interview/page";
 
@@ -30,10 +28,7 @@ const AppRoutes = () => {
         <Route path="/linkstart" Component={DeepLinkHandler} />
         <Route Component={ProtectedLayout}>
           <Route path="/dashboard" Component={Dashboard} />
-          <Route path="/profile" Component={Profile} />
           <Route Component={EnvironmentLayout}>
-            {/* <Route path="/interview/:id" Component={WaitingSetup} /> */}
-            {/* <Route path="/interview/:sessionId" Component={InterviewRoom} /> */}
             <Route path="/interview/:sessionId/room" element={<InterviewRoomPage />} />
             <Route path="/code/:id" Component={Sandbox} />
             <Route path="/editor/:language" Component={CodeEditor} />

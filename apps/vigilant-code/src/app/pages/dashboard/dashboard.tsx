@@ -28,8 +28,6 @@ import { Header } from "@/components/header";
 export default function Dashboard() {
   const [applyingToId, setApplyingToId] = useState<string | null>(null);
   const [coverLetter, setCoverLetter] = useState("");
-  const { isAuthenticated } = useAuth();
-  // console.log(isAuthenticated, "isAuthh");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9;
 
@@ -239,7 +237,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Apply Dialog remains the same */}
       <Dialog open={!!applyingToId} onOpenChange={handleCloseDialog}>
         <DialogContent className="bg-slate-900 border border-slate-700 text-white max-w-md">
           <DialogHeader>

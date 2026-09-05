@@ -944,3 +944,16 @@ type Notification struct {
 	ReadAt     sql.NullString
 	CreatedAt  string
 }
+
+type NotificationResponse struct {
+	ID         int64   `json:"id"`
+	Type       string  `json:"type"`
+	Title      string  `json:"title"`
+	Message    string  `json:"message,omitempty"`
+	EntityType string  `json:"entity_type,omitempty"`
+	EntityID   string  `json:"entity_id,omitempty"`
+	Severity   string  `json:"severity"`
+	IsRead     bool    `json:"is_read"`
+	ReadAt     *string `json:"read_at,omitempty"`
+	CreatedAt  string  `json:"created_at"`
+}

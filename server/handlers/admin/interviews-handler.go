@@ -695,18 +695,31 @@ func (h *AdminHandlers) GetInterviewerRoomToken(c *gin.Context) {
 		return
 	}
 
-	err = h.DB.QueryRowContext(ctx, `
-		SELECT email, role FROM administrators WHERE id = $1
-	`, adminID).Scan(&adminEmail, &adminRole)
-	if err != nil {
-		log.Printf("GetInterviewerRoomToken: failed to fetch admin: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
+	// The super admin (X-Admin-Token) is a synthetic identity that is never
+	// stored in the administrators table, so it can't be looked up there.
+	// Use what the middleware already attached to the context and skip the
+	// interviewer-match check - the super admin can join any room.
+	if isSuperAdmin, _ := c.Get("is_super_admin"); isSuperAdmin == true {
+		if email, ok := c.Get("user_email"); ok {
+			adminEmail, _ = email.(string)
+		}
+		if role, ok := c.Get("admin_role"); ok {
+			adminRole, _ = role.(string)
+		}
+	} else {
+		err = h.DB.QueryRowContext(ctx, `
+			SELECT email, role FROM administrators WHERE id = $1
+		`, adminID).Scan(&adminEmail, &adminRole)
+		if err != nil {
+			log.Printf("GetInterviewerRoomToken: failed to fetch admin: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
 
-	if adminID.(string) != interviewerID && adminRole != "hr" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: not the assigned interviewer for this session"})
-		return
+		if adminID.(string) != interviewerID && adminRole != "hr" {
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: not the assigned interviewer for this session"})
+			return
+		}
 	}
 
 	if status == "cancelled" || status == "completed" {
