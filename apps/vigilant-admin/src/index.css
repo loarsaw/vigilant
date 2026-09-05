@@ -111,6 +111,7 @@ body {
 .font-display {
   font-family: 'Rajdhani', sans-serif;
 }
+
 @layer base {
   * {
     @apply border-border;

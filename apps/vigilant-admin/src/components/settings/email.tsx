@@ -117,14 +117,14 @@ export function EmailCard({
     options: { value: string; label: string }[],
   ) => (
     <div>
-      <Label htmlFor={id} className="text-sm font-medium text-gray-200">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </Label>
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors"
+        className="w-full mt-2 px-3.5 py-2.5 bg-input border border-border rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -143,7 +143,7 @@ export function EmailCard({
     placeholder: string,
   ) => (
     <div>
-      <Label htmlFor={id} className="text-sm font-medium text-gray-200">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </Label>
       <Input
@@ -152,7 +152,7 @@ export function EmailCard({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full mt-2 bg-[#0f1419] border border-gray-700 text-white placeholder:text-gray-600 text-sm py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors"
+        className="w-full mt-2 bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
       />
     </div>
   );
@@ -167,7 +167,7 @@ export function EmailCard({
     placeholder: string,
   ) => (
     <div>
-      <Label htmlFor={id} className="text-sm font-medium text-gray-200">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </Label>
       <div className="relative mt-2">
@@ -177,12 +177,12 @@ export function EmailCard({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-[#0f1419] border border-gray-700 text-white placeholder:text-gray-600 text-sm pr-10 py-2.5 px-3.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400 transition-colors"
+          className="w-full bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm pr-10 py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
         />
         <button
           type="button"
           onClick={toggleShow}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
         >
           {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -192,8 +192,8 @@ export function EmailCard({
 
   const renderReadonlyField = (label: string, value: string) => (
     <div>
-      <Label className="text-sm font-medium text-gray-200">{label}</Label>
-      <div className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419]/50 border border-gray-700 rounded-lg text-white text-sm">
+      <Label className="text-sm font-medium text-foreground">{label}</Label>
+      <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
         {value || "—"}
       </div>
     </div>
@@ -207,7 +207,7 @@ export function EmailCard({
     toggleShow: () => void,
   ) => (
     <div>
-      <Label htmlFor={id} className="text-sm font-medium text-gray-200">
+      <Label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
       </Label>
       <div className="relative mt-2">
@@ -216,12 +216,12 @@ export function EmailCard({
           type={showSecret ? "text" : "password"}
           value={value || "••••••••••••••••"}
           readOnly
-          className="w-full bg-[#0f1419]/50 border border-gray-700 text-white text-sm py-2.5 px-3.5 rounded-lg pr-10 cursor-default"
+          className="w-full bg-input/50 border border-border text-foreground text-sm py-2.5 px-3.5 rounded-md pr-10 cursor-default"
         />
         <button
           type="button"
           onClick={toggleShow}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
         >
           {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
@@ -231,9 +231,9 @@ export function EmailCard({
 
   if (isLoadingEmail) {
     return (
-      <Card className="backdrop-blur-sm border rounded-xl p-6 bg-[#1a1f2e]/40 border-cyan-400/30">
-        <div className="flex items-center gap-3 text-gray-400">
-          <Loader2 className="h-5 w-5 animate-spin text-cyan-400" />
+      <Card className="border rounded-xl p-6 bg-card/40 border-primary/30">
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
           <span className="text-sm">Loading email configuration...</span>
         </div>
       </Card>
@@ -242,18 +242,20 @@ export function EmailCard({
 
   return (
     <Card
-      className={`backdrop-blur-sm border rounded-xl p-6 transition-colors ${
-        editMode.email ? "bg-[#1a1f2e]/80 border-gray-700/50" : "bg-[#1a1f2e]/40 border-cyan-400/30"
+      className={`border rounded-xl p-6 transition-colors ${
+        editMode.email ? "bg-card/80 border-border" : "bg-card/40 border-primary/30"
       }`}
     >
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
-        <div className="p-2.5 bg-cyan-400/10 rounded-lg shrink-0">
-          <Mail className="h-6 w-6 text-cyan-400" />
+        <div className="p-2.5 bg-primary/10 rounded-lg shrink-0 border border-primary/20">
+          <Mail className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="text-lg font-semibold text-white">Email Configuration</h2>
-          <p className="text-sm text-gray-400 mt-1">
+          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+            Email Configuration
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
             {isEmailConfigured && !editMode.email
               ? "Configured • Click Edit to modify"
               : "Configure email service for notifications"}
@@ -262,7 +264,7 @@ export function EmailCard({
         {isEmailConfigured && (
           <button
             onClick={() => toggleEditMode("email")}
-            className="px-3 py-1.5 text-sm bg-cyan-400/10 hover:bg-cyan-400/20 text-cyan-400 rounded-lg transition-colors flex items-center gap-2"
+            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-wide"
           >
             <Edit3 className="h-4 w-4" />
             {editMode.email ? "Cancel" : "Edit"}
@@ -270,8 +272,7 @@ export function EmailCard({
         )}
       </div>
 
-      <div className="space-y-4 border-t border-gray-700/50 pt-6">
-        {/* Provider selector — only in edit/setup mode */}
+      <div className="space-y-4 border-t border-border pt-6">
         {(editMode.email || !isEmailConfigured) &&
           renderSelectField(
             "email-provider",
@@ -284,7 +285,6 @@ export function EmailCard({
             ],
           )}
 
-        {/* Readonly provider display */}
         {isEmailConfigured &&
           !editMode.email &&
           renderReadonlyField(
@@ -292,7 +292,6 @@ export function EmailCard({
             emailConfig.provider === "aws" ? "AWS SES" : "Twilio SendGrid",
           )}
 
-        {/* ── AWS SES fields ── */}
         {emailConfig.provider === "aws" && (
           <div className="space-y-4">
             {editMode.email || !isEmailConfigured ? (
@@ -342,14 +341,14 @@ export function EmailCard({
                 <div>
                   <Label
                     htmlFor="accept-incoming-emails"
-                    className="text-sm font-medium text-gray-200 flex items-center gap-2 cursor-pointer"
+                    className="text-sm font-medium text-foreground flex items-center gap-2 cursor-pointer"
                   >
                     <input
                       id="accept-incoming-emails"
                       type="checkbox"
                       checked={emailConfig.acceptIncomingEmails}
                       onChange={(e) => handleEmailChange("acceptIncomingEmails", e.target.checked)}
-                      className="w-4 h-4 bg-[#0f1419] border border-gray-700 rounded text-cyan-400 focus:ring-2 focus:ring-cyan-400 cursor-pointer"
+                      className="w-4 h-4 bg-input border border-border rounded text-primary focus:ring-2 focus:ring-ring cursor-pointer"
                     />
                     Accept Incoming Emails
                   </Label>
@@ -375,18 +374,18 @@ export function EmailCard({
                 {renderReadonlyField("App Login URL", emailConfig.sesLoginUrl)}
 
                 <div>
-                  <Label className="text-sm font-medium text-gray-200">
+                  <Label className="text-sm font-medium text-foreground">
                     Accept Incoming Emails
                   </Label>
-                  <div className="w-full mt-2 px-3.5 py-2.5 bg-[#0f1419]/50 border border-gray-700 rounded-lg text-white text-sm flex items-center gap-2">
+                  <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm flex items-center gap-2">
                     {emailConfig.acceptIncomingEmails ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 text-cyan-400" />
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
                         Enabled
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 text-gray-500" />
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
                         Disabled
                       </>
                     )}
@@ -397,7 +396,6 @@ export function EmailCard({
           </div>
         )}
 
-        {/* ── Twilio fields ── */}
         {emailConfig.provider === "twilio" && (
           <div className="space-y-4">
             {editMode.email || !isEmailConfigured ? (
@@ -448,18 +446,17 @@ export function EmailCard({
 
         {/* ── Error message ── */}
         {saveEmailError && (
-          <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <div className="flex items-center gap-2 px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
             <AlertCircle className="h-4 w-4 shrink-0" />
             {saveEmailError}
           </div>
         )}
 
-        {/* ── Save button — shown in edit/setup mode ── */}
         {(editMode.email || !isEmailConfigured) && (
           <button
             onClick={handleSave}
             disabled={isSavingEmail}
-            className="w-full mt-2 px-4 py-2.5 bg-cyan-400 hover:bg-cyan-300 disabled:bg-cyan-400/50 disabled:cursor-not-allowed text-black font-medium text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-wide text-sm rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.5)]"
           >
             {isSavingEmail ? (
               <>

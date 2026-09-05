@@ -47,16 +47,16 @@ export function Settings() {
   };
 
   return (
-    <div className="space-y-6 p-10">
+    <div className="space-y-6 p-10 bg-background min-h-screen">
       <div className="mb-8">
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white flex items-center gap-3">
-            <div className="p-2 bg-cyan-400/10 rounded-lg">
-              <Settings2 className="h-8 w-8 text-cyan-400" />
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-wide text-foreground flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+              <Settings2 className="h-8 w-8 text-primary" />
             </div>
             Settings
           </h1>
-          <p className="text-gray-400 mt-2 text-sm">
+          <p className="text-muted-foreground mt-2 text-sm">
             Configure your application integrations and API credentials
           </p>
         </div>
@@ -71,19 +71,19 @@ export function Settings() {
                   <button
                     key={key}
                     onClick={() => setActiveSection(key)}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors text-left ${
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors text-left border-l-2 ${
                       isActive
-                        ? "bg-cyan-400/10 text-cyan-400"
-                        : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                        ? "bg-primary/10 text-foreground border-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent"
                     }`}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
                     <span className="flex-1">{label}</span>
                     {key !== "ai" &&
                       (isConfigured ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                       ) : (
-                        <Circle className="h-3.5 w-3.5 text-gray-600 shrink-0" />
+                        <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
                       ))}
                   </button>
                 );
