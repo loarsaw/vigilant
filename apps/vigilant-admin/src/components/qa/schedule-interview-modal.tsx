@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { useInterview } from "@/hooks/use-interview";
+import { useEffect } from "react";
 
 interface JobApplication {
   id: string;
@@ -46,13 +47,14 @@ export function ScheduleInterviewModal({
   const [duration, setDuration] = useState("60");
   const [interviewType, setInterviewType] = useState("");
   const [interviewURL, setInterviewURL] = useState("");
-  const [timezone, setTimezone] = useState("UTC");
   const [selectedApplicationId, setSelectedApplicationId] = useState("");
   const [notes, setNotes] = useState("");
   const [interviewerId, setInterviewerId] = useState("");
   const [interviewerSearch, setInterviewerSearch] = useState("");
   const { scheduleInterviewAsync, isScheduling, interviewers, isLoadingInterviewers } =
     useInterview(candidateId);
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const filteredInterviewers = interviewers.filter((i) => {
     const q = interviewerSearch.toLowerCase();
@@ -68,7 +70,6 @@ export function ScheduleInterviewModal({
       setDuration("60");
       setInterviewType("");
       setInterviewURL("");
-      setTimezone("UTC");
       setSelectedApplicationId("");
       setNotes("");
       setInterviewerId("");
@@ -77,21 +78,16 @@ export function ScheduleInterviewModal({
   }, [isOpen]);
 
   const handleConfirm = async () => {
-    if (
-      !selectedDate ||
-      !time ||
-      !selectedApplicationId ||
-      !interviewerId ||
-      // !interviewURL ||
-      !interviewType
-    ) {
+    if (!selectedDate || !time || !selectedApplicationId || !interviewerId || !interviewType) {
       alert("Please fill in all required fields");
       return;
     }
 
     const [hours, minutes] = time.split(":");
-    const scheduledAt = new Date(selectedDate);
-    scheduledAt.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    const yyyy = selectedDate.getFullYear();
+    const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(selectedDate.getDate()).padStart(2, "0");
+    const scheduledAtLocal = `${yyyy}-${mm}-${dd}T${hours.padStart(2, "0")}:${minutes.padStart(2, "0")}:00`;
 
     try {
       await scheduleInterviewAsync({
@@ -100,10 +96,10 @@ export function ScheduleInterviewModal({
         interviewer_id: interviewerId,
         position: selectedApplication?.position_title ?? "",
         interview_type: interviewType,
-        scheduled_at: scheduledAt.toISOString(),
+        scheduled_at: scheduledAtLocal,
+        scheduled_timezone: timezone,
         scheduled_duration: parseInt(duration),
         interview_url: interviewURL,
-        timezone,
       });
 
       onClose();
@@ -120,7 +116,6 @@ export function ScheduleInterviewModal({
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Calendar Side */}
           <div className="bg-[#0f1419] rounded-lg border border-gray-800 p-4 h-fit">
             <h3 className="text-white font-medium mb-3">Select Date</h3>
             <CalendarComponent
@@ -131,9 +126,7 @@ export function ScheduleInterviewModal({
             />
           </div>
 
-          {/* Details Side */}
           <div className="space-y-4">
-            {/* Application Select */}
             <div>
               <Label className="text-gray-300">Application</Label>
               <Select
@@ -187,7 +180,6 @@ export function ScheduleInterviewModal({
               </div>
             </div>
 
-            {/* Interview Type */}
             <div>
               <Label className="text-gray-300">Interview Type</Label>
               <Select value={interviewType} onValueChange={setInterviewType}>
@@ -220,28 +212,6 @@ export function ScheduleInterviewModal({
                       {i.full_name} — {i.email}
                     </SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* <div>
-              <Label className="text-gray-300">Meet Link</Label>
-              <Input
-                placeholder="https://meet.google.com/..."
-                value={interviewURL}
-                onChange={(e) => setInterviewURL(e.target.value)}
-                className="bg-[#0f1419] border-gray-700 text-white mt-1"
-              />
-            </div> */}
-
-            <div>
-              <Label className="text-gray-300">Timezone</Label>
-              <Select value={timezone} onValueChange={setTimezone}>
-                <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="UTC">UTC</SelectItem>
                 </SelectContent>
               </Select>
             </div>

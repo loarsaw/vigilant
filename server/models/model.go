@@ -450,13 +450,16 @@ type RepoAnalysis struct {
 // ========================================
 
 type CreateInterviewSessionRequest struct {
-	CandidateSessionID string     `json:"candidate_session_id" validate:"required"`
-	ApplicationID      *string    `json:"application_id,omitempty"`
-	InterviewerID      *string    `json:"interviewer_id,omitempty"`
-	Position           *string    `json:"position,omitempty"`
-	InterviewType      *string    `json:"interview_type,omitempty"`
-	ScheduledAt        *time.Time `json:"scheduled_at,omitempty"`
-	ScheduledDuration  *int       `json:"scheduled_duration,omitempty"`
+	CandidateID       string `json:"candidate_id"        binding:"required"`
+	ApplicationID     string `json:"application_id"`
+	PositionID        string `json:"position_id"`
+	InterviewerID     string `json:"interviewer_id"      binding:"required"`
+	Position          string `json:"position"            binding:"required"`
+	InterviewType     string `json:"interview_type"      binding:"required"`
+	ScheduledAt       string `json:"scheduled_at"        binding:"required"`
+	ScheduledTimezone string `json:"scheduled_timezone"  binding:"required"`
+	ScheduledDuration int    `json:"scheduled_duration"  binding:"required,min=15"`
+	InterviewURL      string `json:"interview_url"`
 }
 
 type InterviewSession struct {

@@ -416,17 +416,19 @@ export interface CandidateApplicationsResponse {
   total: number;
 }
 
-export interface CreateInterviewPayload {
+interface CreateInterviewPayload {
   candidate_id: string;
   application_id: string;
   interviewer_id: string;
   position: string;
   interview_type: string;
-  scheduled_at: string;
+  scheduled_at: string;          
+  scheduled_timezone: string;    
   scheduled_duration: number;
   interview_url: string;
-  timezone: string;
 }
+
+
 export interface SendCustomEmailPayload {
   to_email: string;
   candidate_name: string;

@@ -32,7 +32,6 @@ export function SandboxView({
   const [activePanel, setActivePanel] = useState<PanelId>(defaultPanel);
 
   const loaderFrameworkId = files ? "" : id;
-  console.log(loaderFrameworkId, "id");
   const { data: loaded, loading, error } = useTemplateLoader(loaderFrameworkId);
 
   const resolvedFiles = files ?? loaded?.files ?? {};

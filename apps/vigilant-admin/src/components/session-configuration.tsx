@@ -128,7 +128,10 @@ export function SessionConfigurationCard({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="React">React</SelectItem>
-                  <SelectItem value="Nextjs">Next.js</SelectItem>
+                  <SelectItem value="Vue">Vue</SelectItem>
+                  <SelectItem value="Vanilla">Vanilla</SelectItem>
+                  <SelectItem value="Svelte">Svelte</SelectItem>
+
                 </SelectContent>
               </Select>
             </div>
