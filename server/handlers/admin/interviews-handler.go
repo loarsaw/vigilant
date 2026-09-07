@@ -26,6 +26,7 @@ import (
 	"github.com/lib/pq"
 )
 
+// https://stackoverflow.com/a/16600612/15088678
 var legacyTZAliases = map[string]string{
 	"Asia/Calcutta": "Asia/Kolkata",
 	"Asia/Katmandu": "Asia/Kathmandu",

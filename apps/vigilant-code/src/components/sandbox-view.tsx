@@ -18,7 +18,6 @@ interface SandboxViewProps {
   files: Record<string, string> | null;
   template: SandpackTemplateType | null;
   defaultPanel?: PanelId;
-  onBack: () => void;
 }
 
 export function SandboxView({
@@ -27,7 +26,6 @@ export function SandboxView({
   files,
   template,
   defaultPanel = "preview",
-  onBack,
 }: SandboxViewProps) {
   const [activePanel, setActivePanel] = useState<PanelId>(defaultPanel);
 
@@ -72,20 +70,7 @@ export function SandboxView({
         }}
       >
         <span style={{ fontSize: 14 }}>⚠ {error}</span>
-        <button
-          onClick={onBack}
-          style={{
-            marginTop: 8,
-            padding: "8px 20px",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.1)",
-            background: "none",
-            color: "rgba(255,255,255,0.5)",
-            cursor: "pointer",
-          }}
-        >
-          ← Back
-        </button>
+        
       </div>
     );
   }
@@ -119,7 +104,7 @@ export function SandboxView({
             flexShrink: 0,
           }}
         >
-          <button
+          {/* <button
             onClick={onBack}
             style={{
               background: "none",
@@ -134,7 +119,7 @@ export function SandboxView({
             onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.4)")}
           >
             ← Browse
-          </button>
+          </button> */}
 
           <div
             style={{
