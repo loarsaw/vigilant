@@ -69,8 +69,6 @@ const sendInterviewEmail = async (
   return response.data;
 };
 
-// Fetches a LiveKit room token for the interviewer/admin to join the same
-// room as the candidate — see AdminHandlers.GetInterviewerRoomToken.
 const fetchInterviewerRoomToken = async (
   sessionId: string,
 ): Promise<InterviewRoomTokenResponse> => {
@@ -167,12 +165,6 @@ export function useInterview(candidateId?: string, sessionIdForStatus?: string) 
     },
   });
 
-  // On-demand fetch of the interviewer's own LiveKit room token — call this
-  // right before navigating into the room (mirrors the candidate's
-  // verify-passcode flow, but authenticated via normal admin auth instead
-  // of a passcode). Stashed under ["interview", "admin-room"] so a room
-  // page can read it the same way the candidate flow reads
-  // ["interview", "room"].
   const roomTokenMutation = useMutation({
     mutationFn: fetchInterviewerRoomToken,
     onSuccess: (data) => {

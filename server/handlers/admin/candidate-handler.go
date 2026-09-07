@@ -82,7 +82,7 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 		if err != nil {
 			log.Printf("CreateCandidate: failed to load SES config: %v", err)
 		} else {
-			body, err := email.Render(email.TemplateCandidateCredentials, email.CandidateCredentialsData{
+			body, err := email.Render(email.TemplateCandidateCredentials, models.CandidateCredentialsData{
 				CandidateName: req.FullName,
 				Email:         req.Email,
 				Password:      req.Password,
@@ -495,7 +495,7 @@ func (h *AdminHandlers) UpdateCandidatePassword(c *gin.Context) {
 		if err != nil {
 			log.Printf("UpdateCandidatePassword: failed to load SES config: %v", err)
 		} else {
-			body, err := email.Render(email.TemplateCandidateCredentials, email.CandidateCredentialsData{
+			body, err := email.Render(email.TemplateCandidateCredentials, models.CandidateCredentialsData{
 				CandidateName: fullName,
 				Email:         candidateEmail,
 				Password:      req.NewPassword,

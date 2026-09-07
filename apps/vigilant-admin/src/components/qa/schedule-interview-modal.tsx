@@ -41,7 +41,7 @@ export function ScheduleInterviewModal({
   isLoadingApplications,
   onSchedule,
 }: ScheduleModalProps) {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("60");
   const [interviewType, setInterviewType] = useState("");
@@ -63,7 +63,7 @@ export function ScheduleInterviewModal({
 
   useEffect(() => {
     if (!isOpen) {
-      setSelectedDate(new Date());
+      setSelectedDate(undefined);
       setTime("");
       setDuration("60");
       setInterviewType("");
@@ -71,6 +71,8 @@ export function ScheduleInterviewModal({
       setTimezone("UTC");
       setSelectedApplicationId("");
       setNotes("");
+      setInterviewerId("");
+      setInterviewerSearch("");
     }
   }, [isOpen]);
 
@@ -80,7 +82,7 @@ export function ScheduleInterviewModal({
       !time ||
       !selectedApplicationId ||
       !interviewerId ||
-      !interviewURL ||
+      // !interviewURL ||
       !interviewType
     ) {
       alert("Please fill in all required fields");
@@ -125,7 +127,7 @@ export function ScheduleInterviewModal({
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md"
+              disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
             />
           </div>
 
@@ -222,7 +224,7 @@ export function ScheduleInterviewModal({
               </Select>
             </div>
 
-            <div>
+            {/* <div>
               <Label className="text-gray-300">Meet Link</Label>
               <Input
                 placeholder="https://meet.google.com/..."
@@ -230,7 +232,7 @@ export function ScheduleInterviewModal({
                 onChange={(e) => setInterviewURL(e.target.value)}
                 className="bg-[#0f1419] border-gray-700 text-white mt-1"
               />
-            </div>
+            </div> */}
 
             <div>
               <Label className="text-gray-300">Timezone</Label>

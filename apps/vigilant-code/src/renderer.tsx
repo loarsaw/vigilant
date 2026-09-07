@@ -4,7 +4,6 @@ import { HashRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Sandbox from "./app/pages/code/sandbox";
 import CodeEditor from "./app/pages/code/code-editor";
-import WaitingSetup from "./app/pages/auth/waiting";
 import AppLayout, {
   AuthLayout,
   EnvironmentLayout,
@@ -29,7 +28,7 @@ const AppRoutes = () => {
         <Route Component={ProtectedLayout}>
           <Route path="/dashboard" Component={Dashboard} />
           <Route Component={EnvironmentLayout}>
-            <Route path="/interview/:sessionId/room" element={<InterviewRoomPage />} />
+            <Route path="/interview/:sessionId/room" Component={InterviewRoomPage} />
             <Route path="/code/:id" Component={Sandbox} />
             <Route path="/editor/:language" Component={CodeEditor} />
           </Route>

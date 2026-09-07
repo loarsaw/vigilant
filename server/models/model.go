@@ -957,3 +957,69 @@ type NotificationResponse struct {
 	ReadAt     *string `json:"read_at,omitempty"`
 	CreatedAt  string  `json:"created_at"`
 }
+
+type InterviewJoinInviteData struct {
+	CandidateName string
+	Position      string
+	ScheduledAt   string
+	Duration      int
+	Passcode      string
+	Domain        string
+}
+
+type CandidateInviteData struct {
+	ApplyURL string
+}
+
+type CustomMessageData struct {
+	CandidateName string
+	Message       string
+}
+
+type LoginLinkData struct {
+	CandidateName string
+	LoginURL      string
+}
+
+type CandidateCredentialsData struct {
+	CandidateName string
+	Email         string
+	Password      string
+	LoginURL      string
+}
+
+type InterviewInviteData struct {
+	CandidateName    string
+	InterviewerEmail string
+	Position         string
+	InterviewType    string
+	ScheduledAt      string
+	Duration         int
+	MeetLink         string
+	LoginURL         string
+}
+
+type InterviewReminderData struct {
+	CandidateName string
+	Position      string
+	ScheduledAt   string
+	MeetLink      string
+}
+
+type InterviewerNotificationData struct {
+	InterviewerName string
+	CandidateName   string
+	InterviewURL    string
+}
+
+type AssignmentInviteData struct {
+	CandidateName string
+	Position      string
+	RepoURL       string
+	HighTier      bool
+}
+
+type ShortlistedFinalData struct {
+	CandidateName string
+	Position      string
+}
