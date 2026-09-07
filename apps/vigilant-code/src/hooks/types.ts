@@ -1,4 +1,5 @@
 import { SandpackTemplateType } from "@/types/types";
+import { Room, ConnectionState } from "livekit-client";
 
 export interface LoginCredentials {
   username: string;
@@ -48,13 +49,13 @@ export interface HiringPosition {
   updated_at: string;
   application_id?: string;
   application_status?:
-    | "applied"
-    | "screening"
-    | "interviewing"
-    | "offered"
-    | "hired"
-    | "rejected"
-    | "withdrawn";
+  | "applied"
+  | "screening"
+  | "interviewing"
+  | "offered"
+  | "hired"
+  | "rejected"
+  | "withdrawn";
   applied_at?: string;
   interview?: {
     scheduled_at: string;
@@ -232,4 +233,13 @@ export interface PayloadProcess {
   isUnknown: boolean;
   memory: number;
   commnad: string;
+}
+
+
+export interface InterviewCallContextValue {
+  room: Room;
+  connectionState: ConnectionState;
+  disconnect: () => void;
+  reconnect: () => void;
+  roomPath: string | null;
 }

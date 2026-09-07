@@ -13,40 +13,63 @@ import (
 	"strings"
 	"time"
 	"vigilant/email"
+	"vigilant/middleware"
 	"vigilant/models"
 	"vigilant/utils"
+
+	"os"
+
+	_ "time/tzdata"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
-func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
-	var req struct {
-		CandidateID       string    `json:"candidate_id"       binding:"required"`
-		ApplicationID     string    `json:"application_id"`
-		PositionID        string    `json:"position_id"`
-		InterviewerID     string    `json:"interviewer_id"     binding:"required"`
-		Position          string    `json:"position"           binding:"required"`
-		InterviewType     string    `json:"interview_type"     binding:"required"`
-		ScheduledAt       time.Time `json:"scheduled_at"       binding:"required"`
-		ScheduledDuration int       `json:"scheduled_duration" binding:"required,min=15"`
-		InterviewURL      string    `json:"interview_url"`
-		TimeZone          string    `json:"timezone"`
-	}
+// https://stackoverflow.com/a/16600612/15088678
+var legacyTZAliases = map[string]string{
+	"Asia/Calcutta": "Asia/Kolkata",
+	"Asia/Katmandu": "Asia/Kathmandu",
+	"Asia/Saigon":   "Asia/Ho_Chi_Minh",
+	"Asia/Rangoon":  "Asia/Yangon",
+	"Asia/Dacca":    "Asia/Dhaka",
+	"Europe/Kiev":   "Europe/Kyiv",
+	"US/Eastern":    "America/New_York",
+	"US/Central":    "America/Chicago",
+	"US/Mountain":   "America/Denver",
+	"US/Pacific":    "America/Los_Angeles",
+}
 
+func normalizeTimezone(tz string) string {
+	if canonical, ok := legacyTZAliases[tz]; ok {
+		return canonical
+	}
+	return tz
+}
+
+func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
+	var req models.CreateInterviewSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request format", "details": err.Error()})
 		return
 	}
 
-	if req.TimeZone == "" {
-		req.TimeZone = "Asia/Kolkata"
+	loc, err := time.LoadLocation(normalizeTimezone(req.ScheduledTimezone))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid timezone", "details": err.Error()})
+		return
 	}
 
-	req.ScheduledAt = req.ScheduledAt.UTC()
+	const wallClockLayout = "2006-01-02T15:04:05"
+	scheduledAtLocal, err := time.ParseInLocation(wallClockLayout, req.ScheduledAt, loc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid scheduled_at format", "details": err.Error()})
+		return
+	}
 
-	if !req.ScheduledAt.After(time.Now().UTC()) {
+	scheduledAtUTC := scheduledAtLocal.UTC()
+
+	if !scheduledAtUTC.After(time.Now().UTC()) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "scheduled_at must be in the future"})
 		return
 	}
@@ -54,7 +77,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var candidateEmail, candidateName string
-	err := h.DB.QueryRowContext(ctx, `
+	err = h.DB.QueryRowContext(ctx, `
 		SELECT email, full_name FROM candidates
 		WHERE id = $1 AND is_active = true
 	`, req.CandidateID).Scan(&candidateEmail, &candidateName)
@@ -130,14 +153,13 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	metadataBytes, err := json.Marshal(gin.H{
 		"candidate_email": candidateEmail,
 		"candidate_name":  candidateName,
-		"timezone":        req.TimeZone,
+		"timezone":        req.ScheduledTimezone,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to build metadata"})
 		return
 	}
 
-	// interview_platform: 0 = Google Meet , 1 = LiveKit.
 	interviewPlatform := 1
 	interviewURL := req.InterviewURL
 
@@ -161,7 +183,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		req.InterviewType,
 		interviewPlatform,
 		interviewURL,
-		req.ScheduledAt,
+		scheduledAtUTC,
 		req.ScheduledDuration,
 		"scheduled",
 		string(metadataBytes),
@@ -185,11 +207,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 
 	log.Printf("Interview session created. ID: %d, candidate: %s, interviewer: %s", id, candidateEmail, interviewerEmail)
 
-	// Create the LiveKit room and a candidate join token scoped to this
-	// session's actual scheduled window (+ buffer for late starts/overruns).
-	// Non-fatal on failure — the session row already exists; room/token
-	// creation can be retried via a resend-invite or reschedule path.
-	validFor := time.Until(req.ScheduledAt) + time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
+	validFor := time.Until(scheduledAtUTC) + time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
 	if validFor < 0 {
 		validFor = time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
 	}
@@ -210,14 +228,10 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		log.Printf("CreateInterviewSession: LiveKitService not configured, skipping room/token creation for %s", sessionID)
 	}
 
-	// Generate a passcode tied to this session's LiveKit room token, instead
-	// of exposing a raw join URL/JWT to the candidate. The verify-passcode
-	// handler (separate endpoint) will look this up and return the room
-	// token to whoever presents the correct passcode
 	var passcode string
 	var passcodeExpiresAt time.Time
 	if livekitToken != "" {
-		passcode, passcodeExpiresAt, err = h.createRoomPasscode(ctx, sessionID, livekitToken, livekitHost, req.ScheduledAt, validFor)
+		passcode, passcodeExpiresAt, err = h.createRoomPasscode(ctx, sessionID, livekitToken, livekitHost, scheduledAtUTC, validFor)
 		if err != nil {
 			log.Printf("CreateInterviewSession: failed to create passcode for %s: %v", sessionID, err)
 		}
@@ -225,8 +239,6 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		log.Printf("CreateInterviewSession: skipping passcode creation for %s — no livekit token", sessionID)
 	}
 
-	// Send the interview invite email with the passcode + scheduled date/time
-	// (no room URL or JWT exposed here anymore).
 	if passcode != "" {
 		key, keyErr := email.DecodeKey(h.Cfg.EncryptionKey)
 		if keyErr != nil {
@@ -236,12 +248,18 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 			if sesErr != nil {
 				log.Printf("CreateInterviewSession: failed to load SES config for invite email: %v", sesErr)
 			} else {
-				body, renderErr := email.Render(email.TemplateInterviewJoinInvite, email.InterviewJoinInviteData{
+				domain := os.Getenv("DOMAIN")
+				if domain == "" {
+					domain = "localhost"
+				}
+
+				body, renderErr := email.Render(email.TemplateInterviewJoinInvite, models.InterviewJoinInviteData{
 					CandidateName: candidateName,
 					Position:      req.Position,
-					ScheduledAt:   req.ScheduledAt.Format(time.RFC1123),
+					ScheduledAt:   scheduledAtLocal.Format("Mon, 02 Jan 2006 03:04 PM MST"),
 					Duration:      req.ScheduledDuration,
 					Passcode:      passcode,
+					Domain:        email.ReverseDomain(domain),
 				})
 				if renderErr != nil {
 					log.Printf("CreateInterviewSession: failed to render invite email: %v", renderErr)
@@ -281,7 +299,8 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		"interview_type":      req.InterviewType,
 		"interview_platform":  interviewPlatform,
 		"interview_url":       interviewURL,
-		"scheduled_at":        req.ScheduledAt,
+		"scheduled_at":        scheduledAtUTC,
+		"scheduled_timezone":  req.ScheduledTimezone,
 		"scheduled_duration":  req.ScheduledDuration,
 		"status":              "scheduled",
 		"created_at":          createdAt,
@@ -320,6 +339,7 @@ func (h *AdminHandlers) createRoomPasscode(ctx context.Context, sessionID, roomT
 
 	return "", time.Time{}, fmt.Errorf("failed to generate unique passcode after retries")
 }
+
 func (h *AdminHandlers) ListApplicationInterviewFeedback(c *gin.Context) {
 	applicationID := c.Param("id")
 	if applicationID == "" {
@@ -992,6 +1012,18 @@ func (h *AdminHandlers) CreateInterviewFeedback(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
+	if interviewerIDStr == middleware.SuperAdminUUID {
+		if _, err := h.DB.ExecContext(ctx, `
+			INSERT INTO administrators (id, email, password_hash, full_name, role, is_active)
+			VALUES ($1, 'superadmin@system', '', 'Super Admin', 'superadmin', true)
+			ON CONFLICT (id) DO NOTHING
+		`, middleware.SuperAdminUUID); err != nil {
+			log.Printf("CreateInterviewFeedback: failed to ensure super admin row exists: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare interviewer identity"})
+			return
+		}
+	}
+
 	log.Printf("CreateInterviewFeedback: looking up session_id=%q for interviewer=%q", req.InterviewSessionID, interviewerIDStr)
 
 	var interviewSessionIntID int
@@ -1104,130 +1136,6 @@ func (h *AdminHandlers) CreateInterviewFeedback(c *gin.Context) {
 	})
 }
 
-func (h *AdminHandlers) sendInterviewSessionEmails(ctx context.Context, sessionID string, emailType string) {
-	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
-	if err != nil {
-		log.Printf("sendInterviewSessionEmails: failed to decode encryption key: %v", err)
-		return
-	}
-
-	sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
-	if err != nil {
-		log.Printf("sendInterviewSessionEmails: failed to load SES config: %v", err)
-		return
-	}
-
-	var candidateEmail, candidateName, interviewerEmail, interviewerName string
-	err = h.DB.QueryRowContext(ctx, `
-		SELECT 
-			c.email, 
-			COALESCE(c.full_name, ''),
-			COALESCE(a.email, ''),
-			COALESCE(a.full_name, '')
-		FROM interview_sessions iss
-		JOIN candidates c ON c.id = iss.candidate_id
-		LEFT JOIN administrators a ON a.id = iss.interviewer_id
-		WHERE iss.session_id = $1
-	`, sessionID).Scan(&candidateEmail, &candidateName, &interviewerEmail, &interviewerName)
-
-	if err != nil {
-		log.Printf("sendInterviewSessionEmails: failed to fetch candidate/interviewer: %v", err)
-		return
-	}
-
-	var candidateSubject, candidateTriggeredBy string
-	var candidateTemplateName string
-	var candidateData interface{}
-
-	switch emailType {
-	case "start":
-		candidateSubject = "Your interview is starting now"
-		candidateTriggeredBy = "start_interview_session"
-		candidateTemplateName = email.TemplateLoginLink
-		candidateData = email.LoginLinkData{
-			CandidateName: candidateName,
-			LoginURL:      sesCfg.SESLoginURL,
-		}
-	default:
-		log.Printf("sendInterviewSessionEmails: unknown email type: %s", emailType)
-		return
-	}
-
-	candidateBody, err := email.Render(candidateTemplateName, candidateData)
-	if err != nil {
-		log.Printf("sendInterviewSessionEmails: failed to render candidate email: %v", err)
-		return
-	}
-
-	_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
-		ToEmail:     candidateEmail,
-		ToName:      candidateName,
-		FromEmail:   sesCfg.SESFromEmail,
-		Subject:     candidateSubject,
-		BodyHTML:    candidateBody,
-		Template:    candidateTemplateName,
-		EntityType:  "interview_session",
-		EntityID:    sessionID,
-		TriggeredBy: candidateTriggeredBy,
-		Priority:    email.PriorityHigh,
-	})
-	if err != nil {
-		log.Printf("sendInterviewSessionEmails: failed to enqueue candidate email: %v", err)
-	}
-
-	// if interviewerEmail != "" {
-	// 	interviewerBody, err := email.Render(email.TemplateInterviewerNotification, email.InterviewerNotificationData{
-	// 		InterviewerName: interviewerName,
-	// 		CandidateName:   candidateName,
-	// 		InterviewURL:    sesCfg.SESLoginURL,
-	// 	})
-	// 	if err != nil {
-	// 		log.Printf("sendInterviewSessionEmails: failed to render interviewer email: %v", err)
-	// 	} else {
-	// 		_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
-	// 			ToEmail:     interviewerEmail,
-	// 			ToName:      interviewerName,
-	// 			FromEmail:   sesCfg.SESFromEmail,
-	// 			Subject:     "Interview session started - " + candidateName,
-	// 			BodyHTML:    interviewerBody,
-	// 			Template:    email.TemplateInterviewerNotification,
-	// 			EntityType:  "interview_session",
-	// 			EntityID:    sessionID,
-	// 			TriggeredBy: "start_interview_session_interviewer",
-	// 			Priority:    email.PriorityHigh,
-	// 		})
-	// 		if err != nil {
-	// 			log.Printf("sendInterviewSessionEmails: failed to enqueue interviewer email: %v", err)
-	// 		}
-	// 	}
-	// }
-}
-
-func (h *AdminHandlers) SendLoginLink(c *gin.Context) {
-	sessionID := c.Param("session_id")
-	if sessionID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id is required"})
-		return
-	}
-
-	var req struct {
-		EmailType string `json:"email_type" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email_type is required"})
-		return
-	}
-
-	go h.sendInterviewSessionEmails(c.Request.Context(), sessionID, req.EmailType)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message":    "email sent successfully",
-		"session_id": sessionID,
-		"email_type": req.EmailType,
-	})
-}
-
 func (h *AdminHandlers) StartInterviewSession(c *gin.Context) {
 	sessionID := c.Param("session_id")
 	if sessionID == "" {
@@ -1282,8 +1190,6 @@ func (h *AdminHandlers) StartInterviewSession(c *gin.Context) {
 		return
 	}
 
-	go h.sendInterviewSessionEmails(ctx, sessionID, "start")
-
 	c.JSON(http.StatusOK, gin.H{
 		"id":         session.ID,
 		"session_id": session.SessionID,
@@ -1330,18 +1236,26 @@ func (h *AdminHandlers) EndInterviewSession(c *gin.Context) {
 		&session.Status,
 		&session.UpdatedAt,
 	)
+
 	if err == sql.ErrNoRows {
 		var current struct {
 			exists  bool
 			status  string
 			endedAt *time.Time
 		}
-		_ = h.DB.QueryRowContext(ctx,
+
+		fallbackErr := h.DB.QueryRowContext(ctx,
 			`SELECT EXISTS(SELECT 1 FROM interview_sessions WHERE session_id = $1),
 			        COALESCE((SELECT status FROM interview_sessions WHERE session_id = $1), ''),
 			        (SELECT ended_at FROM interview_sessions WHERE session_id = $1)`,
-			sessionID, sessionID, sessionID,
+			sessionID,
 		).Scan(&current.exists, &current.status, &current.endedAt)
+
+		if fallbackErr != nil {
+			log.Printf("EndInterviewSession fallback lookup for session_id=%s: %v", sessionID, fallbackErr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to check interview session"})
+			return
+		}
 
 		if !current.exists {
 			c.JSON(http.StatusNotFound, gin.H{"error": "interview session not found"})
@@ -1356,6 +1270,7 @@ func (h *AdminHandlers) EndInterviewSession(c *gin.Context) {
 		})
 		return
 	}
+
 	if err != nil {
 		log.Printf("EndInterviewSession: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to end interview session"})

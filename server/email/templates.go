@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"strings"
 )
 
 const (
@@ -20,71 +21,6 @@ const (
 	TemplateInterviewJoinInvite     = "interview_join_invite"
 	TemplateShortlistedFinal        = "shortlisted_final"
 )
-
-type InterviewJoinInviteData struct {
-	CandidateName string
-	Position      string
-	ScheduledAt   string
-	Duration      int
-	Passcode      string
-}
-
-type CandidateInviteData struct {
-	ApplyURL string
-}
-
-type CustomMessageData struct {
-	CandidateName string
-	Message       string
-}
-
-type LoginLinkData struct {
-	CandidateName string
-	LoginURL      string
-}
-
-type CandidateCredentialsData struct {
-	CandidateName string
-	Email         string
-	Password      string
-	LoginURL      string
-}
-
-type InterviewInviteData struct {
-	CandidateName    string
-	InterviewerEmail string
-	Position         string
-	InterviewType    string
-	ScheduledAt      string
-	Duration         int
-	MeetLink         string
-	LoginURL         string
-}
-
-type InterviewReminderData struct {
-	CandidateName string
-	Position      string
-	ScheduledAt   string
-	MeetLink      string
-}
-
-type InterviewerNotificationData struct {
-	InterviewerName string
-	CandidateName   string
-	InterviewURL    string
-}
-
-type AssignmentInviteData struct {
-	CandidateName string
-	Position      string
-	RepoURL       string
-	HighTier      bool // true if the initial application stood out, false if standard qualification — never means "shortlisted," that's decided later
-}
-
-type ShortlistedFinalData struct {
-	CandidateName string
-	Position      string
-}
 
 var templates = map[string]*template.Template{}
 
@@ -125,15 +61,24 @@ func Render(templateName string, data any) (string, error) {
 	return buf.String(), nil
 }
 
+func ReverseDomain(domain string) string {
+	parts := strings.Split(domain, ".")
+	for i, j := 0, len(parts)-1; i < j; i, j = i+1, j-1 {
+		parts[i], parts[j] = parts[j], parts[i]
+	}
+	return strings.Join(parts, ".")
+}
+
 var interviewJoinInviteText = `Your Interview Has Been Scheduled
 
 Hi {{.CandidateName}},
 
 Your interview for the {{.Position}} position has been scheduled for {{.ScheduledAt}} ({{.Duration}} minutes).
 
-Use the passcode below to join your interview through the Vigilant desktop app at your scheduled time:
+Use the passcode and domain below to join your interview through the Vigilant desktop app at your scheduled time:
 
   Passcode: {{.Passcode}}
+  Domain: {{.Domain}}
 
 Please make sure you have the Vigilant desktop app installed before your scheduled time.
 
@@ -224,7 +169,7 @@ You can monitor the session, view process logs, and provide feedback from the da
 Best regards,
 `
 
-var assignmentInviteText = `{{if .HighTier}}Your Application Stood Out — Here's Your Assignment{{else}}Next Step: Your Assignment{{end}}
+var assignmentInviteText = `{{if .HighTier}}Your Application Stood Out - Here's Your Assignment{{else}}Next Step: Your Assignment{{end}}
 
 Hi {{.CandidateName}},
 
@@ -243,11 +188,11 @@ If you don't see the invitation, check your GitHub notifications or spam folder,
 Good luck!
 `
 
-var shortlistedFinalText = `Congratulations — You've Been Shortlisted
+var shortlistedFinalText = `Congratulations - You've Been Shortlisted
 
 Hi {{.CandidateName}},
 
-Great news — after reviewing your assignment for the {{.Position}} position, you've been shortlisted to move forward in our process.
+Great news - after reviewing your assignment for the {{.Position}} position, you've been shortlisted to move forward in our process.
 
 We'll be in touch soon with next steps.
 

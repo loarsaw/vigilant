@@ -12,6 +12,7 @@ import (
 
 	"vigilant/email"
 	"vigilant/middleware"
+	"vigilant/models"
 	"vigilant/utils"
 
 	"github.com/gin-gonic/gin"
@@ -59,7 +60,7 @@ func (h *AdminHandlers) CreateAccessLink(c *gin.Context) {
 		fromEmail = "no-reply@localhost"
 	}
 
-	body, err := email.Render(email.TemplateCandidateInvite, email.CandidateInviteData{
+	body, err := email.Render(email.TemplateCandidateInvite, models.CandidateInviteData{
 		ApplyURL: link,
 	})
 	if err != nil {

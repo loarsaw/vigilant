@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell, session, desktopCapturer } from "electron";
 import path from "path";
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -8,9 +8,37 @@ if (started) {
   app.quit();
 }
 
+// Prevent unhandled promise rejections (e.g. a cancelled or failed
+// screen-share picker) from crashing the whole app.
+process.on("unhandledRejection", (reason) => {
+  console.error("[main] Unhandled promise rejection:", reason);
+});
+
 ipcMain.handle("dev:isDev", async (_event) => {
   return { isDev: !app.isPackaged };
 });
+
+function setupDisplayMediaHandler() {
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (_request, callback) => {
+      desktopCapturer
+        .getSources({ types: ["screen"] })
+        .then((sources) => {
+          if (!sources.length) {
+            console.warn("[main] setDisplayMediaRequestHandler: no sources found (picker likely cancelled)");
+            callback({});
+            return;
+          }
+          callback({ video: sources[0], audio: "loopback" });
+        })
+        .catch((err) => {
+          console.error("[main] setDisplayMediaRequestHandler: desktopCapturer failed:", err);
+          callback({});
+        });
+    },
+    { useSystemPicker: false },
+  );
+}
 
 const createWindow = () => {
   // Create the browser window.
@@ -47,7 +75,10 @@ const createWindow = () => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", () => {
+  setupDisplayMediaHandler();
+  createWindow();
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits

@@ -416,17 +416,19 @@ export interface CandidateApplicationsResponse {
   total: number;
 }
 
-export interface CreateInterviewPayload {
+interface CreateInterviewPayload {
   candidate_id: string;
   application_id: string;
   interviewer_id: string;
   position: string;
   interview_type: string;
-  scheduled_at: string;
+  scheduled_at: string;          
+  scheduled_timezone: string;    
   scheduled_duration: number;
   interview_url: string;
-  timezone: string;
 }
+
+
 export interface SendCustomEmailPayload {
   to_email: string;
   candidate_name: string;
@@ -701,4 +703,46 @@ export interface GithubConfigResponse {
 export interface SaveGithubCredentialsPayload {
   org_name: string;
   token: string;
+}
+
+
+
+export type InterviewRecommendation = "hire" | "consider" | "no_hire";
+
+
+export interface InterviewFeedbackDetail {
+  id: number;
+  interviewer_id: string | null;
+  technical_skills_score: number | null;
+  communication_score: number | null;
+  problem_solving_score: number | null;
+  cultural_fit_score: number | null;
+  overall_score: number | null;
+  comments: string | null;
+  recommendation: InterviewRecommendation | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+
+
+export interface CreateInterviewFeedbackResponse {
+  id: number;
+  interview_session_id: number;
+  interviewer_id: string;
+  technical_skills_score: number;
+  communication_score: number;
+  problem_solving_score: number;
+  cultural_fit_score: number;
+  overall_score: number;
+  comments: string | null;
+  recommendation: InterviewRecommendation | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InterviewFeedbackListResponse {
+  application_id: string;
+  total: number;
+  data: InterviewSessionWithFeedback[]; 
 }

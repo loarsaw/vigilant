@@ -2,8 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
 }
 
 @layer utilities {
@@ -53,7 +60,6 @@ body {
     --sidebar-ring: 210 100% 62%;
   }
   .dark {
-    /* same values — app is dark-only by design, mirrors :root */
     --background: 222 38% 5%;
     --foreground: 218 62% 95%;
     --card: 223 38% 11%;
@@ -76,11 +82,9 @@ body {
   }
 }
 
-
 .font-display {
   font-family: 'Rajdhani', sans-serif;
 }
-
 
 @layer base {
   * {

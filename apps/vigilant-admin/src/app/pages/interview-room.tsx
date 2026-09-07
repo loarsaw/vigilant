@@ -9,8 +9,14 @@ import {
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CandidateLevel, Framework } from "@/types/types";
+import {
+  DSALanguage,
+  SessionConfigurationCard,
+  SessionType,
+} from "@/components/session-configuration";
 
 interface AdminRoomData {
   sessionId: string;
@@ -24,6 +30,37 @@ export default function AdminInterviewRoomPage() {
   const queryClient = useQueryClient();
 
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  // --- session configuration state (moved here from wherever this card lived before joining the room) ---
+  const [sessionType, setSessionType] = useState<SessionType>("");
+  const [dsaLanguage, setDsaLanguage] = useState<DSALanguage | "">("");
+  const [framework, setFramework] = useState<Framework | "">("");
+  const [level, setLevel] = useState<CandidateLevel | "">("");
+  const [dispatched, setDispatched] = useState(false);
+  const [isDispatching, setIsDispatching] = useState(false);
+
+  const canDispatch =
+    sessionType === "dsa"
+      ? !!dsaLanguage
+      : sessionType === "framework"
+        ? !!framework && !!level
+        : false;
+
+  const handleDispatch = async () => {
+    if (!canDispatch || !sessionId) return;
+    setIsDispatching(true);
+    try {
+      // TODO: wire this to your actual dispatch endpoint/socket call
+      // e.g. await api.post(`/interviews/${sessionId}/dispatch`, { sessionType, dsaLanguage, framework, level });
+      setDispatched(true);
+    } catch (err) {
+      console.error("[Admin] dispatch failed:", err);
+    } finally {
+      setIsDispatching(false);
+    }
+  };
+  // ---------------------------------------------------------------------------------------------------
 
   const adminRoom = queryClient.getQueryData<AdminRoomData>(["interview", "admin-room"]);
 
@@ -70,25 +107,71 @@ export default function AdminInterviewRoomPage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-slate-950">
-      <LiveKitRoom
-        video
-        audio
-        token={adminRoom.roomToken}
-        serverUrl={serverUrl}
+    <div className="h-screen w-screen bg-slate-950 flex overflow-hidden relative">
+      {/* Video area */}
+      <div
         data-lk-theme="default"
-        style={{ height: "100%" }}
-        onDisconnected={handleDisconnected}
-        onError={(err) => {
-          console.error("[LiveKit] admin connection error:", err);
-          setConnectionError(
-            "We couldn't connect to the interview room. Please check your connection and try again.",
-          );
-        }}
+        className="lk-room-container flex-1 min-w-0 h-full flex flex-col"
       >
-        <VideoConference chatMessageFormatter={formatChatMessageLinks} />
-        <RoomAudioRenderer />
-      </LiveKitRoom>
+        <LiveKitRoom
+          video
+          audio
+          token={adminRoom.roomToken}
+          serverUrl={serverUrl}
+          data-lk-theme="default"
+          style={{ height: "100%" }}
+          onDisconnected={handleDisconnected}
+          onError={(err) => {
+            console.error("[LiveKit] admin connection error:", err);
+            setConnectionError(
+              "We couldn't connect to the interview room. Please check your connection and try again.",
+            );
+          }}
+        >
+          <div className="flex-1 min-h-0 h-full">
+            <VideoConference chatMessageFormatter={formatChatMessageLinks} />
+          </div>
+          <RoomAudioRenderer />
+        </LiveKitRoom>
+      </div>
+
+      {/* Toggle arrow — sits on the edge of the panel, flips direction based on open state */}
+      <button
+        type="button"
+        onClick={() => setIsPanelOpen((v) => !v)}
+        aria-label={isPanelOpen ? "Close session panel" : "Open session panel"}
+        className={`absolute top-1/2 -translate-y-1/2 z-30 flex items-center justify-center
+          w-7 h-14 rounded-l-md bg-secondary border border-border/60 border-r-0
+          text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-all
+          ${isPanelOpen ? "right-[380px]" : "right-0"}`}
+      >
+        {isPanelOpen ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+      </button>
+
+      {/* Slide-out configuration panel */}
+      <div
+        className={`h-full bg-background border-l border-border/60 shrink-0 overflow-y-auto
+          transition-[width] duration-300 ease-in-out
+          ${isPanelOpen ? "w-[380px]" : "w-0"}`}
+      >
+        {/* fixed inner width so content doesn't reflow/squish mid-animation */}
+        <div className="w-[380px] p-4">
+          <SessionConfigurationCard
+            sessionType={sessionType}
+            dsaLanguage={dsaLanguage}
+            framework={framework}
+            level={level}
+            dispatched={dispatched}
+            isDispatching={isDispatching}
+            canDispatch={canDispatch}
+            onSessionTypeChange={setSessionType}
+            onDsaLanguageChange={setDsaLanguage}
+            onFrameworkChange={setFramework}
+            onLevelChange={setLevel}
+            onDispatch={handleDispatch}
+          />
+        </div>
+      </div>
     </div>
   );
 }

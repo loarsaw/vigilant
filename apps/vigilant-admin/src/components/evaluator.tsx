@@ -1,5 +1,9 @@
 import React, { useState, ChangeEvent } from "react";
-import { useInterview  } from "@/hooks/use-interview";
+import { CheckCircle2, ClipboardCheck, ThumbsDown, ThumbsUp, Meh } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useInterview } from "@/hooks/use-interview";
 import { CreateInterviewFeedbackPayload } from "@/hooks/types";
 
 interface EvaluationData {
@@ -14,12 +18,34 @@ interface ScoreEvaluatorProps {
 }
 
 const RECOMMENDATIONS = [
-  { value: "hire", label: "Hire" },
-  { value: "consider", label: "Consider" },
-  { value: "no_hire", label: "No hire" },
+  { value: "hire", label: "Hire", icon: ThumbsUp },
+  { value: "consider", label: "Consider", icon: Meh },
+  { value: "no_hire", label: "No hire", icon: ThumbsDown },
 ] as const;
 
 type Recommendation = (typeof RECOMMENDATIONS)[number]["value"] | "";
+
+function recommendationClass(value: Recommendation, active: boolean) {
+  if (!active) {
+    return "border-border/60 text-muted-foreground hover:border-border hover:text-foreground/80 bg-transparent";
+  }
+  switch (value) {
+    case "hire":
+      return "border-[hsl(var(--chart-4)/0.4)] bg-[hsl(var(--chart-4)/0.1)] text-[hsl(var(--chart-4))]";
+    case "consider":
+      return "border-[hsl(var(--chart-3)/0.4)] bg-[hsl(var(--chart-3)/0.1)] text-[hsl(var(--chart-3))]";
+    case "no_hire":
+      return "border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))]";
+    default:
+      return "";
+  }
+}
+
+function scoreTone(value: number) {
+  if (value >= 80) return "text-[hsl(var(--chart-4))]";
+  if (value >= 60) return "text-[hsl(var(--chart-3))]";
+  return "text-[hsl(var(--destructive))]";
+}
 
 const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) => {
   const { submitFeedbackAsync, isSubmittingFeedback, feedbackError } = useInterview();
@@ -36,13 +62,12 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
 
   const handleSliderChange = (key: keyof EvaluationData, value: string): void => {
     setScores((prev) => ({ ...prev, [key]: parseInt(value, 10) }));
+    setSubmitSuccess(false);
   };
 
   const overallScore: number = Math.round(
     Object.values(scores).reduce((a, b) => a + b, 0) / Object.keys(scores).length,
   );
-  
-
 
   const handleSubmit = async () => {
     setSubmitSuccess(false);
@@ -58,8 +83,7 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
     try {
       await submitFeedbackAsync(payload);
       setSubmitSuccess(true);
-    } catch {
-    }
+    } catch {}
   };
 
   interface SliderProps {
@@ -69,10 +93,10 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
   }
 
   const ScoreSlider: React.FC<SliderProps> = ({ label, value, stateKey }) => (
-    <div className="mb-6">
-      <div className="flex justify-between mb-2">
-        <span className="text-gray-300 font-medium">{label}</span>
-        <span className="text-cyan-400 font-bold">{value}%</span>
+    <div>
+      <div className="flex justify-between items-baseline mb-2">
+        <span className="text-foreground/80 text-sm font-medium">{label}</span>
+        <span className={`font-display font-bold text-sm ${scoreTone(value)}`}>{value}%</span>
       </div>
       <input
         type="range"
@@ -83,89 +107,106 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
         onChange={(e: ChangeEvent<HTMLInputElement>) =>
           handleSliderChange(stateKey, e.target.value)
         }
-        className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-cyan-500 hover:accent-cyan-400 transition-all"
+        className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary transition-all"
       />
     </div>
   );
 
   return (
-    <div className="bg-[#1a1f2e] p-8 rounded-xl w-full shadow-2xl border border-gray-800 font-sans">
-      <h2 className="text-xl font-semibold text-white mb-8">Evaluation scores</h2>
-
-      <ScoreSlider
-        label="Technical skills"
-        value={scores.technicalSkills}
-        stateKey="technicalSkills"
-      />
-      <ScoreSlider label="Communication" value={scores.communication} stateKey="communication" />
-      <ScoreSlider
-        label="Problem solving"
-        value={scores.problemSolving}
-        stateKey="problemSolving"
-      />
-      <ScoreSlider label="Cultural fit" value={scores.culturalFit} stateKey="culturalFit" />
-
-      <hr className="border-gray-800 my-6" />
-
-      <div className="flex justify-between items-center mb-8">
-        <span className="text-white font-bold text-lg uppercase tracking-wider">Overall score</span>
-        <span className="text-cyan-400 text-3xl font-black">
-          {overallScore}
-          <span className="text-gray-500 text-xl ml-1">/100</span>
-        </span>
-      </div>
-
-      <hr className="border-gray-800 my-6" />
-
-      <div className="mb-6">
-        <p className="text-gray-400 text-sm mb-3">Recommendation</p>
-        <div className="flex gap-3">
-          {RECOMMENDATIONS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setRecommendation(value)}
-              className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-all ${
-                recommendation === value
-                  ? value === "hire"
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                    : value === "consider"
-                      ? "border-amber-500 bg-amber-500/10 text-amber-400"
-                      : "border-red-500 bg-red-500/10 text-red-400"
-                  : "border-gray-700 text-gray-400 hover:border-gray-500"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
+    <Card className="border-border/60">
+      <CardHeader>
+        <CardTitle className="font-display text-lg tracking-wide flex items-center gap-2">
+          <ClipboardCheck className="h-5 w-5 text-primary" />
+          Evaluation Scores
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-5">
+          <ScoreSlider
+            label="Technical skills"
+            value={scores.technicalSkills}
+            stateKey="technicalSkills"
+          />
+          <ScoreSlider
+            label="Communication"
+            value={scores.communication}
+            stateKey="communication"
+          />
+          <ScoreSlider
+            label="Problem solving"
+            value={scores.problemSolving}
+            stateKey="problemSolving"
+          />
+          <ScoreSlider label="Cultural fit" value={scores.culturalFit} stateKey="culturalFit" />
         </div>
-      </div>
 
-      {/* Notes */}
-      <div className="mb-6">
-        <p className="text-gray-400 text-sm mb-2">Notes</p>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Add observations, strengths, areas of concern…"
-          rows={4}
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-gray-200 text-sm placeholder-gray-600 resize-none focus:outline-none focus:border-cyan-500 transition-colors"
-        />
-      </div>
+        <div className="pt-4 border-t border-border/60 flex items-center justify-between">
+          <span className="text-muted-foreground text-sm font-display font-semibold tracking-wide uppercase">
+            Overall score
+          </span>
+          <span className={`font-display font-black text-3xl ${scoreTone(overallScore)}`}>
+            {overallScore}
+            <span className="text-muted-foreground text-lg font-medium ml-1">/100</span>
+          </span>
+        </div>
 
-      {/* Feedback */}
-      {feedbackError && <p className="text-red-400 text-sm mb-4">{feedbackError}</p>}
-      {submitSuccess && (
-        <p className="text-emerald-400 text-sm mb-4">Feedback submitted successfully.</p>
-      )}
+        <div className="pt-4 border-t border-border/60 space-y-3">
+          <p className="text-muted-foreground text-sm">Recommendation</p>
+          <div className="flex gap-2">
+            {RECOMMENDATIONS.map(({ value, label, icon: Icon }) => {
+              const active = recommendation === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setRecommendation(value);
+                    setSubmitSuccess(false);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm font-display font-semibold tracking-wide transition-colors ${recommendationClass(
+                    value,
+                    active,
+                  )}`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={isSubmittingFeedback}
-        className="w-full py-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
-      >
-        {isSubmittingFeedback ? "Submitting…" : "Submit feedback"}
-      </button>
-    </div>
+        <div className="space-y-2">
+          <p className="text-muted-foreground text-sm">Notes</p>
+          <textarea
+            value={notes}
+            onChange={(e) => {
+              setNotes(e.target.value);
+              setSubmitSuccess(false);
+            }}
+            placeholder="Add observations, strengths, areas of concern…"
+            rows={4}
+            className="w-full rounded-md bg-input/50 border border-border/60 p-3 text-sm text-foreground placeholder:text-muted-foreground/70 resize-none focus:outline-none focus:ring-1 focus:ring-primary/50 transition-colors"
+          />
+        </div>
+
+        {feedbackError && <p className="text-sm text-[hsl(var(--destructive))]">{feedbackError}</p>}
+        {submitSuccess && (
+          <div className="flex items-center gap-2 text-sm text-[hsl(var(--chart-4))]">
+            <CheckCircle2 className="h-4 w-4" />
+            Feedback submitted successfully.
+          </div>
+        )}
+
+        <Button
+          onClick={handleSubmit}
+          disabled={isSubmittingFeedback}
+          className="w-full font-display font-semibold tracking-wide gap-2"
+        >
+          {isSubmittingFeedback ? "Submitting…" : "Submit feedback"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 

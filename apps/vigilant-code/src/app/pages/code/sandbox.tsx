@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import { BrowseView } from "@/components/browse-view";
 import { SandboxView } from "@/components/sandbox-view";
 import { FRAMEWORKS } from "@/data/frameworks";
 import { ActiveFramework, AppView, PanelId } from "@/types/types";
@@ -21,21 +20,6 @@ export default function App() {
     }
   }, [id]);
 
-  const handleOpen = useCallback((id: string, panel: PanelId = "preview") => {
-    console.log(id, "id");
-    setActiveFramework({
-      id,
-      defaultPanel: panel,
-      files: null,
-      template: null,
-    });
-    setView("sandbox");
-  }, []);
-
-  const handleBack = useCallback(() => {
-    setView("browse");
-    setActiveFramework(null);
-  }, []);
 
   if (view === "sandbox" && activeFramework) {
     const fw = activeFramework.fw ?? FRAMEWORKS[activeFramework.id];
@@ -47,14 +31,7 @@ export default function App() {
         files={activeFramework.files}
         template={activeFramework.template}
         defaultPanel={activeFramework.defaultPanel}
-        onBack={handleBack}
       />
     );
   }
-
-  return (
-    <>
-      <BrowseView onOpen={handleOpen} />
-    </>
-  );
 }

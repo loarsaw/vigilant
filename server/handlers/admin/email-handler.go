@@ -186,7 +186,7 @@ func (h *AdminHandlers) SendInterviewInvite(c *gin.Context) {
 	}
 
 	// Render template for candidate
-	candidateHTML, err := email.Render(email.TemplateInterviewInvite, email.InterviewInviteData{
+	candidateHTML, err := email.Render(email.TemplateInterviewInvite, models.InterviewInviteData{
 		CandidateName:    req.CandidateName,
 		InterviewerEmail: req.InterviewerEmail,
 		Position:         req.Position,
@@ -202,7 +202,7 @@ func (h *AdminHandlers) SendInterviewInvite(c *gin.Context) {
 	}
 
 	// Render template for interviewer
-	interviewerHTML, err := email.Render(email.TemplateInterviewInvite, email.InterviewInviteData{
+	interviewerHTML, err := email.Render(email.TemplateInterviewInvite, models.InterviewInviteData{
 		CandidateName:    req.CandidateName,
 		InterviewerEmail: req.InterviewerEmail,
 		Position:         req.Position,
@@ -285,7 +285,7 @@ func (h *AdminHandlers) SendCustomEmail(c *gin.Context) {
 		return
 	}
 
-	body, err := email.Render(email.TemplateCustomMessage, email.CustomMessageData{
+	body, err := email.Render(email.TemplateCustomMessage, models.CustomMessageData{
 		CandidateName: req.CandidateName,
 		Message:       req.Message,
 	})
@@ -340,7 +340,7 @@ func (h *AdminHandlers) SendCandidateCredentialsEmail(c *gin.Context) {
 		return
 	}
 
-	bodyHTML, err := email.Render(email.TemplateCandidateCredentials, email.CandidateCredentialsData{
+	bodyHTML, err := email.Render(email.TemplateCandidateCredentials, models.CandidateCredentialsData{
 		CandidateName: req.FullName,
 		Email:         req.Email,
 		Password:      req.Password,
