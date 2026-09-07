@@ -9,6 +9,11 @@ import started from "electron-squirrel-startup";
 if (started) {
   app.quit();
 }
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[main] Unhandled promise rejection:", reason);
+});
+
 app.commandLine.appendSwitch('ignore-certificate-errors');
 let nativeAddon: any;
 try {
@@ -109,21 +114,20 @@ function setupDisplayMediaHandler() {
   session.defaultSession.setDisplayMediaRequestHandler(
     (_request, callback) => {
       desktopCapturer
-        .getSources({ types: ["window", "screen"] })
+        .getSources({ types: ["screen"] })
         .then((sources) => {
           if (!sources.length) {
-            console.error("[main] setDisplayMediaRequestHandler: no sources found");
             callback({});
             return;
           }
           callback({ video: sources[0], audio: "loopback" });
         })
         .catch((err) => {
-          console.error("[main] setDisplayMediaRequestHandler: desktopCapturer failed:", err);
+          console.error("[main] desktopCapturer failed:", err);
           callback({});
         });
     },
-    { useSystemPicker: true },
+    { useSystemPicker: false },
   );
 }
 
