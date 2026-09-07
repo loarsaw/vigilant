@@ -1,8 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-# Setup
+# Configuration
 
 This guide details the environment variables and security settings required to run the **Vigilant** suite. Configuration is split across two files: `vigilant.conf` (secrets and runtime settings) and `.env` (your public domain, used by Caddy).
 

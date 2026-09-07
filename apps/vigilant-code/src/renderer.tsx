@@ -10,21 +10,16 @@ import AppLayout, {
   ProtectedLayout,
 } from "./components/layout/app-layout";
 import Dashboard from "./app/pages/dashboard/dashboard";
-import { useDeepLink } from "./hooks/use-link";
-import DeepLinkHandler from "./app/pages/auth/link-handler";
 import LoginPage from "./app/pages/auth/login";
 import InterviewRoomPage from "./app/pages/interview/page";
 
 const AppRoutes = () => {
-  useDeepLink();
-
   return (
     <Routes>
       <Route Component={AppLayout}>
         <Route Component={AuthLayout}>
           <Route path="/" Component={LoginPage} />
         </Route>
-        <Route path="/linkstart" Component={DeepLinkHandler} />
         <Route Component={ProtectedLayout}>
           <Route path="/dashboard" Component={Dashboard} />
           <Route Component={EnvironmentLayout}>

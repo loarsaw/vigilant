@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   VideoConference,
@@ -6,7 +6,7 @@ import {
   RoomAudioRenderer,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
-import { ConnectionState } from "livekit-client";
+import { ConnectionState, RoomEvent } from "livekit-client";
 import { useInterviewCall } from "@/hooks/use-interview-call";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,42 @@ export default function InterviewRoomPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const { room, connectionState, reconnect } = useInterviewCall();
+  const [mediaError, setMediaError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleDisconnected = () => {
       navigate(`/interview/${sessionId}/ended`, { replace: true });
     };
-    room.on("disconnected", handleDisconnected);
+
+    const handleMediaDevicesError = (error: Error) => {
+      console.error("[LiveKit] Media device error:", error);
+      setMediaError(
+        "Screen sharing failed. This can happen if the share dialog was closed or your system blocked screen capture."
+      );
+    };
+
+    room.on(RoomEvent.Disconnected, handleDisconnected);
+    room.on(RoomEvent.MediaDevicesError, handleMediaDevicesError);
+
     return () => {
-      room.off("disconnected", handleDisconnected);
+      room.off(RoomEvent.Disconnected, handleDisconnected);
+      room.off(RoomEvent.MediaDevicesError, handleMediaDevicesError);
     };
   }, [room, sessionId, navigate]);
+
+  // Belt-and-braces: catch any remaining unhandled rejection in this
+  // renderer window so a stray promise (e.g. from getDisplayMedia)
+  // can never silently kill the window.
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error("[renderer] Unhandled promise rejection:", event.reason);
+      event.preventDefault();
+    };
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, []);
 
   if (
     connectionState === ConnectionState.Connecting ||
@@ -65,6 +91,18 @@ export default function InterviewRoomPage() {
       className="lk-room-container h-screen w-screen bg-slate-950"
       style={{ height: "100%" }}
     >
+      {mediaError && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 bg-red-500/90 text-white text-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          {mediaError}
+          <button
+            onClick={() => setMediaError(null)}
+            className="ml-2 text-white/80 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <VideoConference chatMessageFormatter={formatChatMessageLinks} />
       <RoomAudioRenderer />
     </div>
