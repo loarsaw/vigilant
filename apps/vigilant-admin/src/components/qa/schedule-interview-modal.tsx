@@ -242,10 +242,6 @@ export function ScheduleInterviewModal({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="UTC">UTC</SelectItem>
-                  <SelectItem value="Asia/Kolkata">Asia/Kolkata (IST)</SelectItem>
-                  <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                  <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
-                  <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
