@@ -12,13 +12,10 @@ import {
   StartEndInterviewResponse,
   SendEmailPayload,
   SendEmailResponse,
+  InterviewRoomTokenResponse,
 } from "./types";
 
-interface InterviewRoomTokenResponse {
-  session_id: string;
-  room_token: string;
-  room_host: string;
-}
+
 
 const fetchInterviewSessions = async (
   params: InterviewSessionsParams,

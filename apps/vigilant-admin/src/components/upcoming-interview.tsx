@@ -1,4 +1,4 @@
-import { Calendar, Video, Clock, Loader2, CalendarX } from "lucide-react";
+import { Calendar, Video, Clock, User, Loader2, CalendarX } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useInterview } from "@/hooks/use-interview";
 import { useEffect, useState } from "react";
@@ -31,8 +31,6 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
     }
   }, [nextInterview?.interview_type]);
 
-  console.log(nextInterview, "next interview");
-
   return (
     <Card className="bg-[#1a1f2e] border-gray-800">
       <CardHeader>
@@ -56,6 +54,13 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
                 </span>
               </div>
 
+              {nextInterview.interviewer_name && (
+                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                  <User className="h-4 w-4" />
+                  Interviewer: {nextInterview.interviewer_name}
+                </div>
+              )}
+
               <div className="flex items-center gap-2 text-gray-400 text-sm">
                 <Calendar className="h-4 w-4" />
                 {new Date(nextInterview.scheduled_at).toLocaleDateString("en-US", {
@@ -75,7 +80,7 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
               </div>
             </div>
 
-            <button
+            {/* <button
               onClick={() => {
                 if (window.api) {
                   console.log(nextInterview?.interview_url, "interview url");
@@ -88,7 +93,7 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
             >
               <Video className="h-4 w-4" />
               Join Interview
-            </button>
+            </button> */}
           </>
         )}
 
