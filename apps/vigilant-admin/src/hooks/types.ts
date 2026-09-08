@@ -8,6 +8,12 @@ export interface SESConfigPayload {
   ses_login_url: string;
 }
 
+export interface InterviewRoomTokenResponse {
+  session_id: string;
+  room_token: string;
+  room_host: string;
+}
+
 export interface SESConfigResponse {
   aws_region: string;
   aws_access_key_id: string;
@@ -369,6 +375,7 @@ export interface InterviewSession {
   status: string;
   created_at: string;
   metadata: string;
+  interviewer_name: string | null;
   is_upcoming: boolean;
 }
 
@@ -688,7 +695,7 @@ export interface SaveAIProviderConfigPayload {
 export interface AIProviderConfigForm {
   apiKey: string;
   model: string;
-  baseUrl: string;
+  baseUrl?: string;
 }
 
 

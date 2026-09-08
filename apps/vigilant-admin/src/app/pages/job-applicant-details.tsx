@@ -165,9 +165,6 @@ export function JobApplicationDetails() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Application Overview — data specific to THIS application, not
-              the candidate's general profile (position, status, scores,
-              github repo state, cover letter). */}
           {currentApplication && (
             <Card className="bg-card border-border">
               <CardHeader>
