@@ -695,7 +695,7 @@ export interface SaveAIProviderConfigPayload {
 export interface AIProviderConfigForm {
   apiKey: string;
   model: string;
-  baseUrl: string;
+  baseUrl?: string;
 }
 
 
