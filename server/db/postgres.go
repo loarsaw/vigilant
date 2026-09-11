@@ -1084,6 +1084,81 @@ CREATE TRIGGER trigger_log_job_application_events
     AFTER UPDATE ON job_applications
     FOR EACH ROW
     EXECUTE FUNCTION log_job_application_status_change();`,
+
+		// ========================================
+		// MIGRATION 23: Interview question sets table
+		// AI-generated (or manual) question sets tied to a specific
+		// interview_sessions row. Each regeneration attempt is a new row
+		// (attempt_number increments) rather than overwriting the previous set.
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS interview_question_sets (
+    id SERIAL PRIMARY KEY,
+    interview_session_id INTEGER NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
+    attempt_number INTEGER NOT NULL DEFAULT 1,
+
+    difficulty_level VARCHAR(20) NOT NULL,
+    category VARCHAR(50) DEFAULT 'mixed',
+    questions JSONB NOT NULL,
+
+    generated_by_ai BOOLEAN NOT NULL DEFAULT FALSE,
+    notes TEXT,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    generated_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
+
+    UNIQUE(interview_session_id, attempt_number)
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_question_sets_session ON interview_question_sets(interview_session_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_interview_question_sets_created ON interview_question_sets(created_at DESC)`,
+
+		`CREATE OR REPLACE FUNCTION update_interview_question_sets_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql`,
+		`DROP TRIGGER IF EXISTS interview_question_sets_updated_at_trigger ON interview_question_sets`,
+		`CREATE TRIGGER interview_question_sets_updated_at_trigger
+    BEFORE UPDATE ON interview_question_sets
+    FOR EACH ROW
+    EXECUTE FUNCTION update_interview_question_sets_updated_at()`,
+
+		`CREATE TABLE IF NOT EXISTS question_sets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    position_id UUID NOT NULL REFERENCES hiring_positions(id) ON DELETE CASCADE,
+
+    difficulty_level VARCHAR(20) NOT NULL,
+    category VARCHAR(50) DEFAULT 'mixed',
+    questions JSONB NOT NULL,
+
+    generated_by_ai BOOLEAN NOT NULL DEFAULT FALSE,
+    notes TEXT,
+
+    status VARCHAR(50) DEFAULT 'active',
+    is_active BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
+    updated_by UUID REFERENCES administrators(id) ON DELETE SET NULL
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_question_sets_position ON question_sets(position_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_question_sets_is_active ON question_sets(is_active)`,
+
+		`CREATE OR REPLACE FUNCTION update_question_sets_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql`,
+		`DROP TRIGGER IF EXISTS question_sets_updated_at_trigger ON question_sets`,
+		`CREATE TRIGGER question_sets_updated_at_trigger
+    BEFORE UPDATE ON question_sets
+    FOR EACH ROW
+    EXECUTE FUNCTION update_question_sets_updated_at()`,
 	}
 
 	for i, migration := range migrations {

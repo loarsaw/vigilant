@@ -1026,3 +1026,22 @@ type ShortlistedFinalData struct {
 	CandidateName string
 	Position      string
 }
+
+type LSession struct {
+	ID                int64     `json:"id"`
+	SessionID         string    `json:"session_id"`
+	CandidateID       string    `json:"candidate_id"`
+	CandidateName     *string   `json:"candidate_name"`
+	ApplicationID     *string   `json:"application_id"`
+	InterviewerID     *string   `json:"interviewer_id"`
+	InterviewerName   *string   `json:"interviewer_name"`
+	Position          string    `json:"position"`
+	InterviewType     string    `json:"interview_type"`
+	InterviewURL      string    `json:"interview_url"`
+	ScheduledAt       time.Time `json:"scheduled_at"`
+	ScheduledDuration int       `json:"scheduled_duration"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	Metadata          string    `json:"metadata"`
+	IsUpcoming        bool      `json:"is_upcoming"`
+}

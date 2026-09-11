@@ -535,30 +535,32 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 	}
 	offset := (page - 1) * limit
 
+	// NOTE: all filter conditions are prefixed with "s." since the query
+	// below now joins candidates (c) and administrators (a) to pull names.
 	args := []interface{}{}
 	argCount := 1
 	conditions := []string{}
 
 	if candidateID != "" {
-		conditions = append(conditions, fmt.Sprintf("candidate_id = $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("s.candidate_id = $%d", argCount))
 		args = append(args, candidateID)
 		argCount++
 	}
 
 	if applicationID != "" {
-		conditions = append(conditions, fmt.Sprintf("application_id = $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("s.application_id = $%d", argCount))
 		args = append(args, applicationID)
 		argCount++
 	}
 
 	if interviewerID != "" {
-		conditions = append(conditions, fmt.Sprintf("interviewer_id = $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("s.interviewer_id = $%d", argCount))
 		args = append(args, interviewerID)
 		argCount++
 	}
 
 	if status != "" {
-		conditions = append(conditions, fmt.Sprintf("status = $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("s.status = $%d", argCount))
 		args = append(args, status)
 		argCount++
 	}
@@ -566,11 +568,11 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 	now := time.Now().UTC()
 	switch filter {
 	case "upcoming":
-		conditions = append(conditions, fmt.Sprintf("scheduled_at > $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("s.scheduled_at > $%d", argCount))
 		args = append(args, now)
 		argCount++
 	case "past":
-		conditions = append(conditions, fmt.Sprintf("scheduled_at <= $%d", argCount))
+		conditions = append(conditions, fmt.Sprintf("s.scheduled_at <= $%d", argCount))
 		args = append(args, now)
 		argCount++
 	}
@@ -580,8 +582,11 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 		where = "WHERE " + strings.Join(conditions, " AND ")
 	}
 
+	// Count query stays on the bare table — it doesn't need the joined
+	// name columns, and the WHERE conditions above use "s." so we alias
+	// interview_sessions as s here too, to keep the SQL valid.
 	var total int
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM interview_sessions %s", where)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM interview_sessions s %s", where)
 	if err := h.DB.QueryRowContext(c.Request.Context(), countQuery, args...).Scan(&total); err != nil {
 		log.Printf("ListInterviewSessions: count error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to count sessions"})
@@ -595,13 +600,17 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 
 	query := fmt.Sprintf(`
 		SELECT
-			id, session_id, candidate_id, application_id,
-			interviewer_id, position, interview_type,
-			interview_url, scheduled_at, scheduled_duration,
-			status, created_at, metadata
-		FROM interview_sessions
+			s.id, s.session_id, s.candidate_id, s.application_id,
+			s.interviewer_id, s.position, s.interview_type,
+			s.interview_url, s.scheduled_at, s.scheduled_duration,
+			s.status, s.created_at, s.metadata,
+			c.full_name AS candidate_name,
+			a.full_name AS interviewer_name
+		FROM interview_sessions s
+		LEFT JOIN candidates c ON c.id = s.candidate_id
+		LEFT JOIN administrators a ON a.id = s.interviewer_id
 		%s
-		ORDER BY scheduled_at %s
+		ORDER BY s.scheduled_at %s
 		LIMIT $%d OFFSET $%d
 	`, where, orderDir, argCount, argCount+1)
 	args = append(args, limit, offset)
@@ -614,33 +623,17 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	type Session struct {
-		ID                int64     `json:"id"`
-		SessionID         string    `json:"session_id"`
-		CandidateID       string    `json:"candidate_id"`
-		ApplicationID     *string   `json:"application_id"`
-		InterviewerID     *string   `json:"interviewer_id"`
-		Position          string    `json:"position"`
-		InterviewType     string    `json:"interview_type"`
-		InterviewURL      string    `json:"interview_url"`
-		ScheduledAt       time.Time `json:"scheduled_at"`
-		ScheduledDuration int       `json:"scheduled_duration"`
-		Status            string    `json:"status"`
-		CreatedAt         time.Time `json:"created_at"`
-		Metadata          string    `json:"metadata"`
-		IsUpcoming        bool      `json:"is_upcoming"`
-	}
-
-	sessions := []Session{}
+	sessions := []models.LSession{}
 	for rows.Next() {
-		var s Session
-		var appID, ivrID, metadata sql.NullString
+		var s models.LSession
+		var appID, ivrID, metadata, candidateName, interviewerName sql.NullString
 
 		if err := rows.Scan(
 			&s.ID, &s.SessionID, &s.CandidateID, &appID,
 			&ivrID, &s.Position, &s.InterviewType,
 			&s.InterviewURL, &s.ScheduledAt, &s.ScheduledDuration,
 			&s.Status, &s.CreatedAt, &metadata,
+			&candidateName, &interviewerName,
 		); err != nil {
 			log.Printf("ListInterviewSessions: scan error: %v", err)
 			continue
@@ -654,6 +647,12 @@ func (h *AdminHandlers) ListInterviewSessions(c *gin.Context) {
 		}
 		if metadata.Valid {
 			s.Metadata = metadata.String
+		}
+		if candidateName.Valid {
+			s.CandidateName = &candidateName.String
+		}
+		if interviewerName.Valid {
+			s.InterviewerName = &interviewerName.String
 		}
 		s.IsUpcoming = s.ScheduledAt.After(now)
 

@@ -13,7 +13,15 @@ import {
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAIProvider } from "@/hooks/use-ai-provider";
+import { useProviderModels } from "@/hooks/use-provider-models";
 import { AIProviderConfigForm } from "@/hooks/types";
 
 type ProviderKey = "openai" | "gemini" | "claude";
@@ -35,6 +43,8 @@ const PROVIDERS: { key: ProviderKey; label: string; defaultModel: string; placeh
     },
   ];
 
+const MODEL_FETCH_DEBOUNCE_MS = 600;
+
 function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
   const meta = PROVIDERS.find((p) => p.key === providerKey)!;
 
@@ -48,26 +58,24 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
     saveProviderSuccess,
   } = useAIProvider(providerKey);
 
+  const {
+    models,
+    isLoading: isLoadingModels,
+    error: modelsError,
+    loadModels,
+  } = useProviderModels(providerKey);
+
   const [isEditingLocal, setIsEditingLocal] = useState(true);
   const [form, setForm] = useState<AIProviderConfigForm>({
     apiKey: "",
     model: meta.defaultModel,
-    baseUrl: "",
   });
   const [showSecret, setShowSecret] = useState(false);
 
+  const isEditing = isEditingLocal || !isProviderConfigured;
+
   useEffect(() => {
-    if (fetchedConfig) {
-      setForm((prev) => ({
-        ...prev,
-        model: fetchedConfig.model ?? meta.defaultModel,
-        baseUrl: fetchedConfig.base_url ?? "",
-      }));
-      setIsEditingLocal(false);
-    } else {
-      setIsEditingLocal(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setIsEditingLocal(!fetchedConfig);
   }, [fetchedConfig, providerKey]);
 
   useEffect(() => {
@@ -75,6 +83,23 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
       setIsEditingLocal(false);
     }
   }, [saveProviderSuccess]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+
+    setForm((prev) => (prev.model ? { ...prev, model: "" } : prev));
+
+    if (!form.apiKey) {
+      loadModels("");
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      loadModels(form.apiKey);
+    }, MODEL_FETCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timeout);
+  }, [form.apiKey, isEditing]);
 
   const handleChange = (field: keyof AIProviderConfigForm, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -85,7 +110,6 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
       provider: providerKey,
       api_key: form.apiKey,
       model: form.model,
-      base_url: form.baseUrl || undefined,
     });
   };
 
@@ -97,8 +121,6 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
       </div>
     );
   }
-
-  const isEditing = isEditingLocal || !isProviderConfigured;
 
   return (
     <div className="space-y-4">
@@ -145,37 +167,53 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
                 {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            {isProviderConfigured && (
+              <p className="mt-1.5 text-xs text-muted-foreground/70">
+                Re-enter your key to load available models and change the config.
+              </p>
+            )}
           </div>
 
           <div>
             <Label htmlFor={`${providerKey}-model`} className="text-sm font-medium text-foreground">
               Default Model
             </Label>
-            <Input
-              id={`${providerKey}-model`}
-              type="text"
-              placeholder={meta.defaultModel}
-              value={form.model}
-              onChange={(e) => handleChange("model", e.target.value)}
-              className="w-full mt-2 bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
-            />
-          </div>
 
-          <div>
-            <Label
-              htmlFor={`${providerKey}-base-url`}
-              className="text-sm font-medium text-foreground"
-            >
-              Base URL <span className="text-muted-foreground/70 font-normal">(optional)</span>
-            </Label>
-            <Input
-              id={`${providerKey}-base-url`}
-              type="text"
-              placeholder="Leave blank to use the default endpoint"
-              value={form.baseUrl}
-              onChange={(e) => handleChange("baseUrl", e.target.value)}
-              className="w-full mt-2 bg-input border border-border text-foreground placeholder:text-muted-foreground/60 text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
-            />
+            {!form.apiKey ? (
+              <div className="w-full mt-2 px-3.5 py-2.5 bg-input/30 border border-dashed border-border rounded-md text-muted-foreground text-sm">
+                Enter an API key to load available models
+              </div>
+            ) : isLoadingModels ? (
+              <div className="w-full mt-2 flex items-center gap-2 px-3.5 py-2.5 bg-input border border-border rounded-md text-muted-foreground text-sm">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading models...
+              </div>
+            ) : modelsError ? (
+              <div className="mt-2 flex items-center gap-2 px-3.5 py-2.5 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {modelsError}
+              </div>
+            ) : models.length > 0 ? (
+              <Select value={form.model} onValueChange={(value) => handleChange("model", value)}>
+                <SelectTrigger
+                  id={`${providerKey}-model`}
+                  className="w-full mt-2 bg-input border border-border text-foreground text-sm py-2.5 px-3.5 rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-colors"
+                >
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((modelId) => (
+                    <SelectItem key={modelId} value={modelId}>
+                      {modelId}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="w-full mt-2 px-3.5 py-2.5 bg-input/30 border border-dashed border-border rounded-md text-muted-foreground text-sm">
+                No models found for this key
+              </div>
+            )}
           </div>
         </>
       ) : (
@@ -201,13 +239,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
           <div>
             <Label className="text-sm font-medium text-foreground">Default Model</Label>
             <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
-              {form.model || "—"}
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-foreground">Base URL</Label>
-            <div className="w-full mt-2 px-3.5 py-2.5 bg-input/50 border border-border rounded-md text-foreground text-sm">
-              {form.baseUrl || "Default"}
+              {fetchedConfig?.model || "—"}
             </div>
           </div>
         </>
@@ -246,8 +278,6 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
 export function AIProvidersCard() {
   const [activeProvider, setActiveProvider] = useState<ProviderKey>("openai");
 
-  // Lightweight status check per provider so tabs can show a dot —
-  // each hook call is cheap since react-query caches by queryKey.
   const openaiStatus = useAIProvider("openai");
   const geminiStatus = useAIProvider("gemini");
   const claudeStatus = useAIProvider("claude");

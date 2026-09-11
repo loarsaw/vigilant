@@ -8,6 +8,12 @@ export interface SESConfigPayload {
   ses_login_url: string;
 }
 
+export interface InterviewRoomTokenResponse {
+  session_id: string;
+  room_token: string;
+  room_host: string;
+}
+
 export interface SESConfigResponse {
   aws_region: string;
   aws_access_key_id: string;
@@ -369,6 +375,7 @@ export interface InterviewSession {
   status: string;
   created_at: string;
   metadata: string;
+  interviewer_name: string | null;
   is_upcoming: boolean;
 }
 
@@ -688,7 +695,7 @@ export interface SaveAIProviderConfigPayload {
 export interface AIProviderConfigForm {
   apiKey: string;
   model: string;
-  baseUrl: string;
+  baseUrl?: string;
 }
 
 
@@ -745,4 +752,34 @@ export interface InterviewFeedbackListResponse {
   application_id: string;
   total: number;
   data: InterviewSessionWithFeedback[]; 
+}
+
+
+export type QuestionCategory = "coding" | "system_design" | "behavioral" | "conceptual";
+
+export interface GeneratedQuestion {
+  question: string;
+  category: QuestionCategory;
+  follow_ups: string[];
+  evaluation_tips: string;
+}
+
+export interface QuestionSet {
+  id: string;
+  interview_session_id: number;
+  attempt_number: number;
+  difficulty_level: string;
+  category: string;
+  questions: GeneratedQuestion[];
+  generated_by_ai: boolean;
+  notes: string;
+  generated_by: string | null;
+  created_at: string;
+}
+
+export interface GenerateQuestionsInput {
+  difficulty: string;
+  count?: number;
+  category?: string;
+  notes?: string;
 }

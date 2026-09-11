@@ -26,7 +26,6 @@ root.render(
     <HashRouter>
       <Routes>
         <Route path="/" Component={Login} />
-        <Route path="/interview/:sessionId/room" Component={AdminInterviewRoomPage} />
         <Route element={<SidebarLayout />}>
           <Route path="/dashboard" Component={Dashboard} />
           <Route path="/candidates" Component={CandidatesList} />

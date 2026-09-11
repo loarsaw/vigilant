@@ -33,12 +33,12 @@ export function SidebarLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside
-        className={`relative z-10 flex flex-col bg-sidebar border-r border-sidebar-border shadow-xl transition-all duration-200 ease-in-out flex-shrink-0
+        className={`relative z-10 flex flex-col bg-sidebar border-r border-sidebar-border/60 shadow-xl transition-all duration-200 ease-in-out flex-shrink-0
         ${collapsed ? "w-[72px]" : "w-60"}`}
       >
         {/* Logo */}
         <div
-          className={`flex items-center gap-2.5 border-b border-sidebar-border py-6 overflow-hidden
+          className={`flex items-center gap-2.5 border-b border-sidebar-border/60 py-6 overflow-hidden
           ${collapsed ? "justify-center px-0" : "px-6"}`}
         >
           <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
@@ -65,7 +65,7 @@ export function SidebarLayout() {
                 ${collapsed ? "justify-center px-0 py-3" : "px-4 py-2.5"}
                 ${
                   isActive
-                    ? "bg-primary/15 text-sidebar-foreground font-semibold border-primary"
+                    ? "bg-primary/15 text-sidebar-foreground font-display font-semibold tracking-wide border-primary"
                     : "text-sidebar-foreground/50 hover:text-sidebar-foreground/85 hover:bg-sidebar-accent/60 border-transparent font-normal"
                 }
               `}
@@ -87,7 +87,7 @@ export function SidebarLayout() {
           ))}
         </nav>
 
-        <div className="p-2 border-t border-sidebar-border">
+        <div className="p-2 border-t border-sidebar-border/60">
           <Button
             variant="ghost"
             onClick={() => {
@@ -95,7 +95,7 @@ export function SidebarLayout() {
                 navigate("/");
               });
             }}
-            className={`w-full flex items-center gap-3 text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive h-auto
+            className={`w-full flex items-center gap-3 text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive h-auto font-display font-semibold tracking-wide
               ${collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"}`}
           >
             <LogOut size={18} className="flex-shrink-0" />
@@ -107,7 +107,7 @@ export function SidebarLayout() {
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="absolute top-1/2 -right-3 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-sidebar-accent
-            border border-sidebar-border text-sidebar-foreground/60 hover:bg-sidebar-accent/70 flex items-center justify-center transition-colors"
+            border border-sidebar-border/60 text-sidebar-foreground/60 hover:bg-sidebar-accent/70 flex items-center justify-center transition-colors"
         >
           {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>

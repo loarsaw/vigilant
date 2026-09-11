@@ -139,6 +139,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		aiGroup.POST("/scenarios", h.SaveAIScenario)
 		aiGroup.GET("/scenarios", h.ListAIScenarios)
 		aiGroup.PATCH("/scenarios/:key/deactivate", h.DeactivateAIScenario)
+		aiGroup.POST("/interview-sessions/:id/questions/generate", h.GenerateQuestions)
 	}
 
 	// registerAdminRoutes

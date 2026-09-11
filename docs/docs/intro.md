@@ -4,8 +4,8 @@ sidebar_position: 1
 
 # Vigilant
 
-:::warning
-**UNDER DEVELOPMENT**: This project is currently under development and **not ready for use**. This documentation serves as a development guide and project tracking resource.
+:::note[Active Development]
+This project is under active development. Features and documentation are subject to change as work progresses.
 :::
 
 ## Overview
@@ -39,13 +39,15 @@ To ensure **Vigilant** runs smoothly in a production or staging environment, we 
 | **Network** | 100 Mbps | 1 Gbps (for real-time SSE & monitoring) |
 
 > **Note:** Since Go binaries are statically linked, you don't need to install the Go compiler on the VPS. Just ensure **Docker** and **Docker Compose** are active.
-
 ## Upcoming Features & Roadmap
 - [x] Initial system monitoring engine
 - [x] Go-based execution workers
 - [x] Amazon SES email integration
 - [ ] ~**Twilio Integration**~
-- [x] **Livkit Integration**
+- [x] **Livekit Integration**
 - [x] Process-level heuristics
+- [x] GitHub Integration
+- [ ] Self-Hosted & Managed GitLab Integration
+- [ ] Slack & Teams Webhooks
 
 ---
