@@ -15,8 +15,6 @@ import {
   PhoneOff,
   SlidersHorizontal,
   Clock,
-  NotebookPen,
-  PlayCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +48,9 @@ import {
 } from "@/components/session-configuration";
 import { useSessionFeedback } from "@/hooks/use-session-feedback";
 import FeedbackSummary from "@/components/feedback-summary";
+import { InterviewQuestionsPanel } from "@/components/questions-panel";
+import PreInterviewModal from "@/components/pre-interview-model";
+import { RoomConnectionErrorModal } from "@/components/connection-fallback";
 
 interface RoomCreds {
   roomToken: string;
@@ -118,8 +119,10 @@ export function InterviewDetail() {
     sessionId,
   );
 
-  console.log(existingFeedback, "existingFeedback");
-  // --- in-page room state (replaces navigating to /interview/:sessionId/room) ---
+  const [questionDifficulty, setQuestionDifficulty] = useState<string>("");
+  const [questionCategory, setQuestionCategory] = useState<string>("mixed");
+  const [questionCount, setQuestionCount] = useState(5);
+  // console.log(existingFeedback, "existingFeedback");
   const [roomCreds, setRoomCreds] = useState<RoomCreds | null>(null);
   const [isInRoom, setIsInRoom] = useState(false);
   const [roomConnectionError, setRoomConnectionError] = useState<string | null>(null);
@@ -127,15 +130,13 @@ export function InterviewDetail() {
   const [joinedAt, setJoinedAt] = useState<number | null>(null);
   const [elapsedLabel, setElapsedLabel] = useState("00:00");
   const [interviewNotes, setInterviewNotes] = useState("");
-  // -------------------------------------------------------------------------------
 
   const canDispatch =
     sessionType === "framework"
-      ? level !== "" && framework !== ""
+      ? framework !== ""
       : sessionType === "dsa"
         ? dsaLanguage !== ""
         : false;
-
   // The interview is considered "live" for gating purposes only once the
   // admin has explicitly started it — joining the LiveKit room alone
   // (isInRoom) is not enough to reveal the call/notes/panel UI.
@@ -296,95 +297,26 @@ export function InterviewDetail() {
 
     if (roomConnectionError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-          <div className="max-w-sm w-full text-center space-y-4">
-            <div className="flex justify-center">
-              <AlertTriangle className="w-10 h-10 text-red-400" />
-            </div>
-            <h2 className="text-xl font-semibold text-white">Couldn't join the interview</h2>
-            <p className="text-sm text-slate-400">{roomConnectionError}</p>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setRoomConnectionError(null)}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
-              >
-                Try again
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleLeaveRoom}
-                className="w-full py-2.5 rounded-xl text-slate-300"
-              >
-                Back to details
-              </Button>
-            </div>
-          </div>
-        </div>
+        <RoomConnectionErrorModal
+          roomConnectionError={roomConnectionError}
+          setRoomConnectionError={setRoomConnectionError}
+          handleLeaveRoom={handleLeaveRoom}
+        />
       );
     }
 
-    // --- Gate: joined the room but hasn't started the interview yet.
-    // Nothing else (video, notes, candidate panel) is shown until this
-    // is cleared by clicking "Start Interview".
     if (!hasStarted) {
       return (
-        <div className="fixed inset-0 z-50 h-screen w-screen bg-[#0a0d14] flex items-center justify-center px-4">
-          <button
-            type="button"
-            onClick={handleLeaveRoom}
-            className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 rounded-lg
-              bg-black/50 backdrop-blur-sm border border-white/10 text-sm text-slate-200
-              hover:bg-black/70 hover:text-white transition-colors"
-          >
-            <PhoneOff className="w-4 h-4" />
-            <span className="hidden sm:inline">Leave &amp; back to details</span>
-          </button>
-
-          <div className="max-w-md w-full text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="h-16 w-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <PlayCircle className="h-8 w-8 text-primary" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="font-display text-xl font-semibold tracking-wide text-white">
-                Ready to start the interview?
-              </h2>
-              <p className="text-sm text-slate-400">
-                You've joined the room with{" "}
-                <span className="text-slate-200">{candidateData.full_name}</span>. The call, notes,
-                and session tools stay hidden until you start the interview.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center">
-              <Badge
-                className={`font-display font-semibold tracking-wide ${statusBadgeClass(interviewStatus)}`}
-              >
-                {formatStatus(interviewStatus)}
-              </Badge>
-            </div>
-
-            {sessionError && (
-              <p className="text-sm text-[hsl(var(--destructive))]">{sessionError}</p>
-            )}
-
-            <Button
-              onClick={handleStartInterview}
-              disabled={isStartingSession}
-              size="lg"
-              className="w-full font-display font-semibold tracking-wide gap-2"
-            >
-              {isStartingSession ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <PlayCircle className="h-4 w-4" />
-              )}
-              {isStartingSession ? "Starting..." : "Start Interview"}
-            </Button>
-          </div>
-        </div>
+        <PreInterviewModal
+          candidateData={candidateData}
+          interviewStatus={interviewStatus}
+          isStartingSession={isStartingSession}
+          sessionError={sessionError}
+          handleLeaveRoom={handleLeaveRoom}
+          handleStartInterview={handleStartInterview}
+          statusBadgeClass={statusBadgeClass}
+          formatStatus={formatStatus}
+        />
       );
     }
 
@@ -485,7 +417,7 @@ export function InterviewDetail() {
             ${isConfigPanelOpen ? "w-[340px]" : "w-0"}`}
         >
           <div className="w-[340px] h-full flex flex-col">
-            <div className="shrink-0 overflow-y-auto p-3 pb-0 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 pb-0 space-y-3">
               <SessionConfigurationCard
                 sessionType={sessionType}
                 dsaLanguage={dsaLanguage}
@@ -510,54 +442,19 @@ export function InterviewDetail() {
                 onDispatch={handleDispatch}
               />
 
-              {/* Candidate quick-reference — keeps key info visible without leaving the call */}
-              <Card className="border-border/60">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-display font-semibold tracking-wide text-foreground/90">
-                    Candidate
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2.5 text-sm">
-                  <div className="flex items-center gap-2 text-foreground/80">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="truncate">{candidateData.email}</span>
-                  </div>
-                  {candidateData.phone_number && (
-                    <div className="flex items-center gap-2 text-foreground/80">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span>{candidateData.phone_number}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-muted-foreground text-xs">Experience</span>
-                    <span className="text-foreground/80 text-xs">
-                      {candidateData.experience_years
-                        ? `${candidateData.experience_years} yrs`
-                        : "Not specified"}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Notes — grows to fill the remaining height instead of leaving it empty */}
-            <div className="flex-1 min-h-0 p-3 flex flex-col">
-              <Card className="border-border/60 flex-1 min-h-0 flex flex-col">
-                <CardHeader className="pb-2 shrink-0">
-                  <CardTitle className="text-sm font-display font-semibold tracking-wide text-foreground/90 flex items-center gap-2">
-                    <NotebookPen className="h-3.5 w-3.5 text-muted-foreground" />
-                    Notes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 min-h-0 pb-3">
-                  <textarea
-                    value={interviewNotes}
-                    onChange={(e) => setInterviewNotes(e.target.value)}
-                    placeholder="Jot down observations as you go..."
-                    className="w-full h-full resize-none rounded-md bg-input/50 border border-border/60 p-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                  />
-                </CardContent>
-              </Card>
+              {sessionId && (
+                <InterviewQuestionsPanel
+                  sessionId={sessionId}
+                  difficulty={questionDifficulty}
+                  onDifficultyChange={setQuestionDifficulty}
+                  category={questionCategory}
+                  onCategoryChange={setQuestionCategory}
+                  count={questionCount}
+                  onCountChange={setQuestionCount}
+                />
+              )}
+              
+          
             </div>
 
             {/* Footer action, anchored to the bottom of the panel instead of empty space */}
@@ -623,7 +520,6 @@ export function InterviewDetail() {
       </div>
     );
   }
-  // --- end full-screen room view ---
 
   const skillsArray = candidateData.skills
     ? candidateData.skills.split(",").map((s) => s.trim())

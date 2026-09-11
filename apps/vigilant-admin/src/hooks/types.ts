@@ -753,3 +753,33 @@ export interface InterviewFeedbackListResponse {
   total: number;
   data: InterviewSessionWithFeedback[]; 
 }
+
+
+export type QuestionCategory = "coding" | "system_design" | "behavioral" | "conceptual";
+
+export interface GeneratedQuestion {
+  question: string;
+  category: QuestionCategory;
+  follow_ups: string[];
+  evaluation_tips: string;
+}
+
+export interface QuestionSet {
+  id: string;
+  interview_session_id: number;
+  attempt_number: number;
+  difficulty_level: string;
+  category: string;
+  questions: GeneratedQuestion[];
+  generated_by_ai: boolean;
+  notes: string;
+  generated_by: string | null;
+  created_at: string;
+}
+
+export interface GenerateQuestionsInput {
+  difficulty: string;
+  count?: number;
+  category?: string;
+  notes?: string;
+}

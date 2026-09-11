@@ -131,22 +131,6 @@ export function SessionConfigurationCard({
                   <SelectItem value="Vue">Vue</SelectItem>
                   <SelectItem value="Vanilla">Vanilla</SelectItem>
                   <SelectItem value="Svelte">Svelte</SelectItem>
-
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-display font-semibold uppercase tracking-wide text-muted-foreground">
-                Difficulty Level
-              </p>
-              <Select value={level} onValueChange={(v) => onLevelChange(v as CandidateLevel)}>
-                <SelectTrigger className="bg-input border-border">
-                  <SelectValue placeholder="Select level..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Intern">Intern</SelectItem>
-                  <SelectItem value="Junior">Junior</SelectItem>
-                  <SelectItem value="Senior">Senior</SelectItem>
                 </SelectContent>
               </Select>
             </div>
