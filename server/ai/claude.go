@@ -2,12 +2,11 @@
 package ai
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
+
+	"github.com/anthropics/anthropic-sdk-go"
+	"github.com/anthropics/anthropic-sdk-go/option"
 
 	"vigilant/models"
 )
@@ -21,57 +20,39 @@ func NewClaudeProvider(cfg *models.AIProviderConfig) *ClaudeProvider {
 }
 
 func (p *ClaudeProvider) Complete(ctx context.Context, systemPrompt, userPrompt, model string, temperature float64, maxTokens int) (string, error) {
-	baseURL := "https://api.anthropic.com/v1"
+	opts := []option.RequestOption{
+		option.WithAPIKey(p.cfg.APIKey),
+	}
 	if p.cfg.BaseURL != nil && *p.cfg.BaseURL != "" {
-		baseURL = *p.cfg.BaseURL
+		opts = append(opts, option.WithBaseURL(*p.cfg.BaseURL))
 	}
 
-	payload := map[string]interface{}{
-		"model":       model,
-		"system":      systemPrompt,
-		"max_tokens":  maxTokens,
-		"temperature": temperature,
-		"messages": []map[string]string{
-			{"role": "user", "content": userPrompt},
+	client := anthropic.NewClient(opts...)
+
+	message, err := client.Messages.New(ctx, anthropic.MessageNewParams{
+		Model:       anthropic.Model(model),
+		MaxTokens:   int64(maxTokens),
+		Temperature: anthropic.Float(temperature),
+		System: []anthropic.TextBlockParam{
+			{Text: systemPrompt},
 		},
-	}
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, baseURL+"/messages", bytes.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-api-key", p.cfg.APIKey)
-	req.Header.Set("anthropic-version", "2023-06-01")
-
-	resp, err := http.DefaultClient.Do(req)
+		Messages: []anthropic.MessageParam{
+			anthropic.NewUserMessage(anthropic.NewTextBlock(userPrompt)),
+		},
+	})
 	if err != nil {
 		return "", fmt.Errorf("claude request failed: %w", err)
 	}
-	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("claude error (%d): %s", resp.StatusCode, string(respBody))
-	}
-
-	var parsed struct {
-		Content []struct {
-			Text string `json:"text"`
-		} `json:"content"`
-	}
-	if err := json.Unmarshal(respBody, &parsed); err != nil {
-		return "", fmt.Errorf("failed to parse claude response: %w", err)
-	}
-	if len(parsed.Content) == 0 {
+	if len(message.Content) == 0 {
 		return "", fmt.Errorf("claude returned no content")
 	}
-	return parsed.Content[0].Text, nil
+
+	for _, block := range message.Content {
+		if block.Type == "text" {
+			return block.Text, nil
+		}
+	}
+
+	return "", fmt.Errorf("claude returned no text content")
 }
