@@ -1,13 +1,21 @@
 import axios from "axios";
 
-async function getIsDev() {
-  const { isDev } = await window.api.isDev();
-  return isDev;
+let cachedIsDev: boolean | null = null;
+
+async function getIsDev(): Promise<boolean> {
+  if (cachedIsDev === null) {
+    const { isDev } = await window.api.isDev();
+    cachedIsDev = isDev;
+  }
+  return cachedIsDev;
+}
+
+function getIsDevSync(): boolean {
+  return cachedIsDev ?? false;
 }
 
 function getBaseUrl(): string {
-  const isDev = getIsDev();
-  return isDev ? "http://localhost:3333/api/v1/admin" : "";
+  return getIsDevSync() ? "http://localhost:3333/api/v1/admin" : "";
 }
 
 export const apiClient = axios.create({
@@ -18,15 +26,20 @@ export const apiClient = axios.create({
   },
 });
 
-export const setBaseURL = (workspaceName: string) => {
-  if (!getIsDev()) {
+export async function initApiClient() {
+  const isDev = await getIsDev();
+  apiClient.defaults.baseURL = isDev ? "http://localhost:3333/api/v1/admin" : "";
+}
+
+export const setBaseURL = async (workspaceName: string) => {
+  const isDev = await getIsDev();
+  if (!isDev) {
     const reversedDomain = workspaceName.split(".").reverse().join(".");
     apiClient.defaults.baseURL = `https://${reversedDomain}/api/v1/admin`;
   } else {
     apiClient.defaults.baseURL = `http://localhost:3333/api/v1/admin`;
   }
 };
-
 export function setAuthToken(token: string) {
   apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 }

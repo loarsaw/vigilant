@@ -80,7 +80,6 @@ Entering a new Personal Access Token replaces the existing one.
 ![GitHub Configuration](./img/githubConfig.png)
 
 ---
-
 ## AI Provider Configuration
 
 Vigilant uses an LLM to power scenario prompts. Navigate to **Settings → AI Provider** and choose one of the supported providers: **OpenAI**, **Gemini**, or **Claude**.
@@ -88,11 +87,14 @@ Vigilant uses an LLM to power scenario prompts. Navigate to **Settings → AI Pr
 | Field | Description |
 |---|---|
 | **API Key** | Your provider's API key |
-| **Default Model** | The model used for scenario prompts (e.g., `gpt-4o`) |
-| **Base URL** *(optional)* | Custom endpoint; leave blank to use the provider's default |
+| **Default Model** | The model used for scenario prompts (e.g., `gpt-4o`). Populated automatically once a valid API key is entered — models are fetched live from the provider. |
 
 :::tip
 Each provider tab (OpenAI, Gemini, Claude) is configured independently — a green check next to the tab name indicates it's already connected.
+:::
+
+:::note
+To change an existing configuration, click **Edit** and re-enter your API key. For security, saved keys are never shown or pre-filled — you'll need to paste the key again to update the model or refresh the connection.
 :::
 
 ![AI Provider Configuration](./img/aiProviderConfig.png)
