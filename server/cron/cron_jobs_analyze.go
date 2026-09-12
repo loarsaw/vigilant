@@ -2,8 +2,7 @@ package cron
 
 import (
 	"log"
-
-	"vigilant/analyzer"
+	"vigilant/models"
 )
 
 const analyzeJobBatchSize = 10
@@ -26,7 +25,7 @@ func (s *Scheduler) AnalyzeJobApplications() error {
 			continue
 		}
 
-		err := s.analyzerSvc.AnalyzeApplication(analyzer.AnalyzeInput{
+		err := s.analyzerSvc.AnalyzeApplication(models.AnalyzeInput{
 			JobApplicationID: app.ID,
 			CandidateID:      app.CandidateID,
 			RepoURLs:         app.GithubURLs,

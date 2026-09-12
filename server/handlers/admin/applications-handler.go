@@ -658,10 +658,6 @@ func nullFloatOrNil(v sql.NullFloat64) interface{} {
 	return v.Float64
 }
 
-func (h *AdminHandlers) BulkUpdateJobApplicationStatus(c *gin.Context) {
-
-}
-
 func (h *AdminHandlers) GetJobApplicationStatus(c *gin.Context) {
 	applicationID := c.Param("id")
 

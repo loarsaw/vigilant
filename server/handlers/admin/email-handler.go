@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"vigilant/email"
 	"vigilant/models"
 
@@ -86,69 +85,6 @@ func (h *AdminHandlers) GetEmailConfig(c *gin.Context) {
 		"aws_access_key_id": cfg.AWSAccessKeyID,
 		"ses_from_email":    cfg.SESFromEmail,
 		"ses_login_url":     cfg.SESLoginURL,
-	})
-}
-
-func (h *AdminHandlers) SendCredentialsEmail(c *gin.Context) {
-	var req SendEmailRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
-		return
-	}
-
-	if len(req.Recipients) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no recipients provided"})
-		return
-	}
-
-	mailer, sesCfg, err := h.loadMailer(c)
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email config not configured"})
-		return
-	}
-	if err != nil {
-		log.Printf("SendCredentialsEmail: load mailer: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to initialize mailer"})
-		return
-	}
-
-	for i, r := range req.Recipients {
-		r.Email = strings.ToLower(strings.TrimSpace(r.Email))
-		if r.Email == "" || r.Password == "" {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "email and password are required for each recipient",
-				"index": i,
-			})
-			return
-		}
-	}
-
-	candidates := make([]email.CandidateEmailData, 0, len(req.Recipients))
-	for _, r := range req.Recipients {
-		candidates = append(candidates, email.CandidateEmailData{
-			FullName: r.FullName,
-			Email:    strings.ToLower(strings.TrimSpace(r.Email)),
-			Password: r.Password,
-		})
-	}
-
-	results := mailer.SendBulk(c.Request.Context(), email.BuildBulkCredentialsEmails(candidates, sesCfg.SESLoginURL))
-
-	succeeded, failed := 0, 0
-	var failures []gin.H
-	for _, r := range results {
-		if r.Success {
-			succeeded++
-		} else {
-			failed++
-			failures = append(failures, gin.H{"email": r.Email, "error": r.Error})
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"sent":     succeeded,
-		"failed":   failed,
-		"failures": failures,
 	})
 }
 

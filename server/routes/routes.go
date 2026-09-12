@@ -124,8 +124,8 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// Email endpoints
 
 	// Twilio config
-	g.POST("/twilio-config", h.SaveTwilioConfig)
-	g.GET("/twilio-config", h.GetTwilioConfig)
+	// g.POST("/twilio-config", h.SaveTwilioConfig)
+	// g.GET("/twilio-config", h.GetTwilioConfig)
 	// g.GET("/call/logs", h.ListCallLogs)
 
 	// GitHub config (org + PAT used for creating assignment repos and invites)

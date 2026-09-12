@@ -1,4 +1,4 @@
-// models/interview_questions.go
+// models/ai-questions.go
 package models
 
 import "time"

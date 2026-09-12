@@ -43,14 +43,15 @@ func RunMigrations(db *sql.DB) error {
 
 	migrations := []string{
 		// ========================================
-		// MIGRATION 0: Enable pgcrypto extension
+		// MIGRATION 1: Enable pgcrypto extension
 		// Enables gen_random_uuid() for UUID generation
 		// ========================================
 		`CREATE EXTENSION IF NOT EXISTS pgcrypto`,
 
 		// ========================================
-		// MIGRATION 1: Administrators table
-		// Must be created first for foreign key references
+		// MIGRATION 2: Administrators table
+		// HR/interviewer user accounts. Must be created first for
+		// foreign key references from almost every other table.
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS administrators (
 			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,7 +79,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_administrators_is_active ON administrators(is_active)`,
 
 		// ========================================
-		// MIGRATION 2: Administrators updated_at trigger
+		// MIGRATION 3: Administrators updated_at trigger
 		// ========================================
 		`CREATE OR REPLACE FUNCTION update_administrators_updated_at()
 		RETURNS TRIGGER AS $$
@@ -94,7 +95,7 @@ func RunMigrations(db *sql.DB) error {
 			EXECUTE FUNCTION update_administrators_updated_at()`,
 
 		// ========================================
-		// MIGRATION 3: Candidates table
+		// MIGRATION 4: Candidates table
 		// Primary user table for job applicants
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS candidates (
@@ -114,8 +115,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_candidates_email ON candidates(email);`,
 		`CREATE INDEX IF NOT EXISTS idx_candidates_created ON candidates(created_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_candidates_is_active ON candidates(is_active);`,
+
 		// ========================================
-		// MIGRATION 4: Candidates updated_at trigger
+		// MIGRATION 5: Candidates updated_at trigger
 		// ========================================
 		`CREATE OR REPLACE FUNCTION update_candidates_updated_at()
 		RETURNS TRIGGER AS $$
@@ -131,7 +133,7 @@ func RunMigrations(db *sql.DB) error {
 			EXECUTE FUNCTION update_candidates_updated_at()`,
 
 		// ========================================
-		// MIGRATION 5: Candidate sessions table
+		// MIGRATION 6: Candidate sessions table
 		// Tracks login sessions with device/location info
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS candidate_sessions (
@@ -159,7 +161,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_sessions_ip ON candidate_sessions(ip_address)`,
 
 		// ========================================
-		// MIGRATION 6: Hiring positions table
+		// MIGRATION 7: Hiring positions table
 		// Job postings with salary and requirements
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS hiring_positions (
@@ -194,7 +196,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_is_active ON hiring_positions(is_active)`,
 
 		// ========================================
-		// MIGRATION 7: Hiring positions updated_at trigger
+		// MIGRATION 8: Hiring positions updated_at trigger
 		// ========================================
 		`CREATE OR REPLACE FUNCTION update_hiring_positions_updated_at()
 		RETURNS TRIGGER AS $$
@@ -210,8 +212,10 @@ func RunMigrations(db *sql.DB) error {
 			EXECUTE FUNCTION update_hiring_positions_updated_at()`,
 
 		// ========================================
-		// MIGRATION 7b: Assignments table
-		// Moved here (before job_applications) because job_applications has
+		// MIGRATION 9: Assignments table
+		// Coding/take-home assignments (AI-generated or manual) that
+		// get attached to a hiring position or a specific application.
+		// Created before job_applications because job_applications has
 		// an inline FK to assignments(id) — Postgres requires the target
 		// table to already exist at CREATE TABLE time.
 		// ========================================
@@ -244,7 +248,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_hiring_positions_assignment_id ON hiring_positions(assignment_id)`,
 
 		// ========================================
-		// MIGRATION 8: Job applications table
+		// MIGRATION 10: Job applications table
 		// Links candidates to positions with status tracking
 		// Prevents duplicate applications via unique constraint
 		// ========================================
@@ -318,8 +322,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_job_applications_shortlisted ON job_applications(is_shortlisted);`,
 		`CREATE INDEX IF NOT EXISTS idx_job_applications_github_invite_status ON job_applications(github_invite_status);`,
 		`CREATE INDEX IF NOT EXISTS idx_job_applications_github_repo_deleted_at ON job_applications(github_repo_deleted_at);`,
+
 		// ========================================
-		// MIGRATION 9: Job applications updated_at trigger
+		// MIGRATION 11: Job applications updated_at trigger
 		// ========================================
 		`CREATE OR REPLACE FUNCTION update_job_applications_updated_at()
 		RETURNS TRIGGER AS $$
@@ -335,7 +340,7 @@ func RunMigrations(db *sql.DB) error {
 			EXECUTE FUNCTION update_job_applications_updated_at()`,
 
 		// ========================================
-		// MIGRATION 10: Interview sessions table
+		// MIGRATION 12: Interview sessions table
 		// Scheduled and active interview tracking
 		// Links to applications and candidate sessions
 		// ========================================
@@ -372,8 +377,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_started ON interview_sessions(started_at DESC)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_status ON interview_sessions(status)`,
 		`CREATE INDEX IF NOT EXISTS idx_interview_sessions_platform ON interview_sessions(interview_platform)`,
+
 		// ========================================
-		// MIGRATION 11: Interview sessions updated_at trigger
+		// MIGRATION 13: Interview sessions updated_at trigger
 		// ========================================
 		`CREATE OR REPLACE FUNCTION update_interview_sessions_updated_at()
 		RETURNS TRIGGER AS $$
@@ -389,126 +395,12 @@ func RunMigrations(db *sql.DB) error {
 			EXECUTE FUNCTION update_interview_sessions_updated_at()`,
 
 		// ========================================
-		// MIGRATION 12: Process logs table
-		// Monitoring data from interview sessions
-		// Tracks running processes with categorization
-		// ========================================
-		`CREATE TABLE IF NOT EXISTS process_logs (
-			id BIGSERIAL PRIMARY KEY,
-			interview_session_id INTEGER NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
-			candidate_session_id UUID REFERENCES candidate_sessions(id) ON DELETE SET NULL,
-
-			logged_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-
-			pid INTEGER NOT NULL,
-			ppid INTEGER,
-			name VARCHAR(255) NOT NULL,
-			path TEXT,
-			cmd TEXT,
-			memory DECIMAL(10, 2),
-			cpu_usage DECIMAL(5, 2),
-
-			is_user_app BOOLEAN DEFAULT FALSE,
-			is_gui_app BOOLEAN DEFAULT FALSE,
-			username VARCHAR(255),
-			process_type VARCHAR(50),
-			category VARCHAR(50),
-			confidence DECIMAL(3, 2),
-
-			is_unknown BOOLEAN DEFAULT FALSE,
-			is_suspicious BOOLEAN DEFAULT FALSE,
-			is_electron BOOLEAN DEFAULT FALSE,
-			alert_level VARCHAR(20) DEFAULT 'none',
-
-			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_interview ON process_logs(interview_session_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_timestamp ON process_logs(logged_at DESC)`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_pid ON process_logs(pid)`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_name ON process_logs(name)`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_suspicious ON process_logs(is_suspicious) WHERE is_suspicious = TRUE`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_unknown ON process_logs(is_unknown) WHERE is_unknown = TRUE`,
-		`CREATE INDEX IF NOT EXISTS idx_process_logs_alert ON process_logs(alert_level) WHERE alert_level != 'none'`,
-
-		// ========================================
-		// MIGRATION 13: Alert summary table
-		// Aggregated metrics per interview session
-		// ========================================
-		`CREATE TABLE IF NOT EXISTS alert_summary (
-			id SERIAL PRIMARY KEY,
-			interview_session_id INTEGER UNIQUE NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
-
-			total_processes INTEGER DEFAULT 0,
-			unknown_processes INTEGER DEFAULT 0,
-			suspicious_processes INTEGER DEFAULT 0,
-			high_memory_processes INTEGER DEFAULT 0,
-			electron_processes INTEGER DEFAULT 0,
-
-			critical_alerts INTEGER DEFAULT 0,
-			high_alerts INTEGER DEFAULT 0,
-			medium_alerts INTEGER DEFAULT 0,
-			low_alerts INTEGER DEFAULT 0,
-
-			risk_score DECIMAL(5, 2) DEFAULT 0.0,
-			first_alert_at TIMESTAMPTZ,
-			last_alert_at TIMESTAMPTZ,
-			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-		)`,
-		`CREATE INDEX IF NOT EXISTS idx_alert_summary_interview ON alert_summary(interview_session_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_alert_summary_risk ON alert_summary(risk_score DESC)`,
-
-		// ========================================
-		// MIGRATION 14: Alert summary auto-update function
-		// Trigger on process_logs insert to maintain counts
-		// ========================================
-		`CREATE OR REPLACE FUNCTION update_alert_summary()
-		RETURNS TRIGGER AS $$
-		BEGIN
-			INSERT INTO alert_summary (
-				interview_session_id,
-				total_processes,
-				unknown_processes,
-				suspicious_processes,
-				high_memory_processes,
-				electron_processes
-			)
-			VALUES (
-				NEW.interview_session_id,
-				1,
-				CASE WHEN NEW.is_unknown THEN 1 ELSE 0 END,
-				CASE WHEN NEW.is_suspicious THEN 1 ELSE 0 END,
-				CASE WHEN NEW.memory > 500 THEN 1 ELSE 0 END,
-				CASE WHEN NEW.is_electron THEN 1 ELSE 0 END
-			)
-			ON CONFLICT (interview_session_id) DO UPDATE SET
-				total_processes = alert_summary.total_processes + 1,
-				unknown_processes = alert_summary.unknown_processes + CASE WHEN NEW.is_unknown THEN 1 ELSE 0 END,
-				suspicious_processes = alert_summary.suspicious_processes + CASE WHEN NEW.is_suspicious THEN 1 ELSE 0 END,
-				high_memory_processes = alert_summary.high_memory_processes + CASE WHEN NEW.memory > 500 THEN 1 ELSE 0 END,
-				electron_processes = alert_summary.electron_processes + CASE WHEN NEW.is_electron THEN 1 ELSE 0 END,
-				critical_alerts = alert_summary.critical_alerts + CASE WHEN NEW.alert_level = 'critical' THEN 1 ELSE 0 END,
-				high_alerts = alert_summary.high_alerts + CASE WHEN NEW.alert_level = 'high' THEN 1 ELSE 0 END,
-				medium_alerts = alert_summary.medium_alerts + CASE WHEN NEW.alert_level = 'medium' THEN 1 ELSE 0 END,
-				low_alerts = alert_summary.low_alerts + CASE WHEN NEW.alert_level = 'low' THEN 1 ELSE 0 END,
-				last_alert_at = CASE WHEN NEW.is_suspicious OR NEW.is_unknown THEN CURRENT_TIMESTAMP ELSE alert_summary.last_alert_at END,
-				updated_at = CURRENT_TIMESTAMP;
-
-			RETURN NEW;
-		END;
-		$$ LANGUAGE plpgsql`,
-
-		// ========================================
-		// MIGRATION 15: Alert summary trigger
-		// ========================================
-		`DROP TRIGGER IF EXISTS trigger_update_alert_summary ON process_logs`,
-		`CREATE TRIGGER trigger_update_alert_summary
-			AFTER INSERT ON process_logs
-			FOR EACH ROW
-			EXECUTE FUNCTION update_alert_summary()`,
-
-		// ========================================
-		// MIGRATION 16: Process reports table
-		// Snapshot reports of processes at specific times
+		// MIGRATION 14: Process reports table
+		// Proctoring snapshots — a JSONB blob of the candidate's running
+		// processes reported periodically during an interview session,
+		// plus derived alert counters used by the admin dashboard.
+		// (Replaces an earlier normalized process_logs/alert_summary
+		// design that was removed as dead weight — never populated.)
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS process_reports (
 			id BIGSERIAL PRIMARY KEY,
@@ -526,7 +418,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_process_reports_reported ON process_reports(reported_at DESC)`,
 
 		// ========================================
-		// MIGRATION 17: Code judge submissions table
+		// MIGRATION 15: Code judge submissions table
 		// Stores code execution results for testing
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS judge_submissions (
@@ -548,7 +440,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_judge_submissions_created ON judge_submissions(created_at DESC)`,
 
 		// ========================================
-		// MIGRATION 19: Email configuration table
+		// MIGRATION 16: Email configuration table
 		// AWS SES credentials (encrypted before storage)
 		// Single row configuration
 		// ========================================
@@ -565,7 +457,7 @@ func RunMigrations(db *sql.DB) error {
 		)`,
 
 		// ========================================
-		// MIGRATION 20: Email jobs queue
+		// MIGRATION 17: Email jobs queue
 		// Queued email sending with retry logic
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS email_jobs (
@@ -611,7 +503,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_email_jobs_created ON email_jobs(created_at DESC)`,
 
 		// ========================================
-		// MIGRATION 21: Email send logs
+		// MIGRATION 18: Email send logs
 		// Immutable record of every send attempt
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS email_logs (
@@ -637,7 +529,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_email_logs_sent ON email_logs(sent_at DESC)`,
 
 		// ========================================
-		// MIGRATION 22: Google credentials table
+		// MIGRATION 19: Google credentials table
 		// Service account and OAuth credentials for Google APIs
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS google_credentials (
@@ -674,7 +566,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_google_credentials_type ON google_credentials(credential_type)`,
 
 		// ========================================
-		// MIGRATION 23: Google credentials updated_at trigger
+		// MIGRATION 20: Google credentials updated_at trigger
 		// ========================================
 		`CREATE OR REPLACE FUNCTION update_google_credentials_updated_at()
 		RETURNS TRIGGER AS $$
@@ -690,9 +582,11 @@ func RunMigrations(db *sql.DB) error {
 			EXECUTE FUNCTION update_google_credentials_updated_at()`,
 
 		// ========================================
-		// MIGRATION 24: Interview Evaluation
+		// MIGRATION 21: Interview feedback table
+		// Per-interviewer scorecard for an interview session (technical,
+		// communication, problem solving, culture fit). One row per
+		// interviewer per session; overall_score is auto-computed.
 		// ========================================
-
 		`CREATE TABLE IF NOT EXISTS interview_feedback (
 		id SERIAL PRIMARY KEY,
 		interview_session_id INTEGER NOT NULL REFERENCES interview_sessions(id) ON DELETE CASCADE,
@@ -714,6 +608,11 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_feedback_session ON interview_feedback(interview_session_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_feedback_interviewer ON interview_feedback(interviewer_id);`,
 
+		// ========================================
+		// MIGRATION 22: Admin sessions table
+		// Login-session tracking for administrators/interviewers,
+		// mirrors candidate_sessions for the admin side of the app.
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS admin_sessions (
 		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 		admin_id UUID NOT NULL REFERENCES administrators(id) ON DELETE CASCADE,
@@ -733,7 +632,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_admin_sessions_active ON admin_sessions(is_active, logged_in_at DESC);`,
 
 		// ========================================
-		// MIGRATION 18: Remainder table
+		// MIGRATION 23: Interview reminders table
+		// Tracks which reminder emails (e.g. "24h before") have already
+		// been sent for a session, so the cron job doesn't double-send.
 		// ========================================
 		`
 		CREATE TABLE IF NOT EXISTS interview_reminders (
@@ -752,7 +653,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_interview_reminders_type     ON interview_reminders(reminder_type)`,
 
 		// ========================================
-		// MIGRATION 18: Audit log table
+		// MIGRATION 24: Audit log table
+		// General-purpose audit trail for admin/candidate actions
+		// across the platform (login, edits, deletions, etc).
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS audit_log (
 		id BIGSERIAL PRIMARY KEY,
@@ -777,9 +680,10 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_audit_log_created   ON audit_log(created_at DESC)`,
 
 		// ========================================
-		// MIGRATION 19: Twilio table
+		// MIGRATION 25: Twilio config table
+		// Single-row Twilio account credentials used to place calls
+		// to candidates from the admin panel.
 		// ========================================
-
 		`CREATE TABLE IF NOT EXISTS twilio_config (
 		id         BIGSERIAL PRIMARY KEY,
 		account_sid     TEXT NOT NULL,
@@ -792,7 +696,9 @@ func RunMigrations(db *sql.DB) error {
 	)`,
 
 		// ========================================
-		// MIGRATION 20: Twilio table
+		// MIGRATION 26: Call logs table
+		// Record of outbound Twilio calls made to candidates,
+		// with status/duration updated as the call progresses.
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS call_logs (
     id          BIGSERIAL PRIMARY KEY,
@@ -810,7 +716,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_call_logs_created   ON call_logs(created_at DESC)`,
 
 		// ========================================
-		// MIGRATION 21: LiveKit
+		// MIGRATION 27: LiveKit config table
+		// Single-row LiveKit server credentials used for video
+		// interview rooms.
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS livekit_configs(
            id SERIAL PRIMARY KEY,
@@ -822,14 +730,22 @@ func RunMigrations(db *sql.DB) error {
            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         )`,
 
+		// ========================================
+		// MIGRATION 28: Job application repos table
+		// GitHub assignment repos created per application, keyed so a
+		// position+repo_url pair is only ever created once.
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS job_application_repos (
     repo_url       VARCHAR(512) NOT NULL,
     position_id    UUID NOT NULL REFERENCES hiring_positions(id) ON DELETE CASCADE,
     application_id UUID NOT NULL REFERENCES job_applications(id) ON DELETE CASCADE,
     PRIMARY KEY (position_id, repo_url)
 );`,
+
 		// ========================================
-		// MIGRATION 22: AI
+		// MIGRATION 29: AI provider configs table
+		// Credentials/default model per AI provider (openai/gemini/claude)
+		// used for assignment generation and repo review.
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS ai_provider_configs (
     provider    VARCHAR(20) PRIMARY KEY,          -- 'openai' | 'gemini' | 'claude'
@@ -842,6 +758,12 @@ func RunMigrations(db *sql.DB) error {
     CONSTRAINT chk_ai_provider CHECK (provider IN ('openai', 'gemini', 'claude'))
 );
 `,
+
+		// ========================================
+		// MIGRATION 30: AI scenarios table
+		// Named AI prompt/config presets (e.g. "technical_interview")
+		// that reference a provider from ai_provider_configs.
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS ai_scenarios (
     scenario_key   VARCHAR(50) PRIMARY KEY,        -- e.g. 'technical_interview'
     name           VARCHAR(100) NOT NULL,
@@ -859,7 +781,9 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_ai_scenarios_provider ON ai_scenarios(provider);`,
 
 		// ========================================
-		// MIGRATION 22: Submissions
+		// MIGRATION 31: Assignment submissions table
+		// A candidate's submitted answer(s) for an assignment attached to
+		// their application. Multiple attempts are kept (attempt_number).
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS assignment_submissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -890,6 +814,11 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_submissions_status ON assignment_submissions(status)`,
 		`CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON assignment_submissions(submitted_at DESC)`,
 
+		// ========================================
+		// MIGRATION 32: Candidate access links table
+		// Passwordless magic-link tokens emailed to candidates so they
+		// can access their application/assignment without a full login.
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS candidate_access_links (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
@@ -910,12 +839,15 @@ func RunMigrations(db *sql.DB) error {
 );`,
 
 		`CREATE UNIQUE INDEX IF NOT EXISTS idx_access_links_token_hash ON candidate_access_links(token_hash);`,
-
 		`CREATE INDEX IF NOT EXISTS idx_access_links_email ON candidate_access_links(email);`,
 		`CREATE INDEX IF NOT EXISTS idx_access_links_candidate ON candidate_access_links(candidate_id);`,
-
 		`CREATE INDEX IF NOT EXISTS idx_access_links_expires ON candidate_access_links(expires_at);`,
 
+		// ========================================
+		// MIGRATION 33: Repo analyses table
+		// One-off commit-history analysis of a candidate's assignment
+		// repo (message quality, atomicity, cadence, etc).
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS repo_analyses (
     id SERIAL PRIMARY KEY,
     job_application_id UUID NOT NULL REFERENCES job_applications(id) ON DELETE CASCADE,
@@ -944,7 +876,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_repo_analyses_tier ON repo_analyses(tier);`,
 
 		// ========================================
-		// Assignment repo scores
+		// MIGRATION 34: Assignment scores table
 		// One row per daily scoring attempt on a candidate's assignment
 		// repo — keeps history if scored multiple times (e.g. resubmission
 		// after a low first score, before the shortlist threshold is hit).
@@ -976,8 +908,11 @@ func RunMigrations(db *sql.DB) error {
 );`,
 		`CREATE INDEX IF NOT EXISTS idx_assignment_scores_application ON assignment_scores(job_application_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_assignment_scores_tier ON assignment_scores(tier);`,
+
 		// ========================================
-		// MIGRATION 22: GITHUB CREDENTAILS
+		// MIGRATION 35: GitHub credentials table
+		// Single-row (id always 1) org PAT used to create/invite
+		// candidates to assignment repos.
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS github_credentials (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
@@ -988,6 +923,12 @@ org_name VARCHAR(255) NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );`,
 
+		// ========================================
+		// MIGRATION 36: Admin notifications table
+		// In-app notification feed for admins/HR (new applications,
+		// shortlisting, failed jobs, suspicious activity, etc). NULL
+		// admin_id means broadcast to all admins.
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS admin_notifications (
     id BIGSERIAL PRIMARY KEY,
 
@@ -1022,6 +963,11 @@ org_name VARCHAR(255) NOT NULL,
 		`CREATE INDEX IF NOT EXISTS idx_admin_notifications_entity ON admin_notifications(entity_type, entity_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_admin_notifications_unread ON admin_notifications(is_read) WHERE is_read = FALSE;`,
 
+		// ========================================
+		// MIGRATION 37: Interview room passcodes table
+		// One-time passcodes candidates use to join a LiveKit interview
+		// room, scoped to a session and an expiry window.
+		// ========================================
 		`CREATE TABLE IF NOT EXISTS interview_room_passcodes (
     id           BIGSERIAL PRIMARY KEY,
 	session_id   VARCHAR(255) NOT NULL REFERENCES interview_sessions(session_id) ON DELETE CASCADE,
@@ -1037,56 +983,8 @@ org_name VARCHAR(255) NOT NULL,
 
 		`CREATE INDEX IF NOT EXISTS idx_interview_room_passcodes_session_id ON interview_room_passcodes(session_id);`,
 
-		`CREATE TABLE IF NOT EXISTS application_events (
-    id BIGSERIAL PRIMARY KEY,
-    job_application_id UUID NOT NULL REFERENCES job_applications(id) ON DELETE CASCADE,
-
-    event_type VARCHAR(50) NOT NULL,
-    -- 'applied' | 'status_changed' | 'qualified' | 'shortlisted' |
-    -- 'assignment_submitted' | 'interview_scheduled' | 'hired' | 'rejected' ...
-
-    from_value VARCHAR(50),   -- e.g. old status, or NULL
-    to_value   VARCHAR(50),   -- e.g. new status
-    label      TEXT,          -- human-readable, e.g. "Marked as qualified"
-
-    metadata   JSONB,         -- optional extra context (score, interviewer, etc.)
-    caused_by  UUID REFERENCES administrators(id) ON DELETE SET NULL,
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);`,
-
-		`CREATE INDEX IF NOT EXISTS idx_app_events_application ON application_events(job_application_id, occurred_at);`,
-
-		`CREATE OR REPLACE FUNCTION log_job_application_status_change()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.status IS DISTINCT FROM OLD.status THEN
-        INSERT INTO application_events (job_application_id, event_type, from_value, to_value, label)
-        VALUES (NEW.id, 'status_changed', OLD.status, NEW.status,
-                'Status changed to ' || NEW.status);
-    END IF;
-
-    IF NEW.is_qualified IS DISTINCT FROM OLD.is_qualified AND NEW.is_qualified THEN
-        INSERT INTO application_events (job_application_id, event_type, label)
-        VALUES (NEW.id, 'qualified', 'Marked as qualified');
-    END IF;
-
-    IF NEW.is_shortlisted IS DISTINCT FROM OLD.is_shortlisted AND NEW.is_shortlisted THEN
-        INSERT INTO application_events (job_application_id, event_type, label)
-        VALUES (NEW.id, 'shortlisted', 'Shortlisted');
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS trigger_log_job_application_events ON job_applications;
-CREATE TRIGGER trigger_log_job_application_events
-    AFTER UPDATE ON job_applications
-    FOR EACH ROW
-    EXECUTE FUNCTION log_job_application_status_change();`,
-
 		// ========================================
-		// MIGRATION 23: Interview question sets table
+		// MIGRATION 38: Interview question sets table
 		// AI-generated (or manual) question sets tied to a specific
 		// interview_sessions row. Each regeneration attempt is a new row
 		// (attempt_number increments) rather than overwriting the previous set.
@@ -1124,41 +1022,6 @@ $$ LANGUAGE plpgsql`,
     BEFORE UPDATE ON interview_question_sets
     FOR EACH ROW
     EXECUTE FUNCTION update_interview_question_sets_updated_at()`,
-
-		`CREATE TABLE IF NOT EXISTS question_sets (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    position_id UUID NOT NULL REFERENCES hiring_positions(id) ON DELETE CASCADE,
-
-    difficulty_level VARCHAR(20) NOT NULL,
-    category VARCHAR(50) DEFAULT 'mixed',
-    questions JSONB NOT NULL,
-
-    generated_by_ai BOOLEAN NOT NULL DEFAULT FALSE,
-    notes TEXT,
-
-    status VARCHAR(50) DEFAULT 'active',
-    is_active BOOLEAN DEFAULT TRUE,
-
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    created_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
-    updated_by UUID REFERENCES administrators(id) ON DELETE SET NULL
-)`,
-		`CREATE INDEX IF NOT EXISTS idx_question_sets_position ON question_sets(position_id)`,
-		`CREATE INDEX IF NOT EXISTS idx_question_sets_is_active ON question_sets(is_active)`,
-
-		`CREATE OR REPLACE FUNCTION update_question_sets_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql`,
-		`DROP TRIGGER IF EXISTS question_sets_updated_at_trigger ON question_sets`,
-		`CREATE TRIGGER question_sets_updated_at_trigger
-    BEFORE UPDATE ON question_sets
-    FOR EACH ROW
-    EXECUTE FUNCTION update_question_sets_updated_at()`,
 	}
 
 	for i, migration := range migrations {

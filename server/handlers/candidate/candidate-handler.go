@@ -289,59 +289,6 @@ func (h *Handlers) CompleteOnboarding(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "onboarding complete"})
 }
 
-func (h *Handlers) GetOpenPositions(c *gin.Context) {
-	query := `
-		SELECT id, position_title
-		FROM hiring_positions
-		WHERE is_active = true AND status = 'active'
-		ORDER BY created_at DESC
-	`
-
-	rows, err := h.DB.Query(query)
-	if err != nil {
-		log.Printf("Error querying open positions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve positions"})
-		return
-	}
-	defer rows.Close()
-
-	type OpenPosition struct {
-		ID            string `json:"id"`
-		PositionTitle string `json:"position_title"`
-	}
-
-	positions := []OpenPosition{}
-	for rows.Next() {
-		var pos OpenPosition
-
-		if err := rows.Scan(&pos.ID, &pos.PositionTitle); err != nil {
-			log.Printf("Error scanning position: %v", err)
-			continue
-		}
-
-		positions = append(positions, pos)
-	}
-
-	if err := rows.Err(); err != nil {
-		log.Printf("Error iterating positions: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve positions"})
-		return
-	}
-
-	if len(positions) == 0 {
-		c.JSON(http.StatusOK, gin.H{
-			"data":  []OpenPosition{},
-			"total": 0,
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data":  positions,
-		"total": len(positions),
-	})
-}
-
 func (h *Handlers) GetPositionDetails(c *gin.Context) {
 	positionID := c.Param("id")
 
@@ -884,43 +831,6 @@ func (h *Handlers) ApplyForPosition(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"data": app})
-}
-
-func (h *Handlers) JoinInterviewSession(c *gin.Context) {
-	sessionID := c.Param("session_id")
-
-	candidateSessionIDVal, exists := c.Get("candidate_session_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-	candidateSessionID, ok := candidateSessionIDVal.(string)
-	if !ok || candidateSessionID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-		return
-	}
-
-	result, err := h.DB.Exec(`
-        UPDATE interview_sessions
-        SET candidate_session_id = $1,
-            started_at = NOW(),
-            status = 'in_progress'
-        WHERE session_id = $2
-          AND status = 'scheduled'
-    `, candidateSessionID, sessionID)
-	if err != nil {
-		log.Printf("JoinInterviewSession: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to join session"})
-		return
-	}
-
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "session not found or already started"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "joined session", "session_id": sessionID})
 }
 
 func (h *Handlers) UpdateMe(c *gin.Context) {
