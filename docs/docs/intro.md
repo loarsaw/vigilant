@@ -33,10 +33,11 @@ To ensure **Vigilant** runs smoothly in a production or staging environment, we 
 | Component | Minimum | Recommended |
 | :--- | :--- | :--- |
 | **CPU** | 2 vCPU | 4 vCPU (for concurrent executions) |
-| **RAM** | 2 GB | 4 GB+ (to handle Docker & sandboxed workers) |
+| **RAM** | 4 GB | 8 GB+ (to handle Docker & sandboxed workers) |
 | **Storage** | 20 GB SSD | 50 GB NVMe (for fast Docker image I/O) |
 | **OS** | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS |
 | **Network** | 100 Mbps | 1 Gbps (for real-time SSE & monitoring) |
+
 
 > **Note:** Since Go binaries are statically linked, you don't need to install the Go compiler on the VPS. Just ensure **Docker** and **Docker Compose** are active.
 ## Upcoming Features & Roadmap

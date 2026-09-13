@@ -30,13 +30,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libdpkg-perl fakeroot rpm
 
-      - name: Install dependencies (vigilant)
-        working-directory: apps/vigilant
-        run: npm install
+      # - name: Install dependencies (vigilant)
+      #   working-directory: apps/vigilant
+      #   run: npm install
 
-      - name: Rebuild (vigilant)
-        working-directory: apps/vigilant
-        run: npm run rebuild
+      # - name: Rebuild (vigilant)
+      #   working-directory: apps/vigilant
+      #   run: npm run rebuild
 
       # - name: Publish (vigilant)
       #   working-directory: apps/vigilant
@@ -52,18 +52,18 @@ jobs:
         working-directory: apps/vigilant-code
         run: npm run rebuild
 
-      # - name: Publish (vigilant-code)
-      #   working-directory: apps/vigilant-code
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: npm run publish
+      - name: Publish (vigilant-code)
+        working-directory: apps/vigilant-code
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish
 
       - name: Install dependencies (vigilant-admin)
         working-directory: apps/vigilant-admin
         run: npm install
 
-      # - name: Publish (vigilant-admin)
-      #   working-directory: apps/vigilant-admin
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: npm run publish
+      - name: Publish (vigilant-admin)
+        working-directory: apps/vigilant-admin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run publish

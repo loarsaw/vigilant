@@ -10,10 +10,7 @@ All notable changes to this project will be documented in this file. See [Conven
 ## [Unreleased]
 
 ### Added
-- Initial project setup
-- Monorepo structure with vigilant, vigilant-admin, and vigilant-code apps
-- Go backend server with rate limiting
-- Docker compose configuration
+- N/A
 
 ### Changed
 - N/A
@@ -28,4 +25,4 @@ All notable changes to this project will be documented in this file. See [Conven
 - N/A
 
 ### Security
-- Added tiered rate limiting for DDoS protection
+- N/A
