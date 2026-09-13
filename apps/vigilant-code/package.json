@@ -1,8 +1,8 @@
 {
   "name": "vigilant-code",
   "productName": "Vigilant Code",
-  "version": "0.0.0",
-  "description": "Vigilant code assessment platform for candidates",
+  "version": "1.0.0",
+  "description": "Vigilant code an Interview and Code assessment platform for candidates",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",

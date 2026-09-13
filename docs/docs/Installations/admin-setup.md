@@ -101,8 +101,6 @@ To change an existing configuration, click **Edit** and re-enter your API key. F
 
 ---
 
----
-
 ## Data Retention Configuration
 
 Vigilant can automatically prune old job applications, their associated candidates, and any leftover GitHub assignment repos once they pass a configurable age. Navigate to **Settings → Data Retention** to configure this.
@@ -113,7 +111,7 @@ Vigilant can automatically prune old job applications, their associated candidat
 | **Delete orphaned candidates** | If enabled, a candidate record is also deleted once all of their applications have been pruned |
 | **Enable auto-pruning** | Toggles the daily cleanup job on or off without discarding your configured values |
 
-<!-- ![Data Retention Configuration](./img/retentionConfig.png) -->
+![Data Retention Configuration](./img/retentionConfig.png)
 
 :::info
 The retention window is measured from the application's submission date, not from the candidate's account creation date. A candidate with multiple applications keeps each one on its own clock.
