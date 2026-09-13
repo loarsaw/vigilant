@@ -24,6 +24,10 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
+	}
+
 	middleware.InitLimiters(cfg)
 
 	database, err := db.InitDB(cfg)

@@ -46,28 +46,15 @@ func (s *Service) fromEmail() string {
 	return addr
 }
 
-type AnalyzeInput struct {
-	JobApplicationID string
-	CandidateID      string
-	RepoURLs         []string
-	AuthToken        string
-}
-
-type RepoResult struct {
-	RepoURL   string
-	Breakdown ScoreBreakdown
-	Err       error
-}
-
-func (s *Service) AnalyzeApplication(in AnalyzeInput) error {
+func (s *Service) AnalyzeApplication(in models.AnalyzeInput) error {
 	if len(in.RepoURLs) == 0 {
 		return fmt.Errorf("no repo URLs provided for application %s", in.JobApplicationID)
 	}
 
-	results := make([]RepoResult, 0, len(in.RepoURLs))
+	results := make([]models.RepoResult, 0, len(in.RepoURLs))
 	for _, url := range in.RepoURLs {
 		breakdown, err := s.analyzeOne(url, in.AuthToken)
-		results = append(results, RepoResult{RepoURL: url, Breakdown: breakdown, Err: err})
+		results = append(results, models.RepoResult{RepoURL: url, Breakdown: breakdown, Err: err})
 		if err != nil {
 			log.Printf("warning: failed to analyze repo %s for application %s: %v", url, in.JobApplicationID, err)
 		}
@@ -82,7 +69,7 @@ func (s *Service) AnalyzeApplication(in AnalyzeInput) error {
 		}
 	}
 
-	successful := make([]ScoreBreakdown, 0, len(results))
+	successful := make([]models.ScoreBreakdown, 0, len(results))
 	for _, r := range results {
 		if r.Err == nil {
 			successful = append(successful, r.Breakdown)
@@ -113,22 +100,22 @@ func (s *Service) AnalyzeApplication(in AnalyzeInput) error {
 	return nil
 }
 
-func (s *Service) analyzeOne(repoURL, authToken string) (ScoreBreakdown, error) {
+func (s *Service) analyzeOne(repoURL, authToken string) (models.ScoreBreakdown, error) {
 	localPath, repo, err := cloneRepo(repoURL, authToken)
 	if err != nil {
-		return ScoreBreakdown{}, err
+		return models.ScoreBreakdown{}, err
 	}
 	defer cleanup(localPath)
 
 	commits, err := extractCommits(repo)
 	if err != nil {
-		return ScoreBreakdown{}, fmt.Errorf("failed to extract commits: %w", err)
+		return models.ScoreBreakdown{}, fmt.Errorf("failed to extract commits: %w", err)
 	}
 
 	return Score(commits), nil
 }
 
-func aggregate(results []ScoreBreakdown) (score float64, tier string) {
+func aggregate(results []models.ScoreBreakdown) (score float64, tier string) {
 	var sum float64
 	for _, r := range results {
 		sum += r.TotalScore
@@ -137,7 +124,7 @@ func aggregate(results []ScoreBreakdown) (score float64, tier string) {
 	return avg, tierFor(avg)
 }
 
-func (s *Service) saveRepoAnalysis(jobApplicationID, candidateID string, r RepoResult) error {
+func (s *Service) saveRepoAnalysis(jobApplicationID, candidateID string, r models.RepoResult) error {
 	detailsJSON, err := json.Marshal(map[string]interface{}{
 		"commit_count": r.Breakdown.CommitCount,
 		"avg_lines":    r.Breakdown.AvgLinesPerCommit,
@@ -556,7 +543,7 @@ func (s *Service) getAssignmentContext(jobApplicationID string) (title, descript
 	`, jobApplicationID).Scan(&title, &description, &requirements)
 	return title, description, requirements, err
 }
-func (s *Service) saveAssignmentScore(jobApplicationID string, b ScoreBreakdown, aiScore float64, aiSummary string, combinedScore float64, combinedTier string) error {
+func (s *Service) saveAssignmentScore(jobApplicationID string, b models.ScoreBreakdown, aiScore float64, aiSummary string, combinedScore float64, combinedTier string) error {
 	detailsJSON, err := json.Marshal(map[string]interface{}{
 		"commit_count": b.CommitCount,
 		"avg_lines":    b.AvgLinesPerCommit,

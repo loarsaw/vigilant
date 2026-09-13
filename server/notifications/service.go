@@ -204,3 +204,62 @@ func (s *Service) CreateForRole(ctx context.Context, role string, in CreateInput
 	}
 	return firstErr
 }
+
+func (s *Service) PushOrUpdateOpen(ctx context.Context, in CreateInput) error {
+	if in.Severity == "" {
+		in.Severity = models.SeverityInfo
+	}
+	metadataJSON, err := json.Marshal(in.Metadata)
+	if err != nil {
+		return fmt.Errorf("marshal notification metadata: %w", err)
+	}
+
+	var existingID int64
+	err = s.db.QueryRowContext(ctx, `
+		SELECT id FROM admin_notifications
+		WHERE type = $1 AND entity_type = $2 AND entity_id = $3 AND is_read = FALSE
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, in.Type, in.EntityType, in.EntityID).Scan(&existingID)
+
+	switch {
+	case err == sql.ErrNoRows:
+		return s.Create(ctx, in)
+	case err != nil:
+		return fmt.Errorf("look up   open notification: %w", err)
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+		UPDATE admin_notifications
+		SET title = $1, message = $2, metadata = $3, created_at = CURRENT_TIMESTAMP
+		WHERE id = $4
+	`, in.Title, in.Message, metadataJSON, existingID)
+	if err != nil {
+		return fmt.Errorf("update open notification: %w", err)
+	}
+
+	if s.Broadcaster != nil {
+		s.Broadcaster(in.AdminID, models.Notification{
+			ID:         existingID,
+			AdminID:    in.AdminID,
+			Type:       in.Type,
+			Title:      in.Title,
+			Message:    toNullString(in.Message),
+			EntityType: toNullString(in.EntityType),
+			EntityID:   toNullString(in.EntityID),
+			Metadata:   in.Metadata,
+			Severity:   in.Severity,
+			IsRead:     false,
+		})
+	}
+	return nil
+}
+
+func (s *Service) ResolveOpen(ctx context.Context, notifType, entityType, entityID string) error {
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE admin_notifications
+		SET is_read = TRUE, read_at = CURRENT_TIMESTAMP
+		WHERE type = $1 AND entity_type = $2 AND entity_id = $3 AND is_read = FALSE
+	`, notifType, entityType, entityID)
+	return err
+}

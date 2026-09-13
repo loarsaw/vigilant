@@ -429,8 +429,8 @@ interface CreateInterviewPayload {
   interviewer_id: string;
   position: string;
   interview_type: string;
-  scheduled_at: string;          
-  scheduled_timezone: string;    
+  scheduled_at: string;
+  scheduled_timezone: string;
   scheduled_duration: number;
   interview_url: string;
 }
@@ -751,7 +751,7 @@ export interface CreateInterviewFeedbackResponse {
 export interface InterviewFeedbackListResponse {
   application_id: string;
   total: number;
-  data: InterviewSessionWithFeedback[]; 
+  data: InterviewSessionWithFeedback[];
 }
 
 
@@ -782,4 +782,54 @@ export interface GenerateQuestionsInput {
   count?: number;
   category?: string;
   notes?: string;
+}
+
+
+export interface DataRetentionPolicy {
+  id: number;
+  entity_type: string;
+  retention_days: number;
+  reference_column: string;
+  delete_orphaned_candidate: boolean;
+  is_active: boolean;
+  last_run_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DataRetentionRun {
+  id: number;
+  entity_type: string;
+  run_started_at: string;
+  run_completed_at: string | null;
+  applications_deleted: number;
+  candidates_deleted: number;
+  repos_deleted: number;
+  repo_deletion_failures: number;
+  status: "running" | "completed" | "failed";
+  error?: string;
+}
+
+export interface RetentionPoliciesResponse {
+  data: DataRetentionPolicy[];
+}
+
+
+export interface SaveRetentionPolicyPayload {
+  retention_days: number;
+  reference_column: string;
+  delete_orphaned_candidate: boolean;
+  is_active: boolean;
+}
+
+
+
+export interface RetentionRunsResponse {
+  data: DataRetentionRun[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean;
+  };
 }

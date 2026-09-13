@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
-	"time"
 
 	"vigilant/config"
 	"vigilant/utils"
@@ -13,107 +12,51 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AuthMiddleware protects candidate routes. Two ways to authenticate:
+// AuthMiddleware protects candidate routes. Candidates authenticate with:
 //
-//  1. Authorization: Bearer <jwt> : a candidate ACCESS JWT issued via
-//     utils.IssueCandidateJWT (interview invite login / passcode verify),
-//     scoped to one interview session via claims.SessionID.
+//	Authorization: Bearer <jwt> : a candidate ACCESS JWT issued via
+//	utils.IssueCandidateJWT (interview passcode verify), scoped to one
+//	interview session via claims.SessionID.
 func AuthMiddleware(db *sql.DB, cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if authHeader != "" {
-			parts := strings.SplitN(authHeader, " ", 2)
-			if len(parts) == 2 && strings.EqualFold(parts[0], "bearer") {
-				claims, err := utils.ParseCandidateJWT(cfg, parts[1])
-				if err != nil {
-					c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: invalid or expired token"})
-					c.Abort()
-					return
-				}
-
-				var isActive bool
-				if err := db.QueryRow(`SELECT is_active FROM candidates WHERE id = $1`, claims.CandidateID).Scan(&isActive); err != nil {
-					c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: candidate not found"})
-					c.Abort()
-					return
-				}
-				if !isActive {
-					c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: account is deactivated"})
-					c.Abort()
-					return
-				}
-
-				c.Set("candidate_id", claims.CandidateID)
-				c.Set("candidate_email", claims.Email)
-				c.Set("auth_method", "candidate_jwt")
-				if claims.SessionID != "" {
-					c.Set("invited_session_id", claims.SessionID)
-				}
-				c.Next()
-				return
-			}
-		}
-
-		// Fall back to the original opaque-token (candidate_access_links) flow.
-		rawToken := c.GetHeader("X-Access-Token")
-		if rawToken == "" {
-			rawToken = c.Query("token")
-		}
-		if rawToken == "" {
+		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "access token required"})
 			c.Abort()
 			return
 		}
-		tokenHash := utils.HashToken(rawToken)
 
-		var candidateID sql.NullString
-		var email string
-		var positionID sql.NullString
-		var expiresAt time.Time
-		var revokedAt sql.NullTime
-
-		err := db.QueryRow(`
-			SELECT candidate_id, email, position_id, expires_at, revoked_at
-			FROM candidate_access_links WHERE token_hash = $1
-		`, tokenHash).Scan(&candidateID, &email, &positionID, &expiresAt, &revokedAt)
-
-		if err == sql.ErrNoRows {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid link"})
-			c.Abort()
-			return
-		}
-		if err != nil || revokedAt.Valid || time.Now().After(expiresAt) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "link expired or revoked"})
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "access token required"})
 			c.Abort()
 			return
 		}
 
-		cid := candidateID.String
-		if cid == "" {
-			err = db.QueryRow(`
-				INSERT INTO candidates (email) VALUES ($1)
-				ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
-				RETURNING id
-			`, email).Scan(&cid)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to resolve candidate"})
-				c.Abort()
-				return
-			}
-			db.Exec(`UPDATE candidate_access_links SET candidate_id = $1 WHERE token_hash = $2`, cid, tokenHash)
+		claims, err := utils.ParseCandidateJWT(cfg, parts[1])
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: invalid or expired token"})
+			c.Abort()
+			return
 		}
 
-		db.Exec(`
-			UPDATE candidate_access_links
-			SET last_used_at = CURRENT_TIMESTAMP, use_count = use_count + 1
-			WHERE token_hash = $1
-		`, tokenHash)
+		var isActive bool
+		if err := db.QueryRow(`SELECT is_active FROM candidates WHERE id = $1`, claims.CandidateID).Scan(&isActive); err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: candidate not found"})
+			c.Abort()
+			return
+		}
+		if !isActive {
+			c.JSON(http.StatusForbidden, gin.H{"error": "forbidden: account is deactivated"})
+			c.Abort()
+			return
+		}
 
-		c.Set("candidate_id", cid)
-		c.Set("candidate_email", email)
-		c.Set("auth_method", "access_link")
-		if positionID.Valid {
-			c.Set("invited_position_id", positionID.String)
+		c.Set("candidate_id", claims.CandidateID)
+		c.Set("candidate_email", claims.Email)
+		c.Set("auth_method", "candidate_jwt")
+		if claims.SessionID != "" {
+			c.Set("invited_session_id", claims.SessionID)
 		}
 		c.Next()
 	}

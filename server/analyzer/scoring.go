@@ -4,6 +4,7 @@ import (
 	"math"
 	"regexp"
 	"strings"
+	"vigilant/models"
 )
 
 var (
@@ -11,20 +12,9 @@ var (
 	badWordsRe           = regexp.MustCompile(`(?i)^\s*(wip|temp|fix|update|asdf|test|xxx|misc)\s*$`)
 )
 
-type ScoreBreakdown struct {
-	MessageScore      float64
-	AtomicityScore    float64
-	CadenceScore      float64
-	AuthorScore       float64
-	TotalScore        float64
-	Tier              string
-	CommitCount       int
-	AvgLinesPerCommit float64
-}
-
-func Score(commits []CommitInfo) ScoreBreakdown {
+func Score(commits []CommitInfo) models.ScoreBreakdown {
 	if len(commits) == 0 {
-		return ScoreBreakdown{Tier: "poor"}
+		return models.ScoreBreakdown{Tier: "poor"}
 	}
 
 	msgScore := messageQualityScore(commits)
@@ -34,7 +24,7 @@ func Score(commits []CommitInfo) ScoreBreakdown {
 
 	total := msgScore*0.30 + atomScore*0.30 + cadenceScore*0.20 + authorScore*0.20
 
-	return ScoreBreakdown{
+	return models.ScoreBreakdown{
 		MessageScore:      msgScore,
 		AtomicityScore:    atomScore,
 		CadenceScore:      cadenceScore,

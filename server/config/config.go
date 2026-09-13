@@ -3,8 +3,11 @@ package config
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+
+	"vigilant/email"
 )
 
 type Config struct {
@@ -40,18 +43,11 @@ type Config struct {
 
 	// Encryption
 	EncryptionKey string
-
-	// Email
-	EmailFromAddress string
-
-	TwilioAccountSID string
-	TwilioAuthToken  string
-	TwilioFromNumber string
-
-	TwilioAPIKeySID    string
-	TwilioAPIKeySecret string
-	TwilioTwiMLAppSID  string
 }
+
+// minJWTSecretLen is a floor, not a target 32 bytes is the minimum
+// generally recommended for HMAC-SHA256 signing keys.
+const minJWTSecretLen = 32
 
 func Load() (*Config, error) {
 	configPath := os.Getenv("VIGILANT_CONFIG_PATH")
@@ -141,22 +137,6 @@ func Load() (*Config, error) {
 			config.AllowOrigin = value
 		case "ENCRYPTION_KEY":
 			config.EncryptionKey = value
-		case "EMAIL_FROM_ADDRESS":
-			config.EmailFromAddress = value
-
-		case "TWILIO_ACCOUNT_SID":
-			config.TwilioAccountSID = value
-		case "TWILIO_AUTH_TOKEN":
-			config.TwilioAuthToken = value
-		case "TWILIO_FROM_NUMBER":
-			config.TwilioFromNumber = value
-
-		case "TWILIO_API_KEY_SID":
-			config.TwilioAPIKeySID = value
-		case "TWILIO_API_KEY_SECRET":
-			config.TwilioAPIKeySecret = value
-		case "TWILIO_TWIML_APP_SID":
-			config.TwilioTwiMLAppSID = value
 
 		}
 	}
@@ -166,6 +146,35 @@ func Load() (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func (c *Config) Validate() error {
+	if c.JWTSecret == "" {
+		return fmt.Errorf("JWT_SECRET is not set — refusing to start with an empty JWT signing key")
+	}
+	if len(c.JWTSecret) < minJWTSecretLen {
+		return fmt.Errorf("JWT_SECRET is only %d bytes — must be at least %d bytes", len(c.JWTSecret), minJWTSecretLen)
+	}
+
+	if c.EncryptionKey == "" {
+		return fmt.Errorf("ENCRYPTION_KEY is not set — refusing to start, credentials at rest cannot be encrypted")
+	}
+	if _, err := email.DecodeKey(c.EncryptionKey); err != nil {
+		return fmt.Errorf("ENCRYPTION_KEY is invalid: %w", err)
+	}
+
+	if c.AllowOrigin == "*" {
+		log.Println("⚠️  WARNING: ALLOW_ORIGIN is \"*\" — combined with Access-Control-Allow-Credentials: true, " +
+			"browsers will reject any credentialed cross-origin request. Set ALLOW_ORIGIN to your frontend's " +
+			"exact origin before deploying.")
+	}
+
+	if c.AdminIPAddress == "" {
+		log.Println("⚠️  WARNING: ADMIN_IP_ADDRESS is not set — the admin panel IP allowlist is disabled " +
+			"(reachable from any IP). Set it if you intend to restrict admin access by network.")
+	}
+
+	return nil
 }
 
 func (c *Config) GetDSN() string {
