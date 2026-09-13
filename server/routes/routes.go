@@ -36,8 +36,6 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 
 	// Apply CORS middleware globally
 	r.Use(middleware.CORSMiddleware(cfg))
-	r.POST("/api/v1/twilio/outbound", adminH.OutboundCallTwiML)
-	r.POST("/api/v1/twilio/outbound/status", adminH.CallStatusTwiML)
 	// Health check endpoint with lenient rate limit
 	healthGroup := r.Group("/")
 	healthGroup.Use(middleware.RateLimitMiddleware(middleware.HealthLimiter))
@@ -119,7 +117,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// Admin auth
 	g.GET("/me", h.GetAdminMe)
 	// Hello Hello
-	g.GET("/call/token", h.GetCallToken)
+	// g.GET("/call/token", h.GetCallToken)
 	// g.POST("/call/outbound", h.OutboundCallTwiML)
 	// Email endpoints
 
@@ -131,6 +129,13 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// GitHub config (org + PAT used for creating assignment repos and invites)
 	g.POST("/github-config", h.SaveGithubConfig)
 	g.GET("/github-config", h.GetGithubConfig)
+
+	retentionGroup := g.Group("/retention-policies")
+	{
+		retentionGroup.GET("", h.GetRetentionPolicies)
+		retentionGroup.PUT("/:entity_type", h.UpdateRetentionPolicy)
+		retentionGroup.GET("/:entity_type/runs", h.GetRetentionRuns)
+	}
 
 	aiGroup := g.Group("/ai")
 	{
@@ -181,8 +186,6 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		candidateGroup.DELETE("/:id", h.DeleteCandidate)
 		candidateGroup.POST("/:id/push", h.PushToCandidate)
 		candidateGroup.GET("/:id/applications", h.GetCandidateApplications)
-		candidateGroup.POST("/send-credentials", h.SendCandidateCredentialsEmail)
-		candidateGroup.PATCH("/:id/password", h.UpdateCandidatePassword)
 	}
 
 	// CSV upload

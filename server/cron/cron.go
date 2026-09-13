@@ -85,6 +85,12 @@ func (s *Scheduler) Start() {
 		}
 	})
 
+	s.c.AddFunc("0 6 * * *", func() {
+		if err := s.PruneExpiredApplications(); err != nil {
+			log.Printf("cron: prune expired applications: %v", err)
+		}
+	})
+
 	s.c.Start()
 	log.Println("Cron jobs started")
 }

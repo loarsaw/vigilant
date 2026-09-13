@@ -1,23 +1,35 @@
 // src/pages/Settings.tsx (or wherever this lives)
 import { useState } from "react";
-import { Settings2, Mail, Phone, Video, Github, Bot, CheckCircle2, Circle } from "lucide-react";
 import { EmailCard } from "@/components/settings/email";
 import { CallCard } from "@/components/settings/call";
 import { LiveKitCard } from "@/components/settings/livekit";
 import { GithubCard } from "@/components/settings/github";
-// import { useTwilio } from "@/hooks/use-twilio";
 import { useLiveKit } from "@/hooks/use-livekit";
 import { useGithub } from "@/hooks/use-github";
 import { AIProvidersCard } from "@/components/ai-providers";
+import { useRetention } from "@/hooks/use-retention";
+import { RetentionCard } from "@/components/settings/retention";
+import {
+  Bot,
+  CheckCircle2,
+  Circle,
+  Github,
+  Mail,
+  Phone,
+  Settings2,
+  Trash2,
+  Video,
+} from "lucide-react";
 
-type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai";
+type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai" | "retention";
 
 const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = [
   { key: "email", label: "Email", icon: Mail },
-  { key: "twilio", label: "Voice (Twilio)", icon: Phone },
+  // { key: "twilio", label: "Voice (Twilio)", icon: Phone },
   { key: "livekit", label: "LiveKit", icon: Video },
   { key: "github", label: "GitHub", icon: Github },
   { key: "ai", label: "AI Provider", icon: Bot },
+  { key: "retention", label: "Data Retention", icon: Trash2 },
 ];
 
 export function Settings() {
@@ -32,7 +44,10 @@ export function Settings() {
     twilio: true,
     livekit: true,
     github: true,
+    retention: true,
   });
+
+  const { isRetentionConfigured } = useRetention();
 
   // const { isTwilioConfigured } = useTwilio();
   const { isLiveKitConfigured } = useLiveKit();
@@ -44,6 +59,8 @@ export function Settings() {
     livekit: isLiveKitConfigured,
     github: isGithubConfigured,
     ai: false,
+
+    retention: isRetentionConfigured,
   };
 
   return (
@@ -99,9 +116,9 @@ export function Settings() {
                 configuredSections={configuredSections}
               />
             )}
-            {activeSection === "twilio" && (
+            {/* {activeSection === "twilio" && (
               <CallCard editMode={editMode} setEditMode={setEditMode} />
-            )}
+            )} */}
             {activeSection === "livekit" && (
               <LiveKitCard editMode={editMode} setEditMode={setEditMode} />
             )}
@@ -109,6 +126,10 @@ export function Settings() {
               <GithubCard editMode={editMode} setEditMode={setEditMode} />
             )}
             {activeSection === "ai" && <AIProvidersCard />}
+
+            {activeSection === "retention" && (
+              <RetentionCard editMode={editMode} setEditMode={setEditMode} />
+            )}
           </div>
         </div>
       </div>

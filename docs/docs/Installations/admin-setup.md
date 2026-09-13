@@ -101,4 +101,30 @@ To change an existing configuration, click **Edit** and re-enter your API key. F
 
 ---
 
-## Usage
+---
+
+## Data Retention Configuration
+
+Vigilant can automatically prune old job applications, their associated candidates, and any leftover GitHub assignment repos once they pass a configurable age. Navigate to **Settings → Data Retention** to configure this.
+
+| Field | Description |
+|---|---|
+| **Delete applications after (days)** | Number of days after a candidate applies before their application becomes eligible for deletion |
+| **Delete orphaned candidates** | If enabled, a candidate record is also deleted once all of their applications have been pruned |
+| **Enable auto-pruning** | Toggles the daily cleanup job on or off without discarding your configured values |
+
+<!-- ![Data Retention Configuration](./img/retentionConfig.png) -->
+
+:::info
+The retention window is measured from the application's submission date, not from the candidate's account creation date. A candidate with multiple applications keeps each one on its own clock.
+:::
+
+:::note
+Applications with status **Offered** or **Hired** are never auto-pruned, regardless of age. You can also protect any individual application from pruning by marking it **Do not prune** from the application detail view.
+:::
+
+:::tip
+The **Recent prune runs** panel on this page shows a history of each cleanup pass — how many applications, candidates, and GitHub repos were deleted, and any errors encountered (for example, if a GitHub repo couldn't be deleted because the PAT lacked permissions). Use this to confirm the job is running as expected before relying on it.
+:::
+
+---

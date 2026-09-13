@@ -815,36 +815,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_submissions_submitted_at ON assignment_submissions(submitted_at DESC)`,
 
 		// ========================================
-		// MIGRATION 32: Candidate access links table
-		// Passwordless magic-link tokens emailed to candidates so they
-		// can access their application/assignment without a full login.
-		// ========================================
-		`CREATE TABLE IF NOT EXISTS candidate_access_links (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    candidate_id UUID REFERENCES candidates(id) ON DELETE CASCADE,
-    email VARCHAR(255) NOT NULL,
-    position_id UUID REFERENCES hiring_positions(id) ON DELETE SET NULL,
-
-    token_hash TEXT NOT NULL,
-    expires_at TIMESTAMPTZ NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '10 days'),
-    revoked_at TIMESTAMPTZ,
-    last_used_at TIMESTAMPTZ,
-    use_count INTEGER NOT NULL DEFAULT 0,
-
-    created_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
-    ip_address INET,
-    user_agent TEXT,
-
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);`,
-
-		`CREATE UNIQUE INDEX IF NOT EXISTS idx_access_links_token_hash ON candidate_access_links(token_hash);`,
-		`CREATE INDEX IF NOT EXISTS idx_access_links_email ON candidate_access_links(email);`,
-		`CREATE INDEX IF NOT EXISTS idx_access_links_candidate ON candidate_access_links(candidate_id);`,
-		`CREATE INDEX IF NOT EXISTS idx_access_links_expires ON candidate_access_links(expires_at);`,
-
-		// ========================================
-		// MIGRATION 33: Repo analyses table
+		// MIGRATION 32: Repo analyses table
 		// One-off commit-history analysis of a candidate's assignment
 		// repo (message quality, atomicity, cadence, etc).
 		// ========================================
@@ -876,7 +847,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_repo_analyses_tier ON repo_analyses(tier);`,
 
 		// ========================================
-		// MIGRATION 34: Assignment scores table
+		// MIGRATION 33: Assignment scores table
 		// One row per daily scoring attempt on a candidate's assignment
 		// repo — keeps history if scored multiple times (e.g. resubmission
 		// after a low first score, before the shortlist threshold is hit).
@@ -910,7 +881,7 @@ func RunMigrations(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_assignment_scores_tier ON assignment_scores(tier);`,
 
 		// ========================================
-		// MIGRATION 35: GitHub credentials table
+		// MIGRATION 34: GitHub credentials table
 		// Single-row (id always 1) org PAT used to create/invite
 		// candidates to assignment repos.
 		// ========================================
@@ -924,7 +895,7 @@ org_name VARCHAR(255) NOT NULL,
 );`,
 
 		// ========================================
-		// MIGRATION 36: Admin notifications table
+		// MIGRATION 35: Admin notifications table
 		// In-app notification feed for admins/HR (new applications,
 		// shortlisting, failed jobs, suspicious activity, etc). NULL
 		// admin_id means broadcast to all admins.
@@ -964,7 +935,7 @@ org_name VARCHAR(255) NOT NULL,
 		`CREATE INDEX IF NOT EXISTS idx_admin_notifications_unread ON admin_notifications(is_read) WHERE is_read = FALSE;`,
 
 		// ========================================
-		// MIGRATION 37: Interview room passcodes table
+		// MIGRATION 36: Interview room passcodes table
 		// One-time passcodes candidates use to join a LiveKit interview
 		// room, scoped to a session and an expiry window.
 		// ========================================
@@ -984,7 +955,7 @@ org_name VARCHAR(255) NOT NULL,
 		`CREATE INDEX IF NOT EXISTS idx_interview_room_passcodes_session_id ON interview_room_passcodes(session_id);`,
 
 		// ========================================
-		// MIGRATION 38: Interview question sets table
+		// MIGRATION 37: Interview question sets table
 		// AI-generated (or manual) question sets tied to a specific
 		// interview_sessions row. Each regeneration attempt is a new row
 		// (attempt_number increments) rather than overwriting the previous set.
@@ -1022,6 +993,81 @@ $$ LANGUAGE plpgsql`,
     BEFORE UPDATE ON interview_question_sets
     FOR EACH ROW
     EXECUTE FUNCTION update_interview_question_sets_updated_at()`,
+
+		// ========================================
+		// MIGRATION 38: Data retention policies table
+		// Configurable per-entity pruning rules, e.g. "delete job_applications
+		// 45 days after applied_at". Admin-editable, not hardcoded in code.
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS data_retention_policies (
+    id SERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL UNIQUE,
+    -- 'job_applications' | 'candidates' | ... extensible later
+
+    retention_days INTEGER NOT NULL CHECK (retention_days > 0),
+    reference_column VARCHAR(50) NOT NULL DEFAULT 'applied_at',
+    -- which timestamp column age is measured from
+
+    delete_orphaned_candidate BOOLEAN NOT NULL DEFAULT TRUE,
+    -- if pruning leaves a candidate with zero remaining applications,
+    -- also delete the candidate row
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_run_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES administrators(id) ON DELETE SET NULL,
+    updated_by UUID REFERENCES administrators(id) ON DELETE SET NULL
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_data_retention_policies_active ON data_retention_policies(is_active)`,
+
+		`CREATE OR REPLACE FUNCTION update_data_retention_policies_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql`,
+		`DROP TRIGGER IF EXISTS data_retention_policies_updated_at_trigger ON data_retention_policies`,
+		`CREATE TRIGGER data_retention_policies_updated_at_trigger
+    BEFORE UPDATE ON data_retention_policies
+    FOR EACH ROW
+    EXECUTE FUNCTION update_data_retention_policies_updated_at()`,
+
+		// ========================================
+		// MIGRATION 39: Data retention run log
+		// One row per cron execution, for observability/debugging of the
+		// pruning job (how many rows were touched, did it error, etc).
+		// Per-record detail goes into the existing audit_log table.
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS data_retention_runs (
+    id BIGSERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+
+    run_started_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    run_completed_at TIMESTAMPTZ,
+
+    applications_deleted INTEGER NOT NULL DEFAULT 0,
+    candidates_deleted INTEGER NOT NULL DEFAULT 0,
+    repos_deleted INTEGER NOT NULL DEFAULT 0,
+    repo_deletion_failures INTEGER NOT NULL DEFAULT 0,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'running',
+    -- 'running' | 'completed' | 'failed'
+    error TEXT,
+
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+)`,
+		`CREATE INDEX IF NOT EXISTS idx_data_retention_runs_entity ON data_retention_runs(entity_type, run_started_at DESC)`,
+
+		// ========================================
+		// MIGRATION 40: Exemption flag on job_applications
+		// Lets HR pin a specific application (e.g. a hire, a legal hold) so
+		// the pruning cron never touches it regardless of age.
+		// ========================================
+		`ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS do_not_prune BOOLEAN NOT NULL DEFAULT FALSE`,
+		`CREATE INDEX IF NOT EXISTS idx_job_applications_do_not_prune ON job_applications(do_not_prune) WHERE do_not_prune = TRUE`,
 	}
 
 	for i, migration := range migrations {
