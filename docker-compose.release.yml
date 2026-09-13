@@ -1,0 +1,123 @@
+# docker-compose.release.yml
+#
+# For self-hosters: pulls pre-built images from Docker Hub instead of
+# building from source. No Go/Node toolchain needed on the host — just
+# Docker.
+#
+# Setup:
+#   1. cp vigilant.conf.example vigilant.conf   (fill in JWT_SECRET,
+#      ENCRYPTION_KEY, DB credentials, etc.)
+#   2. cp .env.example .env                     (set VIGILANT_VERSION to
+#      a released tag — pin to a version, don't float on "latest" once
+#      you're past initial setup)
+#   3. docker compose -f docker-compose.release.yml up -d
+#
+# Upgrading: bump VIGILANT_VERSION in .env, then
+#   docker compose -f docker-compose.release.yml pull
+#   docker compose -f docker-compose.release.yml up -d
+# Migrations run automatically on server startup (idempotent) — no manual
+# migration step needed.
+
+x-runner-common:
+  &runner-common
+  restart: always
+  read_only: true
+  tmpfs:
+    - /tmp:size=32m,mode=777,exec
+  mem_limit: 256m
+  memswap_limit: 256m
+  cpus: "0.5"
+  pids_limit: 50
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  networks:
+    - runners
+  logging:
+    driver: json-file
+    options:
+      max-size: 100M
+
+services:
+  server:
+    image: epichypatia/vigilant-server:${VIGILANT_VERSION:-latest}
+    container_name: vigilant-server
+    ports:
+      - "3333:3333"
+    volumes:
+      - ./vigilant.conf:/etc/vigilant/vigilant.conf:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      runner-c:
+        condition: service_started
+      runner-cpp:
+        condition: service_started
+      runner-js:
+        condition: service_started
+      runner-java:
+        condition: service_started
+      runner-python:
+        condition: service_started
+    networks:
+      - public
+      - runners
+    restart: always
+
+  db:
+    image: postgres:16.2
+    container_name: vigilant-db
+    env_file: vigilant.conf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - public
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vigilant"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  runner-c:
+    image: epichypatia/vigilant-runner-c:${VIGILANT_VERSION:-latest}
+    container_name: vigilant-runner-c
+    <<: *runner-common
+
+  runner-cpp:
+    image: epichypatia/vigilant-runner-cpp:${VIGILANT_VERSION:-latest}
+    container_name: vigilant-runner-cpp
+    <<: *runner-common
+
+  runner-js:
+    image: epichypatia/vigilant-runner-js:${VIGILANT_VERSION:-latest}
+    container_name: vigilant-runner-js
+    <<: *runner-common
+
+  runner-java:
+    image: epichypatia/vigilant-runner-java:${VIGILANT_VERSION:-latest}
+    container_name: vigilant-runner-java
+    <<: *runner-common
+
+  runner-python:
+    image: epichypatia/vigilant-runner-python:${VIGILANT_VERSION:-latest}
+    container_name: vigilant-runner-python
+    <<: *runner-common
+
+  adminer:
+    image: adminer
+    container_name: vigilant-adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - public
+
+volumes:
+  postgres_data:
+
+networks:
+  public:
+  runners:
+    internal: true

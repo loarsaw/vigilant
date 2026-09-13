@@ -1,0 +1,101 @@
+name: Docker Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  DOCKERHUB_NAMESPACE: epichypatia
+
+jobs:
+  publish:
+    name: Build & push ${{ matrix.image.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - name: vigilant-server
+            context: ./server
+            dockerfile: ./server/Dockerfile
+          - name: vigilant-runner-c
+            context: ./server/runners
+            dockerfile: ./server/runners/c/Dockerfile
+          - name: vigilant-runner-cpp
+            context: ./server/runners
+            dockerfile: ./server/runners/cpp/Dockerfile
+          - name: vigilant-runner-js
+            context: ./server/runners
+            dockerfile: ./server/runners/js/Dockerfile
+          - name: vigilant-runner-java
+            context: ./server/runners
+            dockerfile: ./server/runners/java/Dockerfile
+          - name: vigilant-runner-python
+            context: ./server/runners
+            dockerfile: ./server/runners/python/Dockerfile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for arm64 builds)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.image.context }}
+          file: ${{ matrix.image.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.image.name }}:${{ steps.version.outputs.version }}
+            ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.image.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.image.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image.name }}
+
+  package-release:
+    name: Package deploy bundle
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble deploy bundle
+        run: |
+          bundle=dist/vigilant-${{ steps.version.outputs.version }}
+          mkdir -p "$bundle"
+          cp docker-compose.release.yml "$bundle/docker-compose.yml"
+          cp docker-compose.prod.yml "$bundle/docker-compose.prod.yml"
+          cp Caddyfile "$bundle/Caddyfile"
+          cp .env.example "$bundle/"
+          cp vigilant.conf.example "$bundle/"
+          cp INSTALL.md "$bundle/"
+          cd dist
+          zip -r vigilant-${{ steps.version.outputs.version }}.zip vigilant-${{ steps.version.outputs.version }}
+
+      - name: Attach bundle to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/vigilant-${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true

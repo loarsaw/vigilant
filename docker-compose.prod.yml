@@ -1,8 +1,28 @@
+# docker-compose.prod.yml
+#
+# Production overlay: adds Caddy (automatic TLS) in front of the stack,
+# tightens resource limits, disables Adminer.
+#
+# Works on top of EITHER base file — merges by service name, so it doesn't
+# matter whether "server" comes from a `build:` or an `image:`:
+#
+#   Building from source:
+#     docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+#   Self-hosting from published images:
+#     docker compose -f docker-compose.release.yml -f docker-compose.prod.yml up -d
+#
+# Requires DOMAIN to be set (in .env or exported in your shell) — this is
+# what Caddy uses to request a TLS cert and route requests, matching the
+# {$DOMAIN} placeholder in ./Caddyfile.
+
 services:
   caddy:
     image: caddy:2-alpine
     container_name: vigilant-caddy
     restart: always
+    environment:
+      - DOMAIN=${DOMAIN}
     ports:
       - "80:80"
       - "443:443"
@@ -18,9 +38,9 @@ services:
         max-size: 100M
 
   server:
-    ports: !reset []          
+    ports: !reset []
     expose:
-      - "3333"                
+      - "3333"
     mem_limit: 512m
     memswap_limit: 512m
     cpus: "1.0"
@@ -41,7 +61,7 @@ services:
 
   adminer:
     deploy:
-      replicas: 0             
+      replicas: 0
 
 volumes:
   caddy_data:
