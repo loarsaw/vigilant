@@ -19,7 +19,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCandidate } from "@/hooks/use-candidates";
-import { useInterview } from "@/hooks/use-interview";
 import { useJobApplications } from "@/hooks/use-job-applications";
 import { UpcomingInterview } from "@/components/upcoming-interview";
 import { EmailModal } from "@/components/qa/email-modal";
@@ -33,7 +32,7 @@ export function JobApplicationDetails() {
   const { status } = useJobApplicationStatus(applicationId ?? "");
   const navigate = useNavigate();
   const { data, isLoading, isError, error } = useCandidate(candidateId);
-  // const { sessions } = useInterview(candidateId);
+
   const {
     applications,
     isLoading: isLoadingApplications,

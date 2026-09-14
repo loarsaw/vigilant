@@ -7,7 +7,6 @@ import (
 	"vigilant/analyzer"
 	"vigilant/config"
 	"vigilant/handlers/admin"
-	"vigilant/handlers/auth"
 	"vigilant/handlers/candidate"
 	"vigilant/handlers/judge"
 	"vigilant/livekit"
@@ -18,7 +17,6 @@ import (
 )
 
 func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
-	authH := &auth.AuthHandlers{DB: db, Cfg: cfg}
 	aiService := ai.NewService(db)
 	notifSvc := notifications.NewService(db)
 	liveKitSvc := livekit.NewService(db)
@@ -74,14 +72,6 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	// 	authGroup.POST("/login", authH.Login)
 	// }
 
-	// Protected auth endpoints
-	authProtected := r.Group("/api/v1/auth")
-	authProtected.Use(middleware.AuthMiddleware(db, cfg))
-	authProtected.Use(middleware.RateLimitMiddleware(middleware.APILimiter))
-	{
-		authProtected.POST("/logout", authH.Logout)
-		authProtected.GET("/me", authH.GetMe)
-	}
 	// Admin login
 	adminLoginGroup := r.Group("/api/v1/admin")
 	adminLoginGroup.Use(middleware.RateLimitMiddleware(middleware.AuthLimiter))

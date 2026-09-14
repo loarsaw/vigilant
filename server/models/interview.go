@@ -129,3 +129,11 @@ type InterviewReminder struct {
 	CandidateName     *string
 	InterviewerName   string
 }
+
+type InterviewerScheduledData struct {
+	InterviewerName string
+	CandidateName   string
+	Position        string
+	ScheduledAt     string
+	Duration        int
+}

@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"vigilant/audit"
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
@@ -531,7 +532,6 @@ func (h *AdminHandlers) ReviewAssignmentSubmission(c *gin.Context) {
 		return
 	}
 
-	// Audit log the review action, same pattern as UpdateJobApplicationStatus.
 	metadataBytes, merr := json.Marshal(map[string]interface{}{
 		"admin_id":   adminIDStr,
 		"submission": submission.ID,
@@ -542,24 +542,17 @@ func (h *AdminHandlers) ReviewAssignmentSubmission(c *gin.Context) {
 		metadataBytes = []byte(`{}`)
 	}
 
-	_, auditErr := h.DB.Exec(`
-		INSERT INTO audit_log (
-			candidate_id, action, entity_type, entity_id, description,
-			metadata, ip_address, user_agent, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-	`,
-		nil,
+	audit.LogAdminAction(
+		h.DB,
+		adminIDStr,
 		"review_assignment_submission",
 		"assignment_submission",
 		submission.ID,
 		"Admin reviewed assignment submission with status '"+req.Status+"'",
-		metadataBytes,
+		map[string]interface{}{},
 		c.ClientIP(),
 		c.Request.UserAgent(),
 	)
-	if auditErr != nil {
-		log.Printf("Warning: Failed to create audit log: %v", auditErr)
-	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "submission reviewed successfully",

@@ -20,6 +20,7 @@ const (
 	TemplateAssignmentInvite        = "assignment_invite"
 	TemplateInterviewJoinInvite     = "interview_join_invite"
 	TemplateShortlistedFinal        = "shortlisted_final"
+	TemplateInterviewerScheduled    = "interviewer_scheduled"
 )
 
 var templates = map[string]*template.Template{}
@@ -35,6 +36,7 @@ func init() {
 	register(TemplateCandidateInvite, candidateInviteText)
 	register(TemplateAssignmentInvite, assignmentInviteText)
 	register(TemplateShortlistedFinal, shortlistedFinalText)
+	register(TemplateInterviewerScheduled, interviewerScheduledText)
 
 	register(TemplateInterviewJoinInvite, interviewJoinInviteText)
 }
@@ -197,4 +199,20 @@ Great news - after reviewing your assignment for the {{.Position}} position, you
 We'll be in touch soon with next steps.
 
 Congratulations again!
+`
+
+var interviewerScheduledText = `New Interview Scheduled
+
+Hi {{.InterviewerName}},
+
+An interview has been scheduled with you as the interviewer.
+
+  Candidate:    {{.CandidateName}}
+  Position:     {{.Position}}
+  Scheduled At: {{.ScheduledAt}}
+  Duration:     {{.Duration}} minutes
+
+Check your dashboard for full details:
+
+Best regards,
 `

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"vigilant/audit"
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
@@ -108,18 +109,18 @@ func (h *AdminHandlers) UpdateJobApplicationStatus(c *gin.Context) {
 
 	description := fmt.Sprintf("Admin updated job application status from '%s' to '%s'", currentApp.Status, req.Status)
 
-	_, err = h.DB.Exec(`
-		INSERT INTO audit_log (
-			candidate_id, action, entity_type, entity_id, description,
-			metadata, ip_address, user_agent, created_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-	`,
-		nil,
+	audit.LogAdminAction(
+		h.DB,
+		adminIDStr,
 		"update_application_status",
 		"job_application",
 		applicationID,
 		description,
-		metadataBytes,
+		map[string]interface{}{
+			"admin_email": adminEmailStr,
+			"old_status":  currentApp.Status,
+			"new_status":  req.Status,
+		},
 		ipAddress,
 		userAgent,
 	)
