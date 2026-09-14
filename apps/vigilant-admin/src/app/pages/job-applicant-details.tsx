@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import {
   ArrowLeft,
@@ -16,7 +16,7 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useCandidate } from "@/hooks/use-candidates";
 import { useInterview } from "@/hooks/use-interview";
@@ -25,7 +25,6 @@ import { UpcomingInterview } from "@/components/upcoming-interview";
 import { EmailModal } from "@/components/qa/email-modal";
 import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
 import { useJobApplicationStatus } from "@/hooks/use-job-application-status";
-// import { useApplicationInterviewFeedback } from "@/hooks/use-application-interview-session";
 import { InterviewHistory } from "@/components/interview-history";
 import { STATUS_STYLES, GITHUB_STATUS_STYLES } from "@/lib/utils";
 
@@ -34,7 +33,7 @@ export function JobApplicationDetails() {
   const { status } = useJobApplicationStatus(applicationId ?? "");
   const navigate = useNavigate();
   const { data, isLoading, isError, error } = useCandidate(candidateId);
-  const { sessions } = useInterview(candidateId);
+  // const { sessions } = useInterview(candidateId);
   const {
     applications,
     isLoading: isLoadingApplications,

@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Search,
   Plus,
@@ -50,6 +51,8 @@ const EMPTY_FORM: CreatePositionPayload = {
 };
 
 export function HiringPositions() {
+  const navigate = useNavigate();
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [department, setDepartment] = useState("");
@@ -324,7 +327,8 @@ export function HiringPositions() {
             positions.map((position) => (
               <Card
                 key={position.id}
-                className={`relative border-border/60 bg-card p-6 transition-all ${
+                onClick={() => navigate(`/hiring/${position.id}`)}
+                className={`relative border-border/60 bg-card p-6 transition-all cursor-pointer ${
                   !position.is_active ? "opacity-60" : "hover:border-primary/30"
                 }`}
               >
@@ -396,7 +400,10 @@ export function HiringPositions() {
                   </div>
 
                   {/* Right */}
-                  <div className="flex flex-col items-end gap-3 shrink-0">
+                  <div
+                    className="flex flex-col items-end gap-3 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <div className="flex items-center gap-2">
                       <Badge
                         className={`font-display font-semibold tracking-wide ${getTypeBadge(position.employment_type)}`}
