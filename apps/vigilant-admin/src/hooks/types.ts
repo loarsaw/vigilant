@@ -857,3 +857,41 @@ export interface GenerateJobDescriptionInput {
 export interface GeneratedJobDescription {
   job_description: string;
 }
+
+
+
+export interface PositionActivityOverview {
+  total_applications: number;
+  qualified: number;
+  shortlisted: number;
+  interviewing: number;
+  offered: number;
+  hired: number;
+  rejected: number;
+  avg_overall_score: number | null;
+  avg_assignment_score: number | null;
+}
+ 
+export interface PositionActivityRadarDimensions {
+  technical_skills: number | null;
+  communication: number | null;
+  problem_solving: number | null;
+  cultural_fit: number | null;
+}
+ 
+export interface PositionActivityRadar {
+  feedback_count: number;
+  dimensions: PositionActivityRadarDimensions;
+}
+ 
+export interface PositionActivity {
+  position_id: string;
+  position_title: string;
+  overview: PositionActivityOverview;
+  pipeline: StatusBreakdown;
+  radar: PositionActivityRadar;
+}
+ 
+export interface PositionActivityResponse {
+  data: PositionActivity;
+}

@@ -202,6 +202,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		positionGroup.PATCH("/:id", h.UpdatePosition)
 		positionGroup.PATCH("/:id/toggle-active", h.UpdatePositionActiveStatus)
 		positionGroup.DELETE("/:id", h.DeletePosition)
+		positionGroup.GET("/:id/activity", h.GetPositionActivity)
 	}
 
 	// Misc endpoints

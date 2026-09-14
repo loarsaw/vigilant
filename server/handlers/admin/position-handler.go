@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"vigilant/models"
 
@@ -17,20 +16,7 @@ import (
 
 func (h *AdminHandlers) CreatePosition(c *gin.Context) {
 
-	var req struct {
-		PositionTitle      string `json:"position_title" binding:"required"`
-		Department         string `json:"department" binding:"required"`
-		Location           string `json:"location" binding:"required"`
-		EmploymentType     string `json:"employment_type" binding:"required"`
-		ExperienceRequired string `json:"experience_required"`
-		SalaryRangeMin     *int   `json:"salary_range_min"`
-		SalaryRangeMax     *int   `json:"salary_range_max"`
-		SalaryRangeText    string `json:"salary_range_text"`
-		NumberOfOpenings   int    `json:"number_of_openings" binding:"required,gt=0"`
-		JobDescription     string `json:"job_description" binding:"required"`
-		Requirements       string `json:"requirements"`
-	}
-
+	var req models.CreatePosition
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "validation failed",
@@ -130,27 +116,10 @@ func (h *AdminHandlers) GetCandidateApplications(c *gin.Context) {
 	}
 	defer rows.Close()
 
-	type ApplicationRow struct {
-		ApplicationID        string     `json:"application_id"`
-		ApplicationStatus    string     `json:"application_status"`
-		AppliedAt            time.Time  `json:"applied_at"`
-		PositionID           string     `json:"position_id"`
-		PositionTitle        string     `json:"position_title"`
-		Department           string     `json:"department"`
-		Location             string     `json:"location"`
-		EmploymentType       string     `json:"employment_type"`
-		CandidateName        string     `json:"candidate_name"`
-		CandidateEmail       string     `json:"candidate_email"`
-		InterviewSessionID   *string    `json:"interview_session_id,omitempty"`
-		InterviewStatus      *string    `json:"interview_status,omitempty"`
-		InterviewScheduledAt *time.Time `json:"interview_scheduled_at,omitempty"`
-		InterviewURL         *string    `json:"interview_url,omitempty"`
-	}
-
-	applications := []ApplicationRow{}
+	applications := []models.ApplicationRow{}
 
 	for rows.Next() {
-		var row ApplicationRow
+		var row models.ApplicationRow
 		var interviewSessionID, interviewStatus, interviewURL sql.NullString
 		var interviewScheduledAt sql.NullTime
 
@@ -573,5 +542,135 @@ func (h *AdminHandlers) DeletePosition(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message":     "position deleted successfully",
 		"position_id": positionID,
+	})
+}
+
+func (h *AdminHandlers) GetPositionActivity(c *gin.Context) {
+	positionID := c.Param("id")
+
+	var positionTitle string
+	if err := h.DB.QueryRow(`
+		SELECT position_title FROM hiring_positions WHERE id = $1
+	`, positionID).Scan(&positionTitle); err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "position not found"})
+			return
+		}
+		log.Printf("Error fetching position for activity: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch position"})
+		return
+	}
+
+	var overview struct {
+		Total              int
+		Qualified          int
+		Shortlisted        int
+		Interviewing       int
+		Offered            int
+		Hired              int
+		Rejected           int
+		AvgOverallScore    sql.NullFloat64
+		AvgAssignmentScore sql.NullFloat64
+	}
+
+	err := h.DB.QueryRow(`
+		SELECT
+			COUNT(*),
+			COUNT(*) FILTER (WHERE is_qualified),
+			COUNT(*) FILTER (WHERE is_shortlisted),
+			COUNT(*) FILTER (WHERE status = 'interviewing'),
+			COUNT(*) FILTER (WHERE status = 'offered'),
+			COUNT(*) FILTER (WHERE status = 'hired'),
+			COUNT(*) FILTER (WHERE status = 'rejected'),
+			AVG(overall_score) FILTER (WHERE overall_score IS NOT NULL),
+			AVG(assignment_overall_score) FILTER (WHERE assignment_overall_score IS NOT NULL)
+		FROM job_applications
+		WHERE position_id = $1
+	`, positionID).Scan(
+		&overview.Total, &overview.Qualified, &overview.Shortlisted,
+		&overview.Interviewing, &overview.Offered, &overview.Hired, &overview.Rejected,
+		&overview.AvgOverallScore, &overview.AvgAssignmentScore,
+	)
+	if err != nil {
+		log.Printf("Error fetching position activity overview: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch activity overview"})
+		return
+	}
+
+	statusRows, err := h.DB.Query(`
+		SELECT status, COUNT(*)
+		FROM job_applications
+		WHERE position_id = $1
+		GROUP BY status
+	`, positionID)
+	if err != nil {
+		log.Printf("Error fetching position status breakdown: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch status breakdown"})
+		return
+	}
+	statusBreakdown := map[string]int{}
+	for statusRows.Next() {
+		var st string
+		var count int
+		if err := statusRows.Scan(&st, &count); err == nil {
+			statusBreakdown[st] = count
+		}
+	}
+	statusRows.Close()
+
+	var radar struct {
+		Technical      sql.NullFloat64
+		Communication  sql.NullFloat64
+		ProblemSolving sql.NullFloat64
+		CulturalFit    sql.NullFloat64
+		FeedbackCount  int
+	}
+	err = h.DB.QueryRow(`
+		SELECT
+			AVG(f.technical_skills_score),
+			AVG(f.communication_score),
+			AVG(f.problem_solving_score),
+			AVG(f.cultural_fit_score),
+			COUNT(*)
+		FROM interview_feedback f
+		JOIN interview_sessions s ON f.interview_session_id = s.id
+		JOIN job_applications ja ON s.application_id = ja.id
+		WHERE ja.position_id = $1
+	`, positionID).Scan(
+		&radar.Technical, &radar.Communication, &radar.ProblemSolving,
+		&radar.CulturalFit, &radar.FeedbackCount,
+	)
+	if err != nil {
+		log.Printf("Error fetching position radar data: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch scorecard averages"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"position_id":    positionID,
+			"position_title": positionTitle,
+			"overview": gin.H{
+				"total_applications":   overview.Total,
+				"qualified":            overview.Qualified,
+				"shortlisted":          overview.Shortlisted,
+				"interviewing":         overview.Interviewing,
+				"offered":              overview.Offered,
+				"hired":                overview.Hired,
+				"rejected":             overview.Rejected,
+				"avg_overall_score":    nullFloatOrNil(overview.AvgOverallScore),
+				"avg_assignment_score": nullFloatOrNil(overview.AvgAssignmentScore),
+			},
+			"pipeline": statusBreakdown,
+			"radar": gin.H{
+				"feedback_count": radar.FeedbackCount,
+				"dimensions": gin.H{
+					"technical_skills": nullFloatOrNil(radar.Technical),
+					"communication":    nullFloatOrNil(radar.Communication),
+					"problem_solving":  nullFloatOrNil(radar.ProblemSolving),
+					"cultural_fit":     nullFloatOrNil(radar.CulturalFit),
+				},
+			},
+		},
 	})
 }

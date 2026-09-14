@@ -10,11 +10,6 @@ import {
   Square,
   AlertTriangle,
   JoystickIcon,
-  ChevronLeft,
-  ChevronRight,
-  PhoneOff,
-  SlidersHorizontal,
-  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,13 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  LiveKitRoom,
-  VideoConference,
-  formatChatMessageLinks,
-  RoomAudioRenderer,
-} from "@livekit/components-react";
-import "@livekit/components-styles";
 import { useCandidate } from "@/hooks/use-candidates";
 import { useInterview } from "@/hooks/use-interview";
 import { pushToCandidate } from "@/lib/axios";
@@ -41,40 +29,15 @@ import { CandidateLevel, Framework } from "@/types/types";
 import ScoreEvaluator from "@/components/evaluator";
 import { SystemDiagnostics } from "./process-report";
 import { BracketCorners } from "@/components/bracket-conner";
-import {
-  SessionConfigurationCard,
-  type SessionType,
-  type DSALanguage,
-} from "@/components/session-configuration";
+import { type SessionType, type DSALanguage } from "@/components/session-configuration";
 import { useSessionFeedback } from "@/hooks/use-session-feedback";
 import FeedbackSummary from "@/components/feedback-summary";
-import { InterviewQuestionsPanel } from "@/components/questions-panel";
-import PreInterviewModal from "@/components/pre-interview-model";
-import { RoomConnectionErrorModal } from "@/components/connection-fallback";
+import { formatStatus, statusBadgeClass } from "@/lib/utils";
+import { InterviewRoomView } from "@/components/interview-room";
 
 interface RoomCreds {
   roomToken: string;
   roomHost: string;
-}
-
-function formatStatus(status: string) {
-  if (!status) return "Unknown";
-  return status
-    .split("_")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-function statusBadgeClass(status: string) {
-  switch (status) {
-    case "in_progress":
-      return "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]";
-    case "completed":
-      return "bg-muted text-muted-foreground border border-border";
-    case "scheduled":
-    default:
-      return "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)]";
-  }
 }
 
 export function InterviewDetail() {
@@ -104,8 +67,6 @@ export function InterviewDetail() {
   const [isDispatching, setIsDispatching] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [upcoming, setUpcoming] = useState(false);
-  // interviewStatus mirrors the DB's `status` column (scheduled / in_progress / completed),
-  // seeded from sessionStatus and updated optimistically on start/end.
   const [interviewStatus, setInterviewStatus] = useState<string>("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
@@ -122,7 +83,6 @@ export function InterviewDetail() {
   const [questionDifficulty, setQuestionDifficulty] = useState<string>("");
   const [questionCategory, setQuestionCategory] = useState<string>("mixed");
   const [questionCount, setQuestionCount] = useState(5);
-  // console.log(existingFeedback, "existingFeedback");
   const [roomCreds, setRoomCreds] = useState<RoomCreds | null>(null);
   const [isInRoom, setIsInRoom] = useState(false);
   const [roomConnectionError, setRoomConnectionError] = useState<string | null>(null);
@@ -137,9 +97,6 @@ export function InterviewDetail() {
       : sessionType === "dsa"
         ? dsaLanguage !== ""
         : false;
-  // The interview is considered "live" for gating purposes only once the
-  // admin has explicitly started it — joining the LiveKit room alone
-  // (isInRoom) is not enough to reveal the call/notes/panel UI.
   const hasStarted = interviewStatus === "in_progress" || interviewStatus === "completed";
 
   useEffect(() => {
@@ -158,8 +115,6 @@ export function InterviewDetail() {
     }
   }, [sessions]);
 
-  // Call-duration ticker only runs once the interview has actually started,
-  // not just from the moment the admin joined the room.
   useEffect(() => {
     if (!isInRoom || !joinedAt || !hasStarted) return;
     const tick = () => {
@@ -213,8 +168,6 @@ export function InterviewDetail() {
     try {
       await startSessionAsync(sessionId);
       setInterviewStatus("in_progress");
-      // Start the call clock from the moment the interview is actually started,
-      // not from when the admin merely joined the room.
       setJoinedAt(Date.now());
     } catch (err: any) {
       setSessionError(err?.response?.data?.error ?? "Failed to start interview");
@@ -228,7 +181,6 @@ export function InterviewDetail() {
       await endSessionAsync(sessionId);
       setInterviewStatus("completed");
       setShowEndModal(false);
-      // if we were in the room when the session ended, drop out of it
       setIsInRoom(false);
       setRoomCreds(null);
     } catch (err: any) {
@@ -236,18 +188,12 @@ export function InterviewDetail() {
     }
   };
 
-  // Joins the room INLINE — fetches the interviewer's LiveKit token and
-  // switches this page into the full-screen room view. This only connects
-  // to the room; it does NOT start the interview. The full-screen view
-  // shows a "Start Interview" gate until handleStartInterview is called.
   const handleJoinInterview = async () => {
     if (!sessionId) return;
     setJoinError(null);
     setRoomConnectionError(null);
     try {
       const creds = await getRoomTokenAsync(sessionId);
-      // API returns snake_case (session_id, room_token, room_host) —
-      // see InterviewRoomTokenResponse in use-interview.ts
       setRoomCreds({ roomToken: creds.room_token, roomHost: creds.room_host });
       setIsInRoom(true);
       setJoinedAt(Date.now());
@@ -291,233 +237,54 @@ export function InterviewDetail() {
 
   // --- Full-screen in-page room view ---
   if (isInRoom && roomCreds) {
-    const serverUrl = roomCreds.roomHost.startsWith("ws")
-      ? roomCreds.roomHost
-      : `wss://${roomCreds.roomHost}`;
-
-    if (roomConnectionError) {
-      return (
-        <RoomConnectionErrorModal
-          roomConnectionError={roomConnectionError}
-          setRoomConnectionError={setRoomConnectionError}
-          handleLeaveRoom={handleLeaveRoom}
-        />
-      );
-    }
-
-    if (!hasStarted) {
-      return (
-        <PreInterviewModal
-          candidateData={candidateData}
-          interviewStatus={interviewStatus}
-          isStartingSession={isStartingSession}
-          sessionError={sessionError}
-          handleLeaveRoom={handleLeaveRoom}
-          handleStartInterview={handleStartInterview}
-          statusBadgeClass={statusBadgeClass}
-          formatStatus={formatStatus}
-        />
-      );
-    }
-
     return (
-      <div className="fixed inset-0 z-50 h-screen w-screen bg-[#0a0d14] flex overflow-hidden">
-        {/* Video area */}
-        <div
-          data-lk-theme="default"
-          className="lk-room-container relative flex-1 min-w-0 h-full flex flex-col"
-        >
-          {/* Top bar overlay — sits above the video, doesn't block it */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between gap-3 p-4 bg-gradient-to-b from-black/70 via-black/30 to-transparent">
-            <button
-              type="button"
-              onClick={handleLeaveRoom}
-              className="pointer-events-auto flex items-center gap-2 px-3 py-2 rounded-lg
-                bg-black/50 backdrop-blur-sm border border-white/10 text-sm text-slate-200
-                hover:bg-black/70 hover:text-white transition-colors"
-            >
-              <PhoneOff className="w-4 h-4" />
-              <span className="hidden sm:inline">Leave &amp; back to details</span>
-            </button>
-
-            <div className="pointer-events-auto flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-sm text-slate-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--chart-4))] animate-pulse" />
-                <span className="font-display font-semibold tracking-wide truncate max-w-[160px]">
-                  {candidateData.full_name}
-                </span>
-                <span className="w-px h-3.5 bg-white/15" />
-                <Badge
-                  className={`font-display font-semibold tracking-wide text-[11px] px-1.5 py-0 ${statusBadgeClass(interviewStatus)}`}
-                >
-                  {formatStatus(interviewStatus)}
-                </Badge>
-                <span className="w-px h-3.5 bg-white/15" />
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span className="tabular-nums text-slate-300">{elapsedLabel}</span>
-              </div>
-
-              {!isConfigPanelOpen && (
-                <button
-                  type="button"
-                  onClick={() => setIsConfigPanelOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/50 backdrop-blur-sm
-                    border border-white/10 text-sm text-slate-200 hover:bg-black/70 hover:text-white transition-colors"
-                >
-                  <SlidersHorizontal className="w-4 h-4" />
-                  <span className="hidden sm:inline">Session panel</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          <LiveKitRoom
-            video
-            audio
-            token={roomCreds.roomToken}
-            serverUrl={serverUrl}
-            data-lk-theme="default"
-            style={{ height: "100%" }}
-            onDisconnected={handleLeaveRoom}
-            onError={(err) => {
-              console.error("[LiveKit] connection error:", err);
-              setRoomConnectionError(
-                "We couldn't connect to the interview room. Please check your connection and try again.",
-              );
-            }}
-          >
-            <div className="flex-1 min-h-0 h-full">
-              <VideoConference chatMessageFormatter={formatChatMessageLinks} />
-            </div>
-            <RoomAudioRenderer />
-          </LiveKitRoom>
-        </div>
-
-        {/* Toggle tab, attached to the panel's edge */}
-        <button
-          type="button"
-          onClick={() => setIsConfigPanelOpen((v) => !v)}
-          aria-label={isConfigPanelOpen ? "Close session panel" : "Open session panel"}
-          className={`absolute top-1/2 -translate-y-1/2 z-30 flex items-center justify-center
-            w-6 h-16 rounded-l-md bg-card border border-border/60 border-r-0
-            text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-[right] duration-300 ease-in-out
-            ${isConfigPanelOpen ? "right-[340px]" : "right-0"}`}
-        >
-          {isConfigPanelOpen ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </button>
-
-        {/* Slide-out session panel — fits its content, no dead space */}
-        <div
-          className={`h-full bg-background border-l border-border/60 shrink-0 overflow-hidden
-            transition-[width] duration-300 ease-in-out
-            ${isConfigPanelOpen ? "w-[340px]" : "w-0"}`}
-        >
-          <div className="w-[340px] h-full flex flex-col">
-            <div className="flex-1 min-h-0 overflow-y-auto p-3 pb-0 space-y-3">
-              <SessionConfigurationCard
-                sessionType={sessionType}
-                dsaLanguage={dsaLanguage}
-                framework={framework}
-                level={level}
-                dispatched={dispatched}
-                isDispatching={isDispatching}
-                canDispatch={canDispatch}
-                onSessionTypeChange={handleSessionTypeChange}
-                onDsaLanguageChange={(lang) => {
-                  setDsaLanguage(lang);
-                  setDispatched(false);
-                }}
-                onFrameworkChange={(fw) => {
-                  setFramework(fw);
-                  setDispatched(false);
-                }}
-                onLevelChange={(lvl) => {
-                  setLevel(lvl);
-                  setDispatched(false);
-                }}
-                onDispatch={handleDispatch}
-              />
-
-              {sessionId && (
-                <InterviewQuestionsPanel
-                  sessionId={sessionId}
-                  difficulty={questionDifficulty}
-                  onDifficultyChange={setQuestionDifficulty}
-                  category={questionCategory}
-                  onCategoryChange={setQuestionCategory}
-                  count={questionCount}
-                  onCountChange={setQuestionCount}
-                />
-              )}
-              
-          
-            </div>
-
-            {/* Footer action, anchored to the bottom of the panel instead of empty space */}
-            <div className="p-3 border-t border-border/60">
-              <Button
-                onClick={() => setShowEndModal(true)}
-                variant="outline"
-                className="w-full border-[hsl(var(--destructive)/0.4)] text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)] font-display font-semibold tracking-wide gap-2"
-              >
-                <Square className="h-4 w-4" />
-                End session
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* End Interview Confirmation Modal (also reachable from the in-room panel) */}
-        <Dialog open={showEndModal} onOpenChange={setShowEndModal}>
-          <DialogContent className="bg-card border-border/60 text-foreground sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 font-display tracking-wide text-foreground">
-                <AlertTriangle className="h-5 w-5 text-[hsl(var(--chart-3))]" />
-                End interview session
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                This will mark the session as completed and record the end time. This action cannot
-                be undone.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="rounded-lg bg-[hsl(var(--chart-3)/0.1)] border border-[hsl(var(--chart-3)/0.3)] p-4 text-sm text-[hsl(var(--chart-3))]">
-              Make sure you have submitted your evaluation scores before ending the session.
-            </div>
-
-            {sessionError && (
-              <p className="text-sm text-[hsl(var(--destructive))]">{sessionError}</p>
-            )}
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="ghost"
-                onClick={() => setShowEndModal(false)}
-                className="font-display font-semibold tracking-wide text-muted-foreground hover:text-foreground"
-                disabled={isEndingSession}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEndInterview}
-                disabled={isEndingSession}
-                className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.9)] text-[hsl(var(--destructive-foreground))] font-display font-semibold tracking-wide gap-2"
-              >
-                {isEndingSession ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Square className="h-4 w-4" />
-                )}
-                {isEndingSession ? "Ending..." : "End session"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <InterviewRoomView
+        roomCreds={roomCreds}
+        hasStarted={hasStarted}
+        candidateData={candidateData}
+        interviewStatus={interviewStatus}
+        isStartingSession={isStartingSession}
+        sessionError={sessionError}
+        roomConnectionError={roomConnectionError}
+        setRoomConnectionError={setRoomConnectionError}
+        handleLeaveRoom={handleLeaveRoom}
+        handleStartInterview={handleStartInterview}
+        elapsedLabel={elapsedLabel}
+        isConfigPanelOpen={isConfigPanelOpen}
+        setIsConfigPanelOpen={setIsConfigPanelOpen}
+        sessionType={sessionType}
+        dsaLanguage={dsaLanguage}
+        framework={framework}
+        level={level}
+        dispatched={dispatched}
+        isDispatching={isDispatching}
+        canDispatch={canDispatch}
+        onSessionTypeChange={handleSessionTypeChange}
+        onDsaLanguageChange={(lang) => {
+          setDsaLanguage(lang);
+          setDispatched(false);
+        }}
+        onFrameworkChange={(fw) => {
+          setFramework(fw);
+          setDispatched(false);
+        }}
+        onLevelChange={(lvl) => {
+          setLevel(lvl);
+          setDispatched(false);
+        }}
+        onDispatch={handleDispatch}
+        sessionId={sessionId}
+        questionDifficulty={questionDifficulty}
+        onQuestionDifficultyChange={setQuestionDifficulty}
+        questionCategory={questionCategory}
+        onQuestionCategoryChange={setQuestionCategory}
+        questionCount={questionCount}
+        onQuestionCountChange={setQuestionCount}
+        showEndModal={showEndModal}
+        setShowEndModal={setShowEndModal}
+        handleEndInterview={handleEndInterview}
+        isEndingSession={isEndingSession}
+      />
     );
   }
 

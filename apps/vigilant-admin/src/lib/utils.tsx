@@ -45,24 +45,47 @@ export const getStatusBadge = (status: string) => {
   );
 };
 
-
-// Badge color per application status 
+// Badge color per application status
 export const STATUS_STYLES: Record<string, string> = {
   applied: "bg-muted text-muted-foreground border border-border",
-  screening: "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
-  interviewing: "bg-[hsl(var(--chart-2)/0.15)] text-[hsl(var(--chart-2))] border border-[hsl(var(--chart-2)/0.3)]",
-  offered: "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)]",
-  hired: "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
+  screening:
+    "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
+  interviewing:
+    "bg-[hsl(var(--chart-2)/0.15)] text-[hsl(var(--chart-2))] border border-[hsl(var(--chart-2)/0.3)]",
+  offered:
+    "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)]",
+  hired:
+    "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
   rejected: "bg-destructive/15 text-destructive border border-destructive/30",
   withdrawn: "bg-muted text-muted-foreground/70 border border-border",
 };
 
 // Badge color per github invite status (invited / accepted / failed / pending).
 export const GITHUB_STATUS_STYLES: Record<string, string> = {
-  invited: "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
-  accepted: "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
+  invited:
+    "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
+  accepted:
+    "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
   failed: "bg-destructive/15 text-destructive border border-destructive/30",
   pending: "bg-muted text-muted-foreground border border-border",
 };
 
+export function formatStatus(status: string) {
+  if (!status) return "Unknown";
+  return status
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
 
+export function statusBadgeClass(status: string) {
+  switch (status) {
+    case "in_progress":
+      return "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]";
+    case "completed":
+      return "bg-muted text-muted-foreground border border-border";
+    case "scheduled":
+    default:
+      return "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)]";
+  }
+}
