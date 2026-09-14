@@ -146,7 +146,14 @@ export function InterviewQuestionsPanel({
         )}
 
         {data && (
-          <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+          <div
+            className="space-y-2 max-h-[360px] overflow-y-auto pr-1
+      [&::-webkit-scrollbar]:w-1.5
+      [&::-webkit-scrollbar-track]:bg-transparent
+      [&::-webkit-scrollbar-thumb]:bg-border
+      [&::-webkit-scrollbar-thumb]:rounded-full
+      hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/50"
+          >
             {data.questions.map((q, idx) => {
               const isOpen = expandedIdx === idx;
               return (
