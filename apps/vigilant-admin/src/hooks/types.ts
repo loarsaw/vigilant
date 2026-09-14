@@ -833,3 +833,27 @@ export interface RetentionRunsResponse {
     has_more: boolean;
   };
 }
+
+
+export interface UseDraftPersistenceOptions<T> {
+  key: string;
+  data: T;
+  enabled: boolean; 
+  debounceMs?: number;
+}
+
+
+export interface GenerateJobDescriptionInput {
+  position_title: string;
+  department?: string;
+  location?: string;
+  employment_type?: string;
+  experience_required?: string;
+  requirements?: string;
+  tone?: "professional" | "casual" | "enthusiastic";
+  notes?: string;
+}
+
+export interface GeneratedJobDescription {
+  job_description: string;
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Search,
   Plus,
@@ -16,9 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -35,6 +32,8 @@ import {
 import { useHiringPositions } from "@/hooks/use-hiring";
 import { CreatePositionPayload, HiringPosition } from "@/hooks/types";
 import { BracketCorners } from "@/components/bracket-conner";
+import { PositionDialog } from "@/components/position/position-dialog";
+import { StatCard } from "@/components/admin/dashboard/stat-card";
 
 const EMPTY_FORM: CreatePositionPayload = {
   position_title: "",
@@ -49,33 +48,6 @@ const EMPTY_FORM: CreatePositionPayload = {
   job_description: "",
   requirements: "",
 };
-
-function StatCard({
-  label,
-  value,
-  icon,
-  tone = "primary",
-}: {
-  label: string;
-  value: number;
-  icon: React.ReactNode;
-  tone?: "primary" | "muted";
-}) {
-  return (
-    <Card className="relative border-border/60 bg-card p-6">
-      <BracketCorners tone={tone} />
-      <div className="flex items-center gap-3">
-        <div className="h-8 w-8 rounded-md bg-input border border-border flex items-center justify-center flex-shrink-0">
-          {icon}
-        </div>
-        <div>
-          <p className="font-display text-2xl font-bold text-foreground">{value}</p>
-          <p className="text-sm text-muted-foreground">{label}</p>
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 export function HiringPositions() {
   const [search, setSearch] = useState("");
@@ -119,6 +91,12 @@ export function HiringPositions() {
     setFormData(EMPTY_FORM);
     setShowDialog(true);
   };
+
+  const stripHtml = useCallback((html: string): string => {
+    if (!html) return "";
+    const withSpaces = html.replace(/<\/(p|div|li|h[1-6])>/gi, " ").replace(/<[^>]*>/g, "");
+    return withSpaces.replace(/\s+/g, " ").trim();
+  }, []);
 
   const openEdit = (pos: HiringPosition) => {
     setEditingPosition(pos);
@@ -380,8 +358,8 @@ export function HiringPositions() {
                         </span>
                       </div>
 
-                      <p className="text-foreground/80 text-sm line-clamp-2">
-                        {position.job_description}
+                      <p className="text-foreground/80 text-sm line-clamp-1">
+                        {stripHtml(position.job_description)}
                       </p>
 
                       {position.requirements && (
@@ -509,198 +487,26 @@ export function HiringPositions() {
           </div>
         )}
 
-        <Dialog open={showDialog} onOpenChange={closeDialog}>
-          <DialogContent className="bg-card border-border/60 text-foreground max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="font-display tracking-wide">
-                {editingPosition ? "Edit Position" : "Add New Position"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 mt-4">
-              <div>
-                <Label>Position Title *</Label>
-                <Input
-                  placeholder="Backend Engineer"
-                  value={formData.position_title}
-                  onChange={(e) => setFormData({ ...formData, position_title: e.target.value })}
-                  className="bg-input border-border mt-1"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Department *</Label>
-                  <Input
-                    placeholder="Engineering"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="bg-input border-border mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Location *</Label>
-                  <Input
-                    placeholder="Remote"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="bg-input border-border mt-1"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Employment Type *</Label>
-                  <select
-                    value={formData.employment_type}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        employment_type: e.target.value,
-                      })
-                    }
-                    className="w-full mt-1 px-4 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="full-time">Full-time</option>
-                    <option value="part-time">Part-time</option>
-                    <option value="contract">Contract</option>
-                    <option value="internship">Internship</option>
-                  </select>
-                </div>
-                <div>
-                  <Label>Experience Required *</Label>
-                  <Input
-                    placeholder="3-5 years"
-                    value={formData.experience_required}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        experience_required: e.target.value,
-                      })
-                    }
-                    className="bg-input border-border mt-1"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label>Min Salary ($)</Label>
-                  <Input
-                    type="number"
-                    placeholder="120000"
-                    value={formData.salary_range_min || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        salary_range_min: Number(e.target.value),
-                      })
-                    }
-                    className="bg-input border-border mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Max Salary ($)</Label>
-                  <Input
-                    type="number"
-                    placeholder="160000"
-                    value={formData.salary_range_max || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        salary_range_max: Number(e.target.value),
-                      })
-                    }
-                    className="bg-input border-border mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Salary Display Text</Label>
-                  <Input
-                    placeholder="$120k – $160k"
-                    value={formData.salary_range_text}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        salary_range_text: e.target.value,
-                      })
-                    }
-                    className="bg-input border-border mt-1"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label>Number of Openings *</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.number_of_openings}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      number_of_openings: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="bg-input border-border mt-1"
-                />
-              </div>
-
-              <div>
-                <Label>Job Description *</Label>
-                <Textarea
-                  placeholder="Describe the role and responsibilities…"
-                  value={formData.job_description}
-                  onChange={(e) => setFormData({ ...formData, job_description: e.target.value })}
-                  className="bg-input border-border mt-1 min-h-24"
-                />
-              </div>
-
-              <div>
-                <Label>Requirements (comma-separated) *</Label>
-                <Textarea
-                  placeholder="React, TypeScript, Node.js, AWS"
-                  value={formData.requirements}
-                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                  className="bg-input border-border mt-1"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <Button
-                  className="flex-1 font-display font-semibold tracking-wide"
-                  onClick={handleSubmit}
-                  disabled={
-                    isCreating ||
-                    isUpdating ||
-                    !formData.position_title ||
-                    !formData.department ||
-                    !formData.location
-                  }
-                >
-                  {isCreating || isUpdating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving…
-                    </>
-                  ) : editingPosition ? (
-                    "Update Position"
-                  ) : (
-                    "Add Position"
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 font-display font-semibold tracking-wide"
-                  onClick={closeDialog}
-                  disabled={isCreating || isUpdating}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <PositionDialog
+          open={showDialog}
+          onOpenChange={closeDialog}
+          editingPosition={editingPosition}
+          onSave={(payload) => {
+            if (editingPosition) {
+              updatePosition({ id: editingPosition.id, payload }, { onSuccess: closeDialog });
+            } else {
+              createPosition(payload, {
+                onSuccess: () => {
+                  try {
+                    localStorage.removeItem("hiring:new-position-draft");
+                  } catch {}
+                  closeDialog();
+                },
+              });
+            }
+          }}
+          isLoading={isCreating || isUpdating}
+        />
       </div>
     </div>
   );

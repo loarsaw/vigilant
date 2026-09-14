@@ -130,7 +130,7 @@ export default function LoginPage() {
                   <Label htmlFor="employer-workspace">Workspace Name</Label>
                   <Input
                     id="employer-workspace"
-                    placeholder="com.yourcompany.app"
+                    placeholder="com.domain.app"
                     value={emailData.workspaceName}
                     onChange={(e) =>
                       setEmailData({
@@ -196,7 +196,7 @@ export default function LoginPage() {
                   <Label htmlFor="token-workspace">Workspace Name</Label>
                   <Input
                     id="token-workspace"
-                    placeholder="com.yourcompany.app"
+                    placeholder="com.domain.app"
                     value={tokenData.workspaceName}
                     onChange={(e) =>
                       setTokenData({

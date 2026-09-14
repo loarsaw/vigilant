@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Configuration
+# Install
 
 This guide details the environment variables and security settings required to run the **Vigilant** suite. Configuration is split across two files: `vigilant.conf` (secrets and runtime settings) and `.env` (deployment settings — which version to run, and your public domain if using Caddy).
 
@@ -18,10 +18,8 @@ There are two ways to run Vigilant, and it affects which files you need:
 
   ```bash
   wget https://github.com/loarsaw/vigilant/releases/download/v1.0.0/vigilant-1.0.0.zip
-  unzip vigilant-1.0.0.zip && cd vigilant-X.Y.Z
+  unzip vigilant-1.0.0.zip && cd vigilant-1.0.0
   ```
-
-  This is the same idea as tools like Judge0 ship — you get a deploy bundle, not the source tree.
 
 - **Building from source** — for contributors, or if you're modifying the server:
 
@@ -77,7 +75,7 @@ ADMIN_SESSION_TIMEOUT=24
 JWT_SECRET=changeme
 BCRYPT_COST=10
 
-# Performance & Limits
+# Code Execution
 DATA_RETENTION_HOURS=72
 RATE_LIMIT_PER_MINUTE=120
 CLIENT_UPDATE_INTERVAL=5
@@ -163,10 +161,16 @@ To ensure **Vigilant** operates securely on your VPS, it is important to underst
 * **`BCRYPT_COST`**: Defines the computational effort for hashing admin passwords. `10` is the industry standard for balancing security and performance.
 * **`ADMIN_IP_ADDRESS`**: Optional comma-separated IP allowlist for the admin panel. Leaving this blank does **not** fail to start — it just disables the allowlist entirely (any IP can reach admin routes). Set this deliberately if you want network-level restriction.
 
+### **Code Execution**
+These four settings all apply to the code-judge service — the sandboxed runner that executes candidate-submitted code (`/execute`) — not to the Electron desktop client or its integrity/anti-cheat monitoring.
+
+* **`HIGH_MEMORY_THRESHOLD`**: The memory ceiling (in MB) for a single code execution. If a submission's peak memory usage exceeds this, the judge marks that submission's status as `high_memory` in its result (alongside `accepted`, `timeout`, or `error`) rather than failing the request. Defaults to `500` if unset or invalid.
+* **`DATA_RETENTION_HOURS`**: How long completed code-judge submissions (code, stdout/stderr, exit code, timing, memory) are kept in the `judge_submissions` table before a background worker purges them. Cleanup runs once on server start, then every 6 hours. Defaults to `72` if unset or invalid.
+* **`RATE_LIMIT_PER_MINUTE`**: Caps how many code-execution requests the judge API will accept per minute, to keep the sandbox runners from being overwhelmed.
+* **`CLIENT_UPDATE_INTERVAL`**: How often (in seconds) the code-judge environment polls/refreshes execution status for a running or queued submission.
+
 ### **Integrity & Performance**
-* **`HIGH_MEMORY_THRESHOLD`**: If the Electron client or a monitored process exceeds this limit (500MB), the system flags it as a potential integrity risk.
-* **`DATA_RETENTION_HOURS`**: To prevent your VPS storage from filling up, Vigilant will automatically purge logs and historical data older than 72 hours.
-* **`CLIENT_UPDATE_INTERVAL`**: How often (in seconds) the system heartbeats and checks the process tree.
+Settings that affect the Electron client and admin-side monitoring live here — currently none of the four vars above belong in this section; see **Code Execution** above.
 
 ---
 
