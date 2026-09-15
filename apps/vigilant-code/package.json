@@ -1,7 +1,7 @@
 {
   "name": "vigilant-code",
   "productName": "Vigilant Code",
-  "version": "1.0.0",
+  "version": "v0.0.0-alpha.1",
   "description": "Vigilant code an Interview and Code assessment platform for candidates",
   "main": ".vite/build/main.js",
   "scripts": {
