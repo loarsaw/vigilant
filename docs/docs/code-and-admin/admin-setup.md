@@ -126,3 +126,43 @@ The **Recent prune runs** panel on this page shows a history of each cleanup pas
 :::
 
 ---
+
+## Audit Log
+
+Vigilant records a running audit log of admin, candidate, and system actions across the platform. Navigate to **Settings → Audit Log** to view it.
+
+:::info
+Only **Super Admin** and **HR** roles can view the audit log. Interviewers do not have access to this tab.
+:::
+
+### Entry Types
+
+Each entry is tagged with an actor type:
+
+| Actor Type | Description |
+|---|---|
+| **Admin** | An action taken by a Super Admin or HR/Interviewer account. Shown as `Name (email)`. If the admin account has since been deleted, the entry shows **Deleted admin**. |
+| **Candidate** | An action taken by a candidate. Shown as `Name (email)`, or **Unknown candidate** if the candidate record no longer exists. |
+| **System** | An automated action (e.g. the retention cron or email worker). Shown using the source tag recorded at the time, such as `system:retention_cron` or `system:email_worker`. |
+
+By default, system events are hidden from the list — toggle **Show system events** to include them.
+
+### Filtering & Search
+
+| Control | Description |
+|---|---|
+| **Search** | Free-text search across the entry's description and action fields. |
+| **Show system events** | Toggles visibility of automated/system-generated entries. |
+| **Refresh** | Re-fetches the current page from the server. |
+
+The underlying endpoint also supports filtering by `entity_type`, `entity_id`, `admin_id`, `candidate_id`, `action`, `actor_type`, and a `from`/`to` date range, though these aren't yet exposed as UI controls.
+
+### Entry Details
+
+Entries with additional metadata (e.g. old/new values for a status change) can be expanded to show the raw metadata as JSON, along with the originating IP address when available.
+
+Results are paginated 25 at a time — use **Load more** to fetch the next page.
+
+![Audit Log](./img/auditLogConfig.png)
+
+---
