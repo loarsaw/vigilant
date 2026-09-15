@@ -3,8 +3,11 @@ package email
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
+
+	"vigilant/audit"
 )
 
 type Worker struct {
@@ -100,12 +103,12 @@ func (w *Worker) processBatch(ctx context.Context) {
 			continue
 		}
 
-		w.sendJob(ctx, mailer, id, toEmail, subject, bodyHTML, bodyText.String, attempts)
+		w.sendJob(ctx, mailer, id, toEmail, fromEmail, subject, bodyHTML, bodyText.String, attempts)
 	}
 }
 
 func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
-	jobID int64, toEmail, subject, bodyHTML, bodyText string, attempt int) {
+	jobID int64, toEmail, fromEmail, subject, bodyHTML, bodyText string, attempt int) {
 
 	body := bodyText
 	if body == "" {
@@ -121,16 +124,36 @@ func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
 	if err != nil {
 		log.Printf("Email worker: failed job %d (attempt %d) to %s: %v", jobID, attempt, toEmail, err)
 
-		w.DB.ExecContext(ctx, `
+		var newStatus string
+		updateErr := w.DB.QueryRowContext(ctx, `
 			UPDATE email_jobs SET
 				status     = CASE WHEN attempts >= max_attempts THEN 'failed' ELSE 'pending' END,
 				failed_at  = NOW(),
 				error      = $1,
 				updated_at = NOW()
 			WHERE id = $2
-		`, err.Error(), jobID)
+			RETURNING status
+		`, err.Error(), jobID).Scan(&newStatus)
+		if updateErr != nil {
+			log.Printf("Email worker: failed to update job %d after send failure: %v", jobID, updateErr)
+		}
 
-		w.logAttempt(ctx, jobID, toEmail, subject, bodyHTML, "", err.Error(), attempt, "failed")
+		w.logAttempt(ctx, jobID, toEmail, fromEmail, subject, bodyHTML, "", err.Error(), attempt, "failed")
+
+		if newStatus == "failed" {
+			audit.LogSystemAction(
+				w.DB,
+				"email_delivery_failed",
+				"email_job",
+				fmt.Sprintf("%d", jobID),
+				fmt.Sprintf("Email to %s permanently failed after %d attempts: %s", toEmail, attempt, err.Error()),
+				map[string]interface{}{
+					"to_email": toEmail,
+					"subject":  subject,
+				},
+				"system:email_worker",
+			)
+		}
 		return
 	}
 
@@ -144,11 +167,10 @@ func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
 		WHERE id = $1
 	`, jobID)
 
-	w.logAttempt(ctx, jobID, toEmail, subject, bodyHTML, "", "", attempt, "sent")
+	w.logAttempt(ctx, jobID, toEmail, fromEmail, subject, bodyHTML, "", "", attempt, "sent")
 }
-
 func (w *Worker) logAttempt(ctx context.Context, jobID int64,
-	toEmail, subject, bodyHTML, msgID, errMsg string, attempt int, status string) {
+	toEmail, fromEmail, subject, bodyHTML, msgID, errMsg string, attempt int, status string) {
 
 	var providerMsgID *string
 	if msgID != "" {
@@ -160,11 +182,13 @@ func (w *Worker) logAttempt(ctx context.Context, jobID int64,
 		errPtr = &errMsg
 	}
 
-	w.DB.ExecContext(ctx, `
+	if _, err := w.DB.ExecContext(ctx, `
 		INSERT INTO email_logs (
 			job_id, to_email, from_email, subject, body_html,
 			status, provider_message_id, error, attempt
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`, jobID, toEmail, "", subject, bodyHTML,
-		status, providerMsgID, errPtr, attempt)
+	`, jobID, toEmail, fromEmail, subject, bodyHTML,
+		status, providerMsgID, errPtr, attempt); err != nil {
+		log.Printf("Email worker: failed to write email_logs for job %d: %v", jobID, err)
+	}
 }

@@ -127,6 +127,8 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		retentionGroup.GET("/:entity_type/runs", h.GetRetentionRuns)
 	}
 
+	g.GET("/audit-log", h.GetAuditLog)
+
 	aiGroup := g.Group("/ai")
 	{
 		aiGroup.POST("/provider-config", h.SaveAIProviderConfig)

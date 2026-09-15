@@ -3,7 +3,6 @@ package admin
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -95,17 +94,6 @@ func (h *AdminHandlers) UpdateJobApplicationStatus(c *gin.Context) {
 
 	adminIDStr, _ := adminID.(string)
 	adminEmailStr, _ := adminEmail.(string)
-
-	metadataBytes, merr := json.Marshal(map[string]string{
-		"admin_id":    adminIDStr,
-		"admin_email": adminEmailStr,
-		"old_status":  currentApp.Status,
-		"new_status":  req.Status,
-	})
-	if merr != nil {
-		log.Printf("Warning: Failed to marshal audit metadata: %v", merr)
-		metadataBytes = []byte(`{}`)
-	}
 
 	description := fmt.Sprintf("Admin updated job application status from '%s' to '%s'", currentApp.Status, req.Status)
 

@@ -137,7 +137,7 @@ func (s *Scheduler) PruneExpiredApplications() error {
 		}
 		appsDeleted++
 
-		audit.LogCandidateAction(tx, a.candidateID, "application_pruned", "job_applications", a.appID, "", "system:retention_cron")
+		audit.LogCandidateAction(tx, a.candidateID, "application_pruned", "job_applications", &a.appID, "", "system:retention_cron")
 
 		// 3. Orphan check.
 		if policy.DeleteOrphanedCandidate {
@@ -152,7 +152,8 @@ func (s *Scheduler) PruneExpiredApplications() error {
 					log.Printf("cron: prune applications: candidate delete failed %s: %v", a.candidateID, err)
 				} else {
 					candsDeleted++
-					audit.LogCandidateAction(tx, a.candidateID, "candidate_pruned", "candidates", a.candidateID, "", "system:retention_cron")
+					audit.LogCandidateAction(tx, a.candidateID, "candidate_pruned", "candidates", &a.candidateID, "", "system:retention_cron")
+
 				}
 			}
 		}

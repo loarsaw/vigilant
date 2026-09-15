@@ -14,14 +14,16 @@ import {
   CheckCircle2,
   Circle,
   Github,
+  History,
   Mail,
   Phone,
   Settings2,
   Trash2,
   Video,
 } from "lucide-react";
+import { AuditLogCard } from "@/components/settings/audit-log";
 
-type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai" | "retention";
+type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai" | "retention" | "audit";
 
 const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = [
   { key: "email", label: "Email", icon: Mail },
@@ -30,6 +32,7 @@ const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = 
   { key: "github", label: "GitHub", icon: Github },
   { key: "ai", label: "AI Provider", icon: Bot },
   { key: "retention", label: "Data Retention", icon: Trash2 },
+  { key: "audit", label: "Audit Log", icon: History },
 ];
 
 export function Settings() {
@@ -61,6 +64,7 @@ export function Settings() {
     ai: false,
 
     retention: isRetentionConfigured,
+    audit: false,
   };
 
   return (
@@ -97,6 +101,7 @@ export function Settings() {
                     <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
                     <span className="flex-1">{label}</span>
                     {key !== "ai" &&
+                      key !== "audit" &&
                       (isConfigured ? (
                         <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                       ) : (
@@ -130,6 +135,8 @@ export function Settings() {
             {activeSection === "retention" && (
               <RetentionCard editMode={editMode} setEditMode={setEditMode} />
             )}
+
+            {activeSection === "audit" && <AuditLogCard />}
           </div>
         </div>
       </div>

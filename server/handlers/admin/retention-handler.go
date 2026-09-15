@@ -3,7 +3,6 @@ package admin
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -150,17 +149,6 @@ func (h *AdminHandlers) UpdateRetentionPolicy(c *gin.Context) {
 			"Admin created retention policy for '%s': %d days",
 			entityType, req.RetentionDays,
 		)
-	}
-
-	metadataBytes, merr := json.Marshal(map[string]interface{}{
-		"admin_email":        adminEmailStr,
-		"old_retention_days": currentPolicy.RetentionDays,
-		"new_retention_days": req.RetentionDays,
-		"is_active":          req.IsActive,
-	})
-	if merr != nil {
-		log.Printf("Warning: Failed to marshal audit metadata: %v", merr)
-		metadataBytes = []byte(`{}`)
 	}
 
 	audit.LogAdminAction(

@@ -3,7 +3,6 @@ package admin
 
 import (
 	"database/sql"
-	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
@@ -530,16 +529,6 @@ func (h *AdminHandlers) ReviewAssignmentSubmission(c *gin.Context) {
 		log.Printf("Error reviewing submission: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to review submission"})
 		return
-	}
-
-	metadataBytes, merr := json.Marshal(map[string]interface{}{
-		"admin_id":   adminIDStr,
-		"submission": submission.ID,
-		"new_status": req.Status,
-		"score":      req.Score,
-	})
-	if merr != nil {
-		metadataBytes = []byte(`{}`)
 	}
 
 	audit.LogAdminAction(

@@ -1,21 +1,21 @@
+// server/audit/audit.go
 package audit
 
 import (
 	"database/sql"
 	"encoding/json"
 	"log"
-
-	"vigilant/middleware"
 )
+
+const SuperAdminSentinelID = "00000000-0000-0000-0000-000000000001"
 
 type Execer interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 }
 
-// LogAdminAction records an audit_log entry for an admin-initiated action.
 func LogAdminAction(db Execer, adminID, action, entityType, entityID, description string, metadata map[string]interface{}, ip, userAgent string) {
 	var adminIDParam interface{} = adminID
-	if adminID == middleware.SuperAdminUUID {
+	if adminID == SuperAdminSentinelID {
 		adminIDParam = nil
 		if metadata == nil {
 			metadata = map[string]interface{}{}
@@ -49,7 +49,7 @@ func LogSystemAction(db Execer, action, entityType, entityID, description string
 	return err
 }
 
-func LogCandidateAction(db Execer, candidateID, action, entityType, entityID, ip, userAgent string) {
+func LogCandidateAction(db Execer, candidateID, action, entityType string, entityID *string, ip, userAgent string) {
 	_, err := db.Exec(`
 		INSERT INTO audit_log (candidate_id, action, entity_type, entity_id, ip_address, user_agent)
 		VALUES ($1, $2, $3, $4, $5, $6)
