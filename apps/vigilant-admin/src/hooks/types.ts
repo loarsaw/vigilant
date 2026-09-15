@@ -895,3 +895,42 @@ export interface PositionActivity {
 export interface PositionActivityResponse {
   data: PositionActivity;
 }
+
+
+export interface AuditLogEntry {
+  id: number;
+  candidate_id: string | null;
+  admin_id: string | null;
+  actor_label: string;
+  actor_type: "admin" | "candidate" | "system";
+  action: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  description: string | null;
+  metadata: Record<string, unknown> | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+}
+
+export interface AuditLogResponse {
+  data: AuditLogEntry[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface AuditLogFilters {
+  entity_type?: string;
+  entity_id?: string;
+  admin_id?: string;
+  candidate_id?: string;
+  action?: string;
+  actor_type?: "admin" | "candidate" | "system";
+  from?: string;
+  to?: string;
+  q?: string;
+}

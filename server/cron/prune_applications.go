@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"time"
 
+	"vigilant/audit"
 	"vigilant/githubapi"
 )
 
@@ -137,7 +137,7 @@ func (s *Scheduler) PruneExpiredApplications() error {
 		}
 		appsDeleted++
 
-		s.insertRetentionAuditLog(tx, a.candidateID, "application_pruned", "job_applications", a.appID)
+		audit.LogCandidateAction(tx, a.candidateID, "application_pruned", "job_applications", &a.appID, "", "system:retention_cron")
 
 		// 3. Orphan check.
 		if policy.DeleteOrphanedCandidate {
@@ -152,7 +152,8 @@ func (s *Scheduler) PruneExpiredApplications() error {
 					log.Printf("cron: prune applications: candidate delete failed %s: %v", a.candidateID, err)
 				} else {
 					candsDeleted++
-					s.insertRetentionAuditLog(tx, a.candidateID, "candidate_pruned", "candidates", a.candidateID)
+					audit.LogCandidateAction(tx, a.candidateID, "candidate_pruned", "candidates", &a.candidateID, "", "system:retention_cron")
+
 				}
 			}
 		}
@@ -228,16 +229,5 @@ func (s *Scheduler) failRetentionRun(runID int64, runErr error) {
 	`, runErr.Error(), runID)
 	if err != nil {
 		log.Printf("cron: prune applications: failed to record run failure: %v", err)
-	}
-}
-
-func (s *Scheduler) insertRetentionAuditLog(tx *sql.Tx, candidateID, action, entityType, entityID string) {
-	_, err := tx.Exec(`
-		INSERT INTO audit_log (candidate_id, action, entity_type, entity_id, description, created_at)
-		VALUES ($1::uuid, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-	`, candidateID, action, entityType, entityID,
-		fmt.Sprintf("Auto-pruned by data retention policy (%s)", time.Now().Format(time.RFC3339)))
-	if err != nil {
-		log.Printf("cron: prune applications: audit log insert failed: %v", err)
 	}
 }

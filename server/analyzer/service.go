@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"vigilant/ai"
+	"vigilant/audit"
 	"vigilant/email"
 	"vigilant/githubapi"
 	"vigilant/models"
@@ -583,28 +584,19 @@ func (s *Service) updateApplicationAssignmentScore(jobApplicationID string, scor
 }
 
 func (s *Service) logAssignmentShortlist(jobApplicationID string, score float64, tier string) error {
-	metadataBytes, err := json.Marshal(map[string]interface{}{
-		"assignment_score": score,
-		"assignment_tier":  tier,
-		"reason":           fmt.Sprintf("assignment score %.1f cleared shortlist threshold %.1f", score, AssignmentPassThreshold),
-	})
-	if err != nil {
-		metadataBytes = []byte(`{}`)
-	}
-
-	_, err = s.db.Exec(`
-		INSERT INTO audit_log (
-			candidate_id, action, entity_type, entity_id, description,
-			metadata, ip_address, user_agent, created_at
-		) VALUES (NULL, $1, $2, $3, $4, $5, '', 'system:analyzer', CURRENT_TIMESTAMP)
-	`,
+	return audit.LogSystemAction(
+		s.db,
 		"assignment_shortlist",
 		"job_application",
 		jobApplicationID,
 		fmt.Sprintf("Application shortlisted after assignment scored %.1f (%s tier)", score, tier),
-		metadataBytes,
+		map[string]interface{}{
+			"assignment_score": score,
+			"assignment_tier":  tier,
+			"reason":           fmt.Sprintf("assignment score %.1f cleared shortlist threshold %.1f", score, AssignmentPassThreshold),
+		},
+		"system:analyzer",
 	)
-	return err
 }
 
 func (s *Service) sendShortlistedEmail(jobApplicationID string) error {

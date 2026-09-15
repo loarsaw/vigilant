@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"vigilant/audit"
 	"vigilant/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -65,7 +66,7 @@ func (h *AdminHandlers) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	h.logAudit(adminID, "login", "admin_session", nil, c.ClientIP(), c.GetHeader("User-Agent"))
+	audit.LogAdminAction(h.DB, adminID, "login", "admin_session", "", "", nil, c.ClientIP(), c.GetHeader("User-Agent"))
 
 	c.JSON(http.StatusOK, gin.H{
 		"token":     token,
@@ -130,7 +131,7 @@ func (h *AdminHandlers) AdminLogout(c *gin.Context) {
 	adminRole := c.GetString("admin_role")
 
 	if adminRole == "superadmin" {
-		h.logAudit(middleware.SuperAdminUUID, "logout", "admin_session", nil, c.ClientIP(), c.GetHeader("User-Agent"))
+		audit.LogAdminAction(h.DB, middleware.SuperAdminUUID, "logout", "admin_session", "", "", nil, c.ClientIP(), c.GetHeader("User-Agent"))
 		c.JSON(http.StatusOK, gin.H{"status": "logged out"})
 		return
 	}
@@ -161,16 +162,6 @@ func (h *AdminHandlers) AdminLogout(c *gin.Context) {
 		return
 	}
 
-	h.logAudit(adminID, "logout", "admin_session", nil, c.ClientIP(), c.GetHeader("User-Agent"))
+	audit.LogAdminAction(h.DB, adminID, "logout", "admin_session", "", "", nil, c.ClientIP(), c.GetHeader("User-Agent"))
 	c.JSON(http.StatusOK, gin.H{"status": "logged out"})
-}
-
-func (h *AdminHandlers) logAudit(adminID, action, entityType string, entityID *string, ip, ua string) {
-	_, err := h.DB.Exec(`
-		INSERT INTO audit_log (admin_id, action, entity_type, entity_id, ip_address, user_agent)
-		VALUES ($1, $2, $3, $4, $5::inet, $6)
-	`, adminID, action, entityType, entityID, ip, ua)
-	if err != nil {
-		log.Printf("Failed to write audit log: %v", err)
-	}
 }

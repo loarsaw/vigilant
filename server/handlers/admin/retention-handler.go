@@ -3,12 +3,12 @@ package admin
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+	"vigilant/audit"
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
@@ -151,29 +151,22 @@ func (h *AdminHandlers) UpdateRetentionPolicy(c *gin.Context) {
 		)
 	}
 
-	metadataBytes, merr := json.Marshal(map[string]interface{}{
-		"admin_email":        adminEmailStr,
-		"old_retention_days": currentPolicy.RetentionDays,
-		"new_retention_days": req.RetentionDays,
-		"is_active":          req.IsActive,
-	})
-	if merr != nil {
-		log.Printf("Warning: Failed to marshal audit metadata: %v", merr)
-		metadataBytes = []byte(`{}`)
-	}
-
-	_, err = h.DB.Exec(`
-		INSERT INTO audit_log (
-			admin_id, action, entity_type, entity_id, description,
-			metadata, ip_address, user_agent, created_at
-		) VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-	`,
-		adminIDStr, action, "data_retention_policy", entityType, description,
-		metadataBytes, ipAddress, userAgent,
+	audit.LogAdminAction(
+		h.DB,
+		adminIDStr,
+		action,
+		"data_retention_policy",
+		entityType,
+		description,
+		map[string]interface{}{
+			"admin_email":        adminEmailStr,
+			"old_retention_days": currentPolicy.RetentionDays,
+			"new_retention_days": req.RetentionDays,
+			"is_active":          req.IsActive,
+		},
+		ipAddress,
+		userAgent,
 	)
-	if err != nil {
-		log.Printf("Warning: Failed to create audit log: %v", err)
-	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "retention policy saved successfully",

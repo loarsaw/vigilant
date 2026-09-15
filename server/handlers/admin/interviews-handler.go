@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"vigilant/audit"
 	"vigilant/email"
 	"vigilant/middleware"
 	"vigilant/models"
@@ -91,24 +92,31 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		return
 	}
 
-	var interviewerEmail string
-	var interviewerRole string
-	err = h.DB.QueryRowContext(ctx, `
-		SELECT email, role FROM administrators
-		WHERE id = $1 AND is_active = true
-	`, req.InterviewerID).Scan(&interviewerEmail, &interviewerRole)
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "interviewer not found or inactive"})
-		return
-	}
-	if err != nil {
-		log.Printf("CreateInterviewSession: failed to fetch interviewer: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		return
-	}
-	if interviewerRole != "interviewer" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "assigned admin is not an interviewer"})
-		return
+	isSuperAdminInterviewer := req.InterviewerID == middleware.SuperAdminUUID
+
+	var interviewerEmail, interviewerName, interviewerRole string
+	if isSuperAdminInterviewer {
+		interviewerEmail = "superadmin@system"
+		interviewerName = "Super Admin"
+		interviewerRole = "superadmin"
+	} else {
+		err = h.DB.QueryRowContext(ctx, `
+			SELECT email, full_name, role FROM administrators
+			WHERE id = $1 AND is_active = true
+		`, req.InterviewerID).Scan(&interviewerEmail, &interviewerName, &interviewerRole)
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "interviewer not found or inactive"})
+			return
+		}
+		if err != nil {
+			log.Printf("CreateInterviewSession: failed to fetch interviewer: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+		if interviewerRole != "interviewer" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "assigned admin is not an interviewer"})
+			return
+		}
 	}
 
 	var finalApplicationID interface{}
@@ -207,6 +215,31 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 
 	log.Printf("Interview session created. ID: %d, candidate: %s, interviewer: %s", id, candidateEmail, interviewerEmail)
 
+	creatorAdminID, _ := c.Get("admin_id")
+	creatorAdminIDStr, _ := creatorAdminID.(string)
+
+	audit.LogAdminAction(
+		h.DB,
+		creatorAdminIDStr,
+		"create_interview_session",
+		"interview_session",
+		sessionID,
+		fmt.Sprintf("Created interview session for candidate %s with interviewer %s", candidateName, interviewerEmail),
+		map[string]interface{}{
+			"candidate_id":       req.CandidateID,
+			"candidate_email":    candidateEmail,
+			"candidate_name":     candidateName,
+			"interviewer_id":     req.InterviewerID,
+			"interviewer_email":  interviewerEmail,
+			"position":           req.Position,
+			"interview_type":     req.InterviewType,
+			"scheduled_at":       scheduledAtUTC,
+			"scheduled_duration": req.ScheduledDuration,
+		},
+		c.ClientIP(),
+		c.Request.UserAgent(),
+	)
+
 	validFor := time.Until(scheduledAtUTC) + time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
 	if validFor < 0 {
 		validFor = time.Duration(req.ScheduledDuration)*time.Minute + 2*time.Hour
@@ -239,20 +272,21 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		log.Printf("CreateInterviewSession: skipping passcode creation for %s — no livekit token", sessionID)
 	}
 
-	if passcode != "" {
-		key, keyErr := email.DecodeKey(h.Cfg.EncryptionKey)
-		if keyErr != nil {
-			log.Printf("CreateInterviewSession: failed to decode encryption key for invite email: %v", keyErr)
+	// --- Emails ---
+	key, keyErr := email.DecodeKey(h.Cfg.EncryptionKey)
+	if keyErr != nil {
+		log.Printf("CreateInterviewSession: failed to decode encryption key for emails: %v", keyErr)
+	} else {
+		sesCfg, sesErr := email.LoadSESConfig(ctx, h.DB, key)
+		if sesErr != nil {
+			log.Printf("CreateInterviewSession: failed to load SES config for emails: %v", sesErr)
 		} else {
-			sesCfg, sesErr := email.LoadSESConfig(ctx, h.DB, key)
-			if sesErr != nil {
-				log.Printf("CreateInterviewSession: failed to load SES config for invite email: %v", sesErr)
-			} else {
-				domain := os.Getenv("DOMAIN")
-				if domain == "" {
-					domain = "localhost"
-				}
+			domain := os.Getenv("DOMAIN")
+			if domain == "" {
+				domain = "localhost"
+			}
 
+			if passcode != "" {
 				body, renderErr := email.Render(email.TemplateInterviewJoinInvite, models.InterviewJoinInviteData{
 					CandidateName: candidateName,
 					Position:      req.Position,
@@ -262,7 +296,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 					Domain:        email.ReverseDomain(domain),
 				})
 				if renderErr != nil {
-					log.Printf("CreateInterviewSession: failed to render invite email: %v", renderErr)
+					log.Printf("CreateInterviewSession: failed to render candidate invite email: %v", renderErr)
 				} else {
 					_, enqueueErr := email.Enqueue(ctx, h.DB, email.EmailJob{
 						ToEmail:     candidateEmail,
@@ -277,13 +311,44 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 						Priority:    email.PriorityHigh,
 					})
 					if enqueueErr != nil {
-						log.Printf("CreateInterviewSession: failed to enqueue invite email: %v", enqueueErr)
+						log.Printf("CreateInterviewSession: failed to enqueue candidate invite email: %v", enqueueErr)
+					}
+				}
+			} else {
+				log.Printf("CreateInterviewSession: skipping candidate invite email for %s — passcode missing", sessionID)
+			}
+
+			if isSuperAdminInterviewer {
+				log.Printf("CreateInterviewSession: skipping interviewer notification for %s — interviewer is super admin", sessionID)
+			} else {
+				interviewerBody, renderErr := email.Render(email.TemplateInterviewerScheduled, models.InterviewerScheduledData{
+					InterviewerName: interviewerName,
+					CandidateName:   candidateName,
+					Position:        req.Position,
+					ScheduledAt:     scheduledAtLocal.Format("Mon, 02 Jan 2006 03:04 PM MST"),
+					Duration:        req.ScheduledDuration,
+				})
+				if renderErr != nil {
+					log.Printf("CreateInterviewSession: failed to render interviewer notification email: %v", renderErr)
+				} else {
+					_, enqueueErr := email.Enqueue(ctx, h.DB, email.EmailJob{
+						ToEmail:     interviewerEmail,
+						ToName:      interviewerName,
+						FromEmail:   sesCfg.SESFromEmail,
+						Subject:     fmt.Sprintf("New Interview Scheduled: %s", req.Position),
+						BodyHTML:    interviewerBody,
+						Template:    email.TemplateInterviewerScheduled,
+						EntityType:  "interview_session",
+						EntityID:    sessionID,
+						TriggeredBy: "create_interview_session",
+						Priority:    email.PriorityHigh,
+					})
+					if enqueueErr != nil {
+						log.Printf("CreateInterviewSession: failed to enqueue interviewer notification email: %v", enqueueErr)
 					}
 				}
 			}
 		}
-	} else {
-		log.Printf("CreateInterviewSession: skipping invite email for %s — passcode missing", sessionID)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
