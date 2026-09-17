@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-import { Admin, AdminsResponse, CreateAdminPayload, ResetPasswordPayload, UpdateAdminPayload } from "./types";
+import {
+  Admin,
+  AdminsResponse,
+  CreateAdminPayload,
+  ResetPasswordPayload,
+  UpdateAdminPayload,
+} from "./types";
 
 const fetchAdmins = async (): Promise<AdminsResponse> => {
   const response = await apiClient.get<AdminsResponse>("/admins");
@@ -103,11 +109,11 @@ export function useAdmins() {
       queryClient.invalidateQueries({ queryKey });
     },
   });
+  const s_adminlist = response?.admins ?? [];
 
   return {
-    admins: response?.admins ?? [],
-    total: response?.admins.length ?? 0,
-
+    admins: s_adminlist,
+    total: s_adminlist.length,
     isLoading,
     isFetching,
     isError,

@@ -1,7 +1,6 @@
 // src/pages/Settings.tsx (or wherever this lives)
 import { useState } from "react";
 import { EmailCard } from "@/components/settings/email";
-import { CallCard } from "@/components/settings/call";
 import { LiveKitCard } from "@/components/settings/livekit";
 import { GithubCard } from "@/components/settings/github";
 import { useLiveKit } from "@/hooks/use-livekit";
@@ -22,6 +21,7 @@ import {
   Video,
 } from "lucide-react";
 import { AuditLogCard } from "@/components/settings/audit-log";
+import { useSettings } from "@/hooks/use-settings";
 
 type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai" | "retention" | "audit";
 
@@ -51,13 +51,14 @@ export function Settings() {
   });
 
   const { isRetentionConfigured } = useRetention();
+  const { isEmailConfigured } = useSettings();
 
   // const { isTwilioConfigured } = useTwilio();
   const { isLiveKitConfigured } = useLiveKit();
   const { isGithubConfigured } = useGithub();
 
   const statusMap: Record<SectionKey, boolean> = {
-    email: configuredSections.email,
+    email: isEmailConfigured,
     twilio: false,
     livekit: isLiveKitConfigured,
     github: isGithubConfigured,

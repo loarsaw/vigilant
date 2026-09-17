@@ -10,6 +10,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/use-auth";
 
+const WORKSPACE_STORAGE_KEY = "admin_workspace";
+
+function isNetworkError(error: unknown): boolean {
+  if (error && typeof error === "object") {
+    const err = error as any;
+    if (err.code === "ERR_NETWORK") return true;
+    if (err.message === "Network Error") return true;
+    if (err.request && !err.response) return true;
+  }
+  return false;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (isNetworkError(error)) {
+    return "Couldn't reach that workspace. Please double-check the workspace name/domain and try again.";
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
 export default function LoginPage() {
   const [isDev, setIsDev] = useState(false);
   const navigate = useNavigate();
@@ -37,6 +57,14 @@ export default function LoginPage() {
     checkIfDev();
   }, []);
 
+  useEffect(() => {
+    const savedWorkspace = localStorage.getItem(WORKSPACE_STORAGE_KEY);
+    if (savedWorkspace) {
+      setEmailData((prev) => ({ ...prev, workspaceName: savedWorkspace }));
+      setTokenData((prev) => ({ ...prev, workspaceName: savedWorkspace }));
+    }
+  }, []);
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailData.workspaceName || !emailData.email || !emailData.password) return;
@@ -50,7 +78,9 @@ export default function LoginPage() {
         },
       });
 
-      setEmailData({ workspaceName: "", email: "", password: "" });
+      // Keep the workspace name (it's saved to localStorage by the auth
+      // hook on success) so it's there next time; only clear credentials.
+      setEmailData((prev) => ({ ...prev, email: "", password: "" }));
 
       navigate("/dashboard");
     } catch (error) {
@@ -74,11 +104,11 @@ export default function LoginPage() {
         },
       });
 
-      setTokenData({ workspaceName: "", authToken: "" });
+      setTokenData((prev) => ({ ...prev, authToken: "" }));
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Token login failed:", error);
-      setTokenData({ ...tokenData, authToken: "" });
+      setTokenData((prev) => ({ ...prev, authToken: "" }));
     }
   };
 
@@ -173,9 +203,10 @@ export default function LoginPage() {
                 {loginError && (
                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md animate-shake">
                     <p className="text-sm text-destructive">
-                      {loginError instanceof Error
-                        ? loginError.message
-                        : "Login failed. Please check your credentials and try again."}
+                      {getErrorMessage(
+                        loginError,
+                        "Login failed. Please check your credentials and try again.",
+                      )}
                     </p>
                   </div>
                 )}
@@ -226,9 +257,10 @@ export default function LoginPage() {
                 {tokenLoginError && (
                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md animate-shake">
                     <p className="text-sm text-destructive">
-                      {tokenLoginError instanceof Error
-                        ? tokenLoginError.message
-                        : "Login failed. Please check your token and try again."}
+                      {getErrorMessage(
+                        tokenLoginError,
+                        "Login failed. Please check your token and try again.",
+                      )}
                     </p>
                   </div>
                 )}

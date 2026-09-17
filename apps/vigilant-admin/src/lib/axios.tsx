@@ -3,6 +3,7 @@ import axios from "axios";
 let cachedIsDev: boolean | null = null;
 
 async function getIsDev(): Promise<boolean> {
+  // return false
   if (cachedIsDev === null) {
     const { isDev } = await window.api.isDev();
     cachedIsDev = isDev;
@@ -25,11 +26,6 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
-
-export async function initApiClient() {
-  const isDev = await getIsDev();
-  apiClient.defaults.baseURL = isDev ? "http://localhost:3333/api/v1/admin" : "";
-}
 
 export const setBaseURL = async (workspaceName: string) => {
   const isDev = await getIsDev();
