@@ -3,10 +3,14 @@ package admin
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
+	"time"
+	"vigilant/audit"
 	"vigilant/email"
+	"vigilant/githubapi"
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
@@ -46,6 +50,15 @@ func (h *AdminHandlers) SaveGithubConfig(c *gin.Context) {
 		return
 	}
 
+	if err := verifyGithubTokenPermissions(h.DB, req.Token, req.OrgName, adminActor(c)); err != nil {
+		log.Printf("github token permission check failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "github token does not have sufficient permissions",
+			"details": err.Error(),
+		})
+		return
+	}
+
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
 		log.Printf("Error decoding encryption key: %v", err)
@@ -80,6 +93,75 @@ func (h *AdminHandlers) SaveGithubConfig(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "github config saved successfully"})
+}
+
+func verifyGithubTokenPermissions(db *sql.DB, token, orgName, actor string) error {
+	client := githubapi.NewClient(token, orgName)
+
+	testRepoName := fmt.Sprintf("vigilant-permission-check-%d", time.Now().UnixNano())
+
+	repoURL, err := client.CreateRepo(testRepoName)
+	if err != nil {
+		audit.LogSystemAction(
+			db,
+			"github_token_check_create_failed",
+			"github_repo",
+			testRepoName,
+			fmt.Sprintf("Token permission check failed to create repo %s in org %s: %s", testRepoName, orgName, err.Error()),
+			map[string]interface{}{
+				"org_name": orgName,
+				"repo":     testRepoName,
+			},
+			actor,
+		)
+		return fmt.Errorf("token could not create a repo in org %q: %w", orgName, err)
+	}
+
+	audit.LogSystemAction(
+		db,
+		"github_token_check_repo_created",
+		"github_repo",
+		testRepoName,
+		fmt.Sprintf("Token permission check created test repo %s in org %s", testRepoName, orgName),
+		map[string]interface{}{
+			"org_name": orgName,
+			"repo":     testRepoName,
+			"repo_url": repoURL,
+		},
+		actor,
+	)
+
+	if err := client.DeleteRepo(testRepoName); err != nil {
+		audit.LogSystemAction(
+			db,
+			"github_token_check_delete_failed",
+			"github_repo",
+			testRepoName,
+			fmt.Sprintf("Token permission check created test repo %s in org %s but failed to delete it: %s", testRepoName, orgName, err.Error()),
+			map[string]interface{}{
+				"org_name": orgName,
+				"repo":     testRepoName,
+				"repo_url": repoURL,
+			},
+			actor,
+		)
+		return fmt.Errorf("token created a test repo but could not delete it (repo %q may need manual cleanup): %w", testRepoName, err)
+	}
+
+	audit.LogSystemAction(
+		db,
+		"github_token_check_repo_deleted",
+		"github_repo",
+		testRepoName,
+		fmt.Sprintf("Token permission check deleted test repo %s in org %s", testRepoName, orgName),
+		map[string]interface{}{
+			"org_name": orgName,
+			"repo":     testRepoName,
+		},
+		actor,
+	)
+
+	return nil
 }
 
 func (h *AdminHandlers) GetGithubConfig(c *gin.Context) {

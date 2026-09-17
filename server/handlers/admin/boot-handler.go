@@ -12,6 +12,7 @@ import (
 	"vigilant/config"
 	"vigilant/email"
 	"vigilant/livekit"
+	"vigilant/middleware"
 	"vigilant/models"
 	"vigilant/notifications"
 
@@ -104,7 +105,9 @@ func CheckSystemReadiness(ctx context.Context, dbConn *sql.DB) error {
 	if err != nil {
 		return fmt.Errorf("system readiness check: %w", err)
 	}
-
+	if err := ensureSuperAdmin(ctx, dbConn); err != nil {
+		return fmt.Errorf("system readiness check: %w", err)
+	}
 	openID, hasOpen, err := findOpenReadinessNotification(ctx, dbConn)
 	if err != nil {
 		return fmt.Errorf("system readiness check: %w", err)
@@ -220,4 +223,16 @@ func joinWithCommas(items []string) string {
 		}
 		return out
 	}
+}
+
+func ensureSuperAdmin(ctx context.Context, dbConn *sql.DB) error {
+	_, err := dbConn.ExecContext(ctx, `
+		INSERT INTO administrators (id, email, password_hash, full_name, role, is_active)
+		VALUES ($1, 'superadmin@system', '', 'Super Admin', 'superadmin', true)
+		ON CONFLICT (id) DO NOTHING
+	`, middleware.SuperAdminUUID)
+	if err != nil {
+		return fmt.Errorf("ensure super admin: %w", err)
+	}
+	return nil
 }

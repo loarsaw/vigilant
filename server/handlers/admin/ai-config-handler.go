@@ -2,9 +2,11 @@
 package admin
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"vigilant/ai"
+	"vigilant/audit"
+	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,12 +17,7 @@ func (h *AdminHandlers) SaveAIProviderConfig(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		Provider string  `json:"provider" binding:"required,oneof=openai gemini claude"`
-		APIKey   string  `json:"api_key" binding:"required"`
-		Model    string  `json:"model" binding:"required"`
-		BaseURL  *string `json:"base_url,omitempty"`
-	}
+	var req models.SaveAIProviderConfig
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "validation failed",
@@ -29,13 +26,50 @@ func (h *AdminHandlers) SaveAIProviderConfig(c *gin.Context) {
 		return
 	}
 
-	err := h.AIService.SaveProviderConfig(ai.SaveProviderConfigInput{
+	input := models.SaveProviderConfigInput{
 		Provider: req.Provider,
 		APIKey:   req.APIKey,
 		Model:    req.Model,
 		BaseURL:  req.BaseURL,
-	})
-	if err != nil {
+	}
+
+	actor := adminActor(c)
+
+	if err := h.AIService.TestProviderConfig(c.Request.Context(), input); err != nil {
+		log.Printf("AI provider config test failed: %v", err)
+		audit.LogSystemAction(
+			h.DB,
+			"ai_provider_test_failed",
+			"ai_provider_config",
+			req.Provider,
+			fmt.Sprintf("AI provider config test failed for provider %s model %s: %s", req.Provider, req.Model, err.Error()),
+			map[string]interface{}{
+				"provider": req.Provider,
+				"model":    req.Model,
+			},
+			actor,
+		)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "provider config failed text generation test",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	audit.LogSystemAction(
+		h.DB,
+		"ai_provider_test_succeeded",
+		"ai_provider_config",
+		req.Provider,
+		fmt.Sprintf("AI provider config test succeeded for provider %s model %s", req.Provider, req.Model),
+		map[string]interface{}{
+			"provider": req.Provider,
+			"model":    req.Model,
+		},
+		actor,
+	)
+
+	if err := h.AIService.SaveProviderConfig(input); err != nil {
 		log.Printf("Error saving AI provider config: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save provider config"})
 		return

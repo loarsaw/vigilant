@@ -33,3 +33,17 @@ type QuestionSet struct {
 	GeneratedBy        *string             `json:"generated_by"`
 	CreatedAt          time.Time           `json:"created_at"`
 }
+
+type SaveAIProviderConfig struct {
+	Provider string  `json:"provider" binding:"required,oneof=openai gemini claude"`
+	APIKey   string  `json:"api_key" binding:"required"`
+	Model    string  `json:"model" binding:"required"`
+	BaseURL  *string `json:"base_url,omitempty"`
+}
+
+type SaveProviderConfigInput struct {
+	Provider string
+	APIKey   string
+	Model    string
+	BaseURL  *string
+}

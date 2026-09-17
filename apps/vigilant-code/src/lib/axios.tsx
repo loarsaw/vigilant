@@ -5,7 +5,6 @@ async function getIsDev(): Promise<boolean> {
   return isDev;
 }
 
-// Bullshot
 async function getBaseUrl(domain?: string): Promise<string> {
   const isDev = await getIsDev();
 

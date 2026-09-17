@@ -41,6 +41,26 @@ func (s *Service) GetProviderConfig(provider string) (*models.AIProviderConfig, 
 	return &cfg, nil
 }
 
+func (s *Service) SaveProviderConfig(in models.SaveProviderConfigInput) error {
+	query := `
+		INSERT INTO ai_provider_configs
+			(provider, api_key, model, base_url, is_active, updated_at)
+		VALUES ($1, $2, $3, $4, true, now())
+		ON CONFLICT (provider)
+		DO UPDATE SET
+			api_key    = EXCLUDED.api_key,
+			model      = EXCLUDED.model,
+			base_url   = EXCLUDED.base_url,
+			is_active  = true,
+			updated_at = now()
+	`
+	_, err := s.db.Exec(query, in.Provider, in.APIKey, in.Model, in.BaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to save provider config: %w", err)
+	}
+	return nil
+}
+
 func (s *Service) ListProviderConfigs() ([]models.AIProviderConfig, error) {
 	rows, err := s.db.Query(`
 		SELECT provider, api_key, model, base_url, is_active, created_at, updated_at
@@ -66,140 +86,6 @@ func (s *Service) ListProviderConfigs() ([]models.AIProviderConfig, error) {
 	return configs, nil
 }
 
-type SaveProviderConfigInput struct {
-	Provider string
-	APIKey   string
-	Model    string
-	BaseURL  *string
-}
-
-func (s *Service) SaveProviderConfig(in SaveProviderConfigInput) error {
-	if in.Provider != "openai" && in.Provider != "gemini" && in.Provider != "claude" {
-		return fmt.Errorf("unsupported provider: %s", in.Provider)
-	}
-
-	query := `
-		INSERT INTO ai_provider_configs (provider, api_key, model, base_url, is_active, updated_at)
-		VALUES ($1, $2, $3, $4, true, now())
-		ON CONFLICT (provider)
-		DO UPDATE SET
-			api_key = EXCLUDED.api_key,
-			model = EXCLUDED.model,
-			base_url = EXCLUDED.base_url,
-			is_active = true,
-			updated_at = now()
-	`
-	_, err := s.db.Exec(query, in.Provider, in.APIKey, in.Model, in.BaseURL)
-	if err != nil {
-		return fmt.Errorf("failed to save %s config: %w", in.Provider, err)
-	}
-	return nil
-}
-
-func (s *Service) GetScenario(key string) (*models.AIScenario, error) {
-	var sc models.AIScenario
-	var description, model sql.NullString
-
-	query := `
-		SELECT scenario_key, name, description, provider, model, system_prompt,
-		       temperature, max_tokens, is_active, created_at, updated_at
-		FROM ai_scenarios
-		WHERE scenario_key = $1
-	`
-	err := s.db.QueryRow(query, key).Scan(
-		&sc.ScenarioKey, &sc.Name, &description, &sc.Provider, &model, &sc.SystemPrompt,
-		&sc.Temperature, &sc.MaxTokens, &sc.IsActive, &sc.CreatedAt, &sc.UpdatedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("scenario %s not found", key)
-		}
-		return nil, fmt.Errorf("failed to fetch scenario: %w", err)
-	}
-	if description.Valid {
-		sc.Description = &description.String
-	}
-	if model.Valid {
-		sc.Model = &model.String
-	}
-	return &sc, nil
-}
-
-func (s *Service) ListScenarios() ([]models.AIScenario, error) {
-	rows, err := s.db.Query(`
-		SELECT scenario_key, name, description, provider, model, system_prompt,
-		       temperature, max_tokens, is_active, created_at, updated_at
-		FROM ai_scenarios ORDER BY scenario_key
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list scenarios: %w", err)
-	}
-	defer rows.Close()
-
-	var scenarios []models.AIScenario
-	for rows.Next() {
-		var sc models.AIScenario
-		var description, model sql.NullString
-		if err := rows.Scan(
-			&sc.ScenarioKey, &sc.Name, &description, &sc.Provider, &model, &sc.SystemPrompt,
-			&sc.Temperature, &sc.MaxTokens, &sc.IsActive, &sc.CreatedAt, &sc.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		if description.Valid {
-			sc.Description = &description.String
-		}
-		if model.Valid {
-			sc.Model = &model.String
-		}
-		scenarios = append(scenarios, sc)
-	}
-	return scenarios, nil
-}
-
-type SaveScenarioInput struct {
-	ScenarioKey  string
-	Name         string
-	Description  *string
-	Provider     string
-	Model        *string
-	SystemPrompt string
-	Temperature  float64
-	MaxTokens    int
-}
-
-func (s *Service) SaveScenario(in SaveScenarioInput) error {
-	query := `
-		INSERT INTO ai_scenarios
-			(scenario_key, name, description, provider, model, system_prompt, temperature, max_tokens, is_active, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, now())
-		ON CONFLICT (scenario_key)
-		DO UPDATE SET
-			name = EXCLUDED.name,
-			description = EXCLUDED.description,
-			provider = EXCLUDED.provider,
-			model = EXCLUDED.model,
-			system_prompt = EXCLUDED.system_prompt,
-			temperature = EXCLUDED.temperature,
-			max_tokens = EXCLUDED.max_tokens,
-			is_active = true,
-			updated_at = now()
-	`
-	_, err := s.db.Exec(query,
-		in.ScenarioKey, in.Name, in.Description, in.Provider, in.Model,
-		in.SystemPrompt, in.Temperature, in.MaxTokens,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to save scenario: %w", err)
-	}
-	return nil
-}
-
-func (s *Service) DeactivateScenario(key string) error {
-	_, err := s.db.Exec(`UPDATE ai_scenarios SET is_active = false, updated_at = now() WHERE scenario_key = $1`, key)
-	return err
-}
-
 type Provider interface {
 	Complete(ctx context.Context, systemPrompt, userPrompt, model string, temperature float64, maxTokens int) (string, error)
 }
@@ -215,36 +101,6 @@ func (s *Service) client(cfg *models.AIProviderConfig) (Provider, error) {
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", cfg.Provider)
 	}
-}
-
-func (s *Service) Generate(ctx context.Context, scenarioKey, userPrompt string) (string, error) {
-	scenario, err := s.GetScenario(scenarioKey)
-	if err != nil {
-		return "", err
-	}
-	if !scenario.IsActive {
-		return "", fmt.Errorf("scenario %s is not active", scenarioKey)
-	}
-
-	cfg, err := s.GetProviderConfig(scenario.Provider)
-	if err != nil {
-		return "", err
-	}
-	if !cfg.IsActive {
-		return "", fmt.Errorf("provider %s is not active", cfg.Provider)
-	}
-
-	model := cfg.Model
-	if scenario.Model != nil && *scenario.Model != "" {
-		model = *scenario.Model
-	}
-
-	client, err := s.client(cfg)
-	if err != nil {
-		return "", err
-	}
-
-	return client.Complete(ctx, scenario.SystemPrompt, userPrompt, model, scenario.Temperature, scenario.MaxTokens)
 }
 
 var DefaultProviderPriority = []string{"claude", "gemini", "openai"}

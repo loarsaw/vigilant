@@ -119,7 +119,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		}
 	}
 
-	var finalApplicationID interface{}
+	var finalApplicationID string
 
 	if req.ApplicationID != "" {
 		var appExists bool
@@ -139,7 +139,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		}
 	}
 
-	if finalApplicationID == nil && req.PositionID != "" {
+	if finalApplicationID == "" && req.PositionID != "" {
 		var newAppID string
 		err = h.DB.QueryRowContext(ctx, `
 			INSERT INTO job_applications (candidate_id, position_id, cover_letter)
@@ -171,6 +171,11 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	interviewPlatform := 1
 	interviewURL := req.InterviewURL
 
+	var applicationIDParam interface{}
+	if finalApplicationID != "" {
+		applicationIDParam = finalApplicationID
+	}
+
 	var id int64
 	var createdAt time.Time
 
@@ -185,7 +190,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	`,
 		sessionID,
 		req.CandidateID,
-		finalApplicationID,
+		applicationIDParam,
 		req.InterviewerID,
 		req.Position,
 		req.InterviewType,
@@ -206,11 +211,6 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		log.Printf("CreateInterviewSession: failed to insert: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create interview session"})
 		return
-	}
-
-	resolvedAppID := ""
-	if finalApplicationID != nil {
-		resolvedAppID = finalApplicationID.(string)
 	}
 
 	log.Printf("Interview session created. ID: %d, candidate: %s, interviewer: %s", id, candidateEmail, interviewerEmail)
@@ -355,7 +355,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 		"id":                  id,
 		"session_id":          sessionID,
 		"candidate_id":        req.CandidateID,
-		"application_id":      resolvedAppID,
+		"application_id":      finalApplicationID,
 		"interviewer_id":      req.InterviewerID,
 		"interviewer_email":   interviewerEmail,
 		"candidate_email":     candidateEmail,
@@ -1075,18 +1075,6 @@ func (h *AdminHandlers) CreateInterviewFeedback(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-
-	if interviewerIDStr == middleware.SuperAdminUUID {
-		if _, err := h.DB.ExecContext(ctx, `
-			INSERT INTO administrators (id, email, password_hash, full_name, role, is_active)
-			VALUES ($1, 'superadmin@system', '', 'Super Admin', 'superadmin', true)
-			ON CONFLICT (id) DO NOTHING
-		`, middleware.SuperAdminUUID); err != nil {
-			log.Printf("CreateInterviewFeedback: failed to ensure super admin row exists: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to prepare interviewer identity"})
-			return
-		}
-	}
 
 	log.Printf("CreateInterviewFeedback: looking up session_id=%q for interviewer=%q", req.InterviewSessionID, interviewerIDStr)
 
