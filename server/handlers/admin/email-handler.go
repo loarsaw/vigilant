@@ -2,40 +2,90 @@ package admin
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
+	"regexp"
+	"strings"
 	"vigilant/email"
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
 )
 
-type SESConfigRequest struct {
-	AWSRegion          string `json:"aws_region"`
-	AWSAccessKeyID     string `json:"aws_access_key_id"`
-	AWSSecretAccessKey string `json:"aws_secret_access_key"`
-	SESFromEmail       string `json:"ses_from_email"`
-	SESLoginURL        string `json:"ses_login_url"`
-}
+var (
+	awsRegionRegex    = regexp.MustCompile(`^[a-z]{2}(-gov|-iso[a-z]*)?-[a-z]+-\d$`)
+	awsAccessKeyRegex = regexp.MustCompile(`^(AKIA|ASIA|AROA|AIDA)[A-Z0-9]{16}$`)
+	awsSecretKeyRegex = regexp.MustCompile(`^[A-Za-z0-9/+=]{40}$`)
+	basicEmailRegex   = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+)
 
-type SendEmailRequest struct {
-	Recipients []struct {
-		FullName string `json:"full_name"`
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	} `json:"recipients"`
+func validateSESConfigFields(req models.SESConfigRequest) string {
+	region := strings.TrimSpace(req.AWSRegion)
+	accessKey := strings.TrimSpace(req.AWSAccessKeyID)
+	secretKey := strings.TrimSpace(req.AWSSecretAccessKey)
+
+	switch {
+	case region == "":
+		return "AWS Region is required"
+	case !awsRegionRegex.MatchString(region):
+		return "AWS Region doesn't look valid, e.g. us-east-1, eu-west-2"
+	case accessKey == "":
+		return "AWS Access Key ID is required"
+	case len(accessKey) != 20 || !awsAccessKeyRegex.MatchString(accessKey):
+		return "AWS Access Key ID doesn't look valid"
+	case secretKey == "":
+		return "AWS Secret Access Key is required"
+	case len(secretKey) != 40 || !awsSecretKeyRegex.MatchString(secretKey):
+		return "AWS Secret Access Key doesn't look valid"
+	case strings.TrimSpace(req.SESFromEmail) == "":
+		return "From Email is required"
+	case !basicEmailRegex.MatchString(req.SESFromEmail):
+		return "From Email doesn't look like a valid email address"
+	case strings.TrimSpace(req.SESLoginURL) == "":
+		return "App Login URL is required"
+	case strings.TrimSpace(req.TestEmail) == "":
+		return "A test email address is required to verify the configuration"
+	case !basicEmailRegex.MatchString(req.TestEmail):
+		return "Test email doesn't look like a valid email address"
+	}
+	return ""
 }
 
 func (h *AdminHandlers) SaveEmailConfig(c *gin.Context) {
-	var req SESConfigRequest
+	var req models.SESConfigRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
 
-	if req.AWSRegion == "" || req.AWSAccessKeyID == "" || req.AWSSecretAccessKey == "" || req.SESFromEmail == "" || req.SESLoginURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "all fields are required"})
+	if msg := validateSESConfigFields(req); msg != "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
+		return
+	}
+
+	candidate := email.SESConfig{
+		AWSRegion:          req.AWSRegion,
+		AWSAccessKeyID:     req.AWSAccessKeyID,
+		AWSSecretAccessKey: req.AWSSecretAccessKey,
+		SESFromEmail:       req.SESFromEmail,
+		SESLoginURL:        req.SESLoginURL,
+	}
+
+	body, err := email.Render(email.TemplateConfigVerification, models.ConfigVerificationData{
+		LoginURL: req.SESLoginURL,
+	})
+	if err != nil {
+		log.Printf("SaveEmailConfig: render verification email: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to render verification email"})
+		return
+	}
+
+	if err := email.SendTestEmail(c.Request.Context(), candidate, req.TestEmail,
+		"Vigilant — email configuration verified", body); err != nil {
+		log.Printf("SaveEmailConfig: verification send failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Couldn't send a test email with these credentials. Check the Access Key, Secret Key, Region, and that the From Email is verified in SES, then try again.",
+		})
 		return
 	}
 
@@ -46,21 +96,14 @@ func (h *AdminHandlers) SaveEmailConfig(c *gin.Context) {
 		return
 	}
 
-	if err := email.SaveSESConfig(c.Request.Context(), h.DB, email.SESConfig{
-		AWSRegion:          req.AWSRegion,
-		AWSAccessKeyID:     req.AWSAccessKeyID,
-		AWSSecretAccessKey: req.AWSSecretAccessKey,
-		SESFromEmail:       req.SESFromEmail,
-		SESLoginURL:        req.SESLoginURL,
-	}, key); err != nil {
+	if err := email.SaveSESConfig(c.Request.Context(), h.DB, candidate, key); err != nil {
 		log.Printf("SaveEmailConfig: save: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to save email config"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "email config saved"})
+	c.JSON(http.StatusOK, gin.H{"message": "test email sent and config saved"})
 }
-
 func (h *AdminHandlers) GetEmailConfig(c *gin.Context) {
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
@@ -85,116 +128,6 @@ func (h *AdminHandlers) GetEmailConfig(c *gin.Context) {
 		"aws_access_key_id": cfg.AWSAccessKeyID,
 		"ses_from_email":    cfg.SESFromEmail,
 		"ses_login_url":     cfg.SESLoginURL,
-	})
-}
-
-func (h *AdminHandlers) SendInterviewInvite(c *gin.Context) {
-	var req struct {
-		CandidateName    string `json:"candidate_name" binding:"required"`
-		CandidateEmail   string `json:"candidate_email" binding:"required,email"`
-		InterviewerEmail string `json:"interviewer_email" binding:"required,email"`
-		Position         string `json:"position" binding:"required"`
-		// InterviewType    string `json:"interview_type" binding:"required"`
-		ScheduledAt string `json:"scheduled_at" binding:"required"`
-		Duration    int    `json:"duration_minutes" binding:"required"`
-		MeetLink    string `json:"meet_link"`
-		EntityID    string `json:"entity_id"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "server misconfiguration"})
-		return
-	}
-	sesCfg, err := email.LoadSESConfig(c.Request.Context(), h.DB, key)
-	if err == sql.ErrNoRows {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email not configured"})
-		return
-	}
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load email config"})
-		return
-	}
-
-	// Render template for candidate
-	candidateHTML, err := email.Render(email.TemplateInterviewInvite, models.InterviewInviteData{
-		CandidateName:    req.CandidateName,
-		InterviewerEmail: req.InterviewerEmail,
-		Position:         req.Position,
-		// InterviewType:    req.InterviewType,
-		ScheduledAt: req.ScheduledAt,
-		Duration:    req.Duration,
-		MeetLink:    req.MeetLink,
-	})
-	if err != nil {
-		log.Printf("SendInterviewInvite: render candidate template: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to render email"})
-		return
-	}
-
-	// Render template for interviewer
-	interviewerHTML, err := email.Render(email.TemplateInterviewInvite, models.InterviewInviteData{
-		CandidateName:    req.CandidateName,
-		InterviewerEmail: req.InterviewerEmail,
-		Position:         req.Position,
-		// InterviewType:    req.InterviewType,
-		ScheduledAt: req.ScheduledAt,
-		Duration:    req.Duration,
-		MeetLink:    req.MeetLink,
-	})
-	if err != nil {
-		log.Printf("SendInterviewInvite: render interviewer template: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to render email"})
-		return
-	}
-
-	ctx := c.Request.Context()
-
-	// Enqueue email to candidate
-	_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
-		ToEmail:     req.CandidateEmail,
-		ToName:      req.CandidateName,
-		FromEmail:   sesCfg.SESFromEmail,
-		Subject:     fmt.Sprintf("Interview Scheduled: %s", req.Position),
-		BodyHTML:    candidateHTML,
-		Template:    email.TemplateInterviewInvite,
-		EntityType:  "interview_session",
-		EntityID:    req.EntityID,
-		TriggeredBy: "send_interview_invite",
-		Priority:    email.PriorityHigh,
-	})
-	if err != nil {
-		log.Printf("SendInterviewInvite: enqueue candidate email: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to queue candidate email"})
-		return
-	}
-
-	// Enqueue email to interviewer
-	_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
-		ToEmail:     req.InterviewerEmail,
-		FromEmail:   sesCfg.SESFromEmail,
-		Subject:     fmt.Sprintf("Interview Scheduled: %s with %s", req.Position, req.CandidateName),
-		BodyHTML:    interviewerHTML,
-		Template:    email.TemplateInterviewInvite,
-		EntityType:  "interview_session",
-		EntityID:    req.EntityID,
-		TriggeredBy: "send_interview_invite",
-		Priority:    email.PriorityHigh,
-	})
-	if err != nil {
-		log.Printf("SendInterviewInvite: enqueue interviewer email: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to queue interviewer email"})
-		return
-	}
-
-	c.JSON(http.StatusAccepted, gin.H{
-		"message":    "interview invites queued",
-		"recipients": []string{req.CandidateEmail, req.InterviewerEmail},
 	})
 }
 

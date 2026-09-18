@@ -21,6 +21,7 @@ const (
 	TemplateInterviewJoinInvite     = "interview_join_invite"
 	TemplateShortlistedFinal        = "shortlisted_final"
 	TemplateInterviewerScheduled    = "interviewer_scheduled"
+	TemplateConfigVerification      = "config_verification"
 )
 
 var templates = map[string]*template.Template{}
@@ -37,6 +38,7 @@ func init() {
 	register(TemplateAssignmentInvite, assignmentInviteText)
 	register(TemplateShortlistedFinal, shortlistedFinalText)
 	register(TemplateInterviewerScheduled, interviewerScheduledText)
+	register(TemplateConfigVerification, configVerificationText)
 
 	register(TemplateInterviewJoinInvite, interviewJoinInviteText)
 }
@@ -215,4 +217,19 @@ An interview has been scheduled with you as the interviewer.
 Check your dashboard for full details:
 
 Best regards,
+`
+
+var configVerificationText = `Email Configuration Verified
+
+Hi,
+
+This is a test message from Vigilant confirming that your email configuration is working correctly.
+
+  From Email:  {{.FromEmail}}
+  AWS Region:  {{.AWSRegion}}
+  Login URL:   {{.LoginURL}}
+
+If you received this message, your SES credentials are valid and Vigilant has saved this configuration. No action is needed.
+
+If you did not request this, you can safely ignore this email.
 `

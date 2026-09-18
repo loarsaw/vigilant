@@ -52,3 +52,26 @@ type InterviewInviteData struct {
 	MeetLink         string
 	LoginURL         string
 }
+
+type SESConfigRequest struct {
+	AWSRegion          string `json:"aws_region"`
+	AWSAccessKeyID     string `json:"aws_access_key_id"`
+	AWSSecretAccessKey string `json:"aws_secret_access_key"`
+	SESFromEmail       string `json:"ses_from_email"`
+	SESLoginURL        string `json:"ses_login_url"`
+	TestEmail          string `json:"ses_test_email"`
+}
+
+type SendEmailRequest struct {
+	Recipients []struct {
+		FullName string `json:"full_name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	} `json:"recipients"`
+}
+
+type ConfigVerificationData struct {
+	FromEmail string
+	AWSRegion string
+	LoginURL  string
+}

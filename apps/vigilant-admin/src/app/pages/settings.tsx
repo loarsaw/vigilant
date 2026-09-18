@@ -1,6 +1,6 @@
 // src/pages/Settings.tsx (or wherever this lives)
 import { useState } from "react";
-import { EmailCard } from "@/components/settings/email";
+import { EmailCard } from "@/components/settings/email/email";
 import { LiveKitCard } from "@/components/settings/livekit";
 import { GithubCard } from "@/components/settings/github";
 import { useLiveKit } from "@/hooks/use-livekit";

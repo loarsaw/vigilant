@@ -6,10 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useGithub } from "@/hooks/use-github";
 import { getGithubOrgNameError, getGithubTokenError } from "@/lib/validators";
-interface GithubCardProps {
-  editMode: Record<string, boolean>;
-  setEditMode: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-}
+import { GithubCardProps } from "./types";
 
 export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
   const {
@@ -40,7 +37,6 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
     } else {
       setEditMode((prev) => ({ ...prev, github: true }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [githubConfig, isGithubConfigured]);
 
   useEffect(() => {
@@ -50,7 +46,6 @@ export function GithubCard({ editMode, setEditMode }: GithubCardProps) {
       setOrgTouched(false);
       setTokenTouched(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saveGithubSuccess]);
 
   const isEditing = editMode.github || !isGithubConfigured;
