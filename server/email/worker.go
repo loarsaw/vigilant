@@ -1,3 +1,4 @@
+// server/email/worker.go
 package email
 
 import (
@@ -55,15 +56,15 @@ func (w *Worker) processBatch(ctx context.Context) {
 		return
 	}
 
-	sesCfg, err := LoadSESConfig(ctx, w.DB, key)
+	cfg, err := LoadEmailConfig(ctx, w.DB, key)
 	if err != nil {
-		log.Printf("Email worker: failed to load SES config: %v", err)
+		log.Printf("Email worker: failed to load email config: %v", err)
 		return
 	}
 
-	mailer, err := NewMailerFromConfig(ctx, sesCfg)
+	provider, err := NewProvider(ctx, cfg)
 	if err != nil {
-		log.Printf("Email worker: failed to create mailer: %v", err)
+		log.Printf("Email worker: failed to create provider %q: %v", cfg.Provider, err)
 		return
 	}
 
@@ -103,11 +104,11 @@ func (w *Worker) processBatch(ctx context.Context) {
 			continue
 		}
 
-		w.sendJob(ctx, mailer, id, toEmail, fromEmail, subject, bodyHTML, bodyText.String, attempts)
+		w.sendJob(ctx, provider, id, toEmail, fromEmail, subject, bodyHTML, bodyText.String, attempts)
 	}
 }
 
-func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
+func (w *Worker) sendJob(ctx context.Context, provider Provider,
 	jobID int64, toEmail, fromEmail, subject, bodyHTML, bodyText string, attempt int) {
 
 	body := bodyText
@@ -115,14 +116,14 @@ func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
 		body = bodyHTML
 	}
 
-	err := mailer.Send(ctx, EmailInput{
+	err := provider.Send(ctx, EmailInput{
 		ToEmail: toEmail,
 		Subject: subject,
 		Body:    body,
 	})
 
 	if err != nil {
-		log.Printf("Email worker: failed job %d (attempt %d) to %s: %v", jobID, attempt, toEmail, err)
+		log.Printf("Email worker: failed job %d (attempt %d) to %s via %s: %v", jobID, attempt, toEmail, provider.Name(), err)
 
 		var newStatus string
 		updateErr := w.DB.QueryRowContext(ctx, `
@@ -146,10 +147,11 @@ func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
 				"email_delivery_failed",
 				"email_job",
 				fmt.Sprintf("%d", jobID),
-				fmt.Sprintf("Email to %s permanently failed after %d attempts: %s", toEmail, attempt, err.Error()),
+				fmt.Sprintf("Email to %s permanently failed after %d attempts via %s: %s", toEmail, attempt, provider.Name(), err.Error()),
 				map[string]interface{}{
 					"to_email": toEmail,
 					"subject":  subject,
+					"provider": provider.Name(),
 				},
 				"system:email_worker",
 			)
@@ -157,7 +159,7 @@ func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
 		return
 	}
 
-	log.Printf("Email worker: sent job %d to %s", jobID, toEmail)
+	log.Printf("Email worker: sent job %d to %s via %s", jobID, toEmail, provider.Name())
 
 	w.DB.ExecContext(ctx, `
 		UPDATE email_jobs SET
@@ -169,6 +171,7 @@ func (w *Worker) sendJob(ctx context.Context, mailer *Mailer,
 
 	w.logAttempt(ctx, jobID, toEmail, fromEmail, subject, bodyHTML, "", "", attempt, "sent")
 }
+
 func (w *Worker) logAttempt(ctx context.Context, jobID int64,
 	toEmail, fromEmail, subject, bodyHTML, msgID, errMsg string, attempt int, status string) {
 

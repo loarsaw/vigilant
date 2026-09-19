@@ -277,7 +277,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 	if keyErr != nil {
 		log.Printf("CreateInterviewSession: failed to decode encryption key for emails: %v", keyErr)
 	} else {
-		sesCfg, sesErr := email.LoadSESConfig(ctx, h.DB, key)
+		cfg, sesErr := email.LoadEmailConfig(ctx, h.DB, key)
 		if sesErr != nil {
 			log.Printf("CreateInterviewSession: failed to load SES config for emails: %v", sesErr)
 		} else {
@@ -301,7 +301,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 					_, enqueueErr := email.Enqueue(ctx, h.DB, email.EmailJob{
 						ToEmail:     candidateEmail,
 						ToName:      candidateName,
-						FromEmail:   sesCfg.SESFromEmail,
+						FromEmail:   cfg.FromEmail,
 						Subject:     fmt.Sprintf("Interview Scheduled: %s", req.Position),
 						BodyHTML:    body,
 						Template:    email.TemplateInterviewJoinInvite,
@@ -334,7 +334,7 @@ func (h *AdminHandlers) CreateInterviewSession(c *gin.Context) {
 					_, enqueueErr := email.Enqueue(ctx, h.DB, email.EmailJob{
 						ToEmail:     interviewerEmail,
 						ToName:      interviewerName,
-						FromEmail:   sesCfg.SESFromEmail,
+						FromEmail:   cfg.FromEmail,
 						Subject:     fmt.Sprintf("New Interview Scheduled: %s", req.Position),
 						BodyHTML:    interviewerBody,
 						Template:    email.TemplateInterviewerScheduled,

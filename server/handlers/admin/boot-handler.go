@@ -34,23 +34,23 @@ type AdminHandlers struct {
 	LiveKitService  *livekit.Service
 }
 
-func (h *AdminHandlers) loadMailer(c *gin.Context) (*email.Mailer, *email.SESConfig, error) {
+func (h *AdminHandlers) loadMailer(c *gin.Context) (email.Provider, *email.EmailConfig, error) {
 	key, err := email.DecodeKey(h.Cfg.EncryptionKey)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	sesCfg, err := email.LoadSESConfig(c.Request.Context(), h.DB, key)
+	cfg, err := email.LoadEmailConfig(c.Request.Context(), h.DB, key)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	mailer, err := email.NewMailerFromConfig(c.Request.Context(), sesCfg)
+	provider, err := email.NewProvider(c.Request.Context(), cfg)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return mailer, sesCfg, nil
+	return provider, cfg, nil
 }
 
 func (h *AdminHandlers) VerifyToken(c *gin.Context) {

@@ -4,16 +4,14 @@ export type EditSections = {
 };
 
 export interface EmailConfig {
-  provider: "aws" | "twilio";
+  provider: "ses" | "sendgrid";
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   awsRegion: string;
+  sendgridApiKey: string;
   sesFromEmail: string;
   sesLoginUrl: string;
   acceptIncomingEmails: boolean;
-  twilioAccountSid: string;
-  twilioAuthToken: string;
-  twilioFromEmail: string;
   sesTestEmail: string;
 }
 
@@ -21,6 +19,7 @@ export interface FieldErrors {
   region: string | null;
   accessKey: string | null;
   secretKey: string | null;
+  apiKey: string | null;
   testEmail: string | null;
 }
 
@@ -28,12 +27,13 @@ export interface FieldTouched {
   region: boolean;
   accessKey: boolean;
   secretKey: boolean;
+  apiKey: boolean;
   testEmail: boolean;
 }
 
 export interface ShowSecrets {
   awsSecretAccessKey: boolean;
-  twilioAuthToken: boolean;
+  apiKey: boolean;
 }
 
 

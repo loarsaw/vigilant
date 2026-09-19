@@ -934,3 +934,60 @@ export interface AuditLogFilters {
   to?: string;
   q?: string;
 }
+
+
+
+export type EmailProvider = "ses" | "sendgrid";
+
+export interface EmailConfig {
+  provider: EmailProvider;
+  awsAccessKeyId: string;
+  awsSecretAccessKey: string;
+  awsRegion: string;
+  sendgridApiKey: string;
+  sesFromEmail: string;
+  sesLoginUrl: string;
+  sesTestEmail: string;
+  acceptIncomingEmails: boolean;
+}
+
+export interface FieldErrors {
+  region: string | null;
+  accessKey: string | null;
+  secretKey: string | null;
+  apiKey: string | null;
+  testEmail: string | null;
+}
+
+export interface FieldTouched {
+  region: boolean;
+  accessKey: boolean;
+  secretKey: boolean;
+  apiKey: boolean;
+  testEmail: boolean;
+}
+
+export interface EditSections {
+  email: boolean;
+  calendar: boolean;
+}
+
+export interface EmailConfigResponse {
+  provider: EmailProvider;
+  from_email: string;
+  login_url: string;
+  aws_region?: string;
+  aws_access_key_id?: string;
+  api_key_configured?: boolean;
+}
+
+export interface EmailConfigPayload {
+  provider: EmailProvider;
+  from_email: string;
+  login_url: string;
+  test_email: string;
+  aws_region?: string;
+  aws_access_key_id?: string;
+  aws_secret_access_key?: string;
+  api_key?: string;
+}

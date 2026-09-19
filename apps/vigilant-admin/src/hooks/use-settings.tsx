@@ -3,16 +3,16 @@ import { apiClient } from "@/lib/axios";
 import {
   GoogleCredentialPayload,
   GoogleCredentialResponse,
-  SESConfigPayload,
-  SESConfigResponse,
+  EmailConfigPayload,
+  EmailConfigResponse,
 } from "./types";
 
-async function fetchEmailConfig(): Promise<SESConfigResponse> {
-  const response = await apiClient.get<SESConfigResponse>("/email-config");
+async function fetchEmailConfig(): Promise<EmailConfigResponse> {
+  const response = await apiClient.get<EmailConfigResponse>("/email-config");
   return response.data;
 }
 
-async function saveEmailConfig(payload: SESConfigPayload): Promise<void> {
+async function saveEmailConfig(payload: EmailConfigPayload): Promise<void> {
   await apiClient.post("/email-config", payload);
 }
 
@@ -31,14 +31,14 @@ export function useSettings() {
     isLoading: isLoadingEmail,
     isError: isEmailError,
     error: emailFetchError,
-  } = useQuery<SESConfigResponse, Error>({
+  } = useQuery<EmailConfigResponse, Error>({
     queryKey: ["settings", "email-config"],
     queryFn: fetchEmailConfig,
     staleTime: 1000 * 60 * 5,
     retry: false,
   });
 
-  const saveEmailMutation = useMutation<void, Error, SESConfigPayload>({
+  const saveEmailMutation = useMutation<void, Error, EmailConfigPayload>({
     mutationFn: saveEmailConfig,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings", "email-config"] });

@@ -1,4 +1,4 @@
-// server/email/tamplates.go
+// server/email/templates.go
 package email
 
 import (
@@ -225,11 +225,12 @@ Hi,
 
 This is a test message from Vigilant confirming that your email configuration is working correctly.
 
+  Provider:    {{.Provider}}
   From Email:  {{.FromEmail}}
-  AWS Region:  {{.AWSRegion}}
-  Login URL:   {{.LoginURL}}
+{{if .AWSRegion}}  AWS Region:  {{.AWSRegion}}
+{{end}}  Login URL:   {{.LoginURL}}
 
-If you received this message, your SES credentials are valid and Vigilant has saved this configuration. No action is needed.
+If you received this message, your credentials are valid and Vigilant has saved this configuration. No action is needed.
 
 If you did not request this, you can safely ignore this email.
 `
