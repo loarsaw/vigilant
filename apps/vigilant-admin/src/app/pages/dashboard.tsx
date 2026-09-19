@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -21,8 +20,8 @@ import {
   Activity,
 } from "lucide-react";
 import { useDashboard } from "@/hooks/use-dashboard";
-import { StatCard } from "@/components/admin/dashboard/stat-card";
-import { PipelineRing } from "@/components/admin/dashboard/pipeline-ring";
+import { StatCard } from "@/components/stat-card";
+import { PipelineRing } from "@/components/pipeline-ring";
 import { formatDate, getStatusBadge } from "@/lib/utils";
 
 export const Dashboard = () => {

@@ -78,3 +78,10 @@ type ConfigVerificationData struct {
 	AWSRegion string
 	LoginURL  string
 }
+
+type EmailConfig struct {
+	Provider  string
+	FromEmail string
+	LoginURL  string
+	Settings  map[string]string
+}

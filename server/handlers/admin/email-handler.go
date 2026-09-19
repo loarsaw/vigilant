@@ -19,8 +19,11 @@ var (
 	awsSecretKeyRegex = regexp.MustCompile(`^[A-Za-z0-9/+=]{40}$`)
 	basicEmailRegex   = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 	sendgridKeyRegex  = regexp.MustCompile(`^SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$`)
+	resendKeyRegex    = regexp.MustCompile(`^re_[A-Za-z0-9_]{10,}$`)
 )
 
+// validateEmailConfigFields validates the fields common to every provider,
+// plus whichever provider-specific fields apply to req.Provider.
 func validateEmailConfigFields(req models.EmailConfigRequest) string {
 	switch req.Provider {
 	case email.ProviderSES:
@@ -52,8 +55,17 @@ func validateEmailConfigFields(req models.EmailConfigRequest) string {
 			return "SendGrid API Key doesn't look valid, expected format SG.xxxxx.yyyyy"
 		}
 
+	case email.ProviderResend:
+		apiKey := strings.TrimSpace(req.APIKey)
+		switch {
+		case apiKey == "":
+			return "Resend API Key is required"
+		case !resendKeyRegex.MatchString(apiKey):
+			return "Resend API Key doesn't look valid, expected format re_xxxxxxxxxxxx"
+		}
+
 	default:
-		return "Provider must be one of: ses, sendgrid"
+		return "Provider must be one of: ses, sendgrid, resend"
 	}
 
 	switch {
@@ -80,7 +92,7 @@ func buildSettings(req models.EmailConfigRequest) map[string]string {
 			"aws_access_key_id":     req.AWSAccessKeyID,
 			"aws_secret_access_key": req.AWSSecretAccessKey,
 		}
-	case email.ProviderSendGrid:
+	case email.ProviderSendGrid, email.ProviderResend:
 		return map[string]string{
 			"api_key": req.APIKey,
 		}
@@ -118,7 +130,6 @@ func (h *AdminHandlers) SaveEmailConfig(c *gin.Context) {
 	}
 
 	body, err := email.Render(email.TemplateConfigVerification, verificationData)
-
 	if err != nil {
 		log.Printf("SaveEmailConfig: render verification email: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to render verification email"})
@@ -178,8 +189,9 @@ func (h *AdminHandlers) GetEmailConfig(c *gin.Context) {
 	switch cfg.Provider {
 	case email.ProviderSES:
 		resp["aws_region"] = cfg.Get("aws_region")
+		// I wonder if I should even send the Access Key
 		resp["aws_access_key_id"] = cfg.Get("aws_access_key_id")
-	case email.ProviderSendGrid:
+	case email.ProviderSendGrid, email.ProviderResend:
 		resp["api_key_configured"] = cfg.Get("api_key") != ""
 	}
 

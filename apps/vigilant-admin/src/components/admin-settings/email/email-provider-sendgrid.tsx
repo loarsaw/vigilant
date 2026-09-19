@@ -26,8 +26,8 @@ export function SendGridFields({
         <PasswordField
           id="sendgrid-api-key"
           label="SendGrid API Key"
-          value={emailConfig.sendgridApiKey}
-          onChange={(value) => onChange("sendgridApiKey", value)}
+          value={emailConfig.apiKey}
+          onChange={(value) => onChange("apiKey", value)}
           onBlur={onApiKeyBlur}
           error={errors.apiKey}
           showSecret={showSecrets.apiKey}
@@ -38,7 +38,7 @@ export function SendGridFields({
         <ReadonlySecretField
           id="sendgrid-api-key"
           label="SendGrid API Key"
-          value={emailConfig.sendgridApiKey}
+          value={emailConfig.apiKey}
           showSecret={showSecrets.apiKey}
           toggleShow={() => toggleSecretVisibility("apiKey")}
         />

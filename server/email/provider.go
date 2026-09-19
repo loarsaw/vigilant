@@ -41,6 +41,7 @@ func SendBulk(ctx context.Context, p Provider, inputs []EmailInput) []SendResult
 const (
 	ProviderSES      = "ses"
 	ProviderSendGrid = "sendgrid"
+	ProviderResend   = "resend"
 )
 
 // NewProvider builds the configured Provider from an EmailConfig loaded from the DB.
@@ -51,6 +52,8 @@ func NewProvider(ctx context.Context, cfg *EmailConfig) (Provider, error) {
 		return newSESProvider(ctx, cfg)
 	case ProviderSendGrid:
 		return newSendGridProvider(cfg)
+	case ProviderResend:
+		return newResendProvider(cfg)
 	default:
 		return nil, fmt.Errorf("email: unknown provider %q", cfg.Provider)
 	}

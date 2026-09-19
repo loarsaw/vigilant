@@ -1,13 +1,13 @@
-// src/pages/Settings.tsx (or wherever this lives)
+// src/app/pages/settings.tsx
 import { useState } from "react";
-import { EmailCard } from "@/components/settings/email/email";
-import { LiveKitCard } from "@/components/settings/livekit";
-import { GithubCard } from "@/components/settings/github";
+import { EmailCard } from "@/components/admin-settings/email/email";
+import { LiveKitCard } from "@/components/admin-settings/livekit";
+import { GithubCard } from "@/components/admin-settings/github";
 import { useLiveKit } from "@/hooks/use-livekit";
 import { useGithub } from "@/hooks/use-github";
 import { AIProvidersCard } from "@/components/ai-providers";
 import { useRetention } from "@/hooks/use-retention";
-import { RetentionCard } from "@/components/settings/retention";
+import { RetentionCard } from "@/components/admin-settings/retention";
 import {
   Bot,
   CheckCircle2,
@@ -15,19 +15,17 @@ import {
   Github,
   History,
   Mail,
-  Phone,
   Settings2,
   Trash2,
   Video,
 } from "lucide-react";
-import { AuditLogCard } from "@/components/settings/audit-log";
-import { useSettings } from "@/hooks/use-settings";
+import { AuditLogCard } from "@/components/admin-settings/audit-log";
+import { useEmailProviders } from "@/hooks/use-email-provider";
 
 type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai" | "retention" | "audit";
 
 const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = [
   { key: "email", label: "Email", icon: Mail },
-  // { key: "twilio", label: "Voice (Twilio)", icon: Phone },
   { key: "livekit", label: "LiveKit", icon: Video },
   { key: "github", label: "GitHub", icon: Github },
   { key: "ai", label: "AI Provider", icon: Bot },
@@ -38,10 +36,6 @@ const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = 
 export function Settings() {
   const [activeSection, setActiveSection] = useState<SectionKey>("email");
 
-  const [configuredSections, setConfiguredSections] = useState({
-    email: false,
-  });
-
   const [editMode, setEditMode] = useState({
     email: true,
     twilio: true,
@@ -51,9 +45,8 @@ export function Settings() {
   });
 
   const { isRetentionConfigured } = useRetention();
-  const { isEmailConfigured } = useSettings();
+  const { isEmailConfigured } = useEmailProviders();
 
-  // const { isTwilioConfigured } = useTwilio();
   const { isLiveKitConfigured } = useLiveKit();
   const { isGithubConfigured } = useGithub();
 
@@ -116,15 +109,9 @@ export function Settings() {
 
           <div className="flex-1 min-w-0">
             {activeSection === "email" && (
-              <EmailCard
-                editMode={editMode}
-                setEditMode={setEditMode}
-                configuredSections={configuredSections}
-              />
+              <EmailCard editMode={editMode} setEditMode={setEditMode} />
             )}
-            {/* {activeSection === "twilio" && (
-              <CallCard editMode={editMode} setEditMode={setEditMode} />
-            )} */}
+
             {activeSection === "livekit" && (
               <LiveKitCard editMode={editMode} setEditMode={setEditMode} />
             )}

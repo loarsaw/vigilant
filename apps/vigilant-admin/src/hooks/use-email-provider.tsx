@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
-import {
-  GoogleCredentialPayload,
-  GoogleCredentialResponse,
-  EmailConfigPayload,
-  EmailConfigResponse,
-} from "./types";
+import { EmailConfigPayload, EmailConfigResponse } from "./types";
 
 async function fetchEmailConfig(): Promise<EmailConfigResponse> {
   const response = await apiClient.get<EmailConfigResponse>("/email-config");
@@ -16,14 +11,7 @@ async function saveEmailConfig(payload: EmailConfigPayload): Promise<void> {
   await apiClient.post("/email-config", payload);
 }
 
-async function saveGoogleCredential(
-  payload: GoogleCredentialPayload,
-): Promise<GoogleCredentialResponse> {
-  const response = await apiClient.post<GoogleCredentialResponse>("/credentials/google", payload);
-  return response.data;
-}
-
-export function useSettings() {
+export function useEmailProviders() {
   const queryClient = useQueryClient();
 
   const {
@@ -45,19 +33,6 @@ export function useSettings() {
     },
   });
 
-  const saveGoogleCredentialMutation = useMutation<
-    GoogleCredentialResponse,
-    Error,
-    GoogleCredentialPayload
-  >({
-    mutationFn: saveGoogleCredential,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["settings", "google-credential"],
-      });
-    },
-  });
-
   return {
     emailConfig,
     isEmailConfigured: !!emailConfig,
@@ -70,12 +45,5 @@ export function useSettings() {
     isSavingEmail: saveEmailMutation.isPending,
     saveEmailError: saveEmailMutation.error?.message ?? null,
     saveEmailSuccess: saveEmailMutation.isSuccess,
-
-    saveGoogleCredential: saveGoogleCredentialMutation.mutate,
-    saveGoogleCredentialAsync: saveGoogleCredentialMutation.mutateAsync,
-    isSavingGoogle: saveGoogleCredentialMutation.isPending,
-    saveGoogleError: saveGoogleCredentialMutation.error?.message ?? null,
-    saveGoogleSuccess: saveGoogleCredentialMutation.isSuccess,
-    savedGoogleCredential: saveGoogleCredentialMutation.data ?? null,
   };
 }

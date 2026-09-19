@@ -8,7 +8,7 @@ import { useJobApplications } from "@/hooks/use-job-applications";
 import { RadarChart } from "@/components/radar-chart";
 import { STATUS_STYLES } from "@/lib/utils";
 import { BracketCorners } from "@/components/bracket-conner";
-import { StatCard } from "@/components/admin/dashboard/stat-card";
+import { StatCard } from "@/components/stat-card";
 
 export function PositionActivity() {
   const { id } = useParams();

@@ -36,10 +36,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAdmins } from "@/hooks/use-admin";
-import { AddAdminDialog } from "@/components/admin/add-admin";
-import { ResetPasswordDialog } from "@/components/admin/reset-password";
+import { ResetPasswordDialog } from "@/components/dialogs/reset-password";
 import { BracketCorners } from "@/components/bracket-conner";
-
+import { AddAdminDialog } from "@/components/dialogs/add-admin";
 export function AdminList() {
   const {
     admins,

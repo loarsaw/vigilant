@@ -1,19 +1,21 @@
 import { useState, useEffect } from "react";
 import { Mail, AlertCircle, Edit3, Save, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { useSettings } from "@/hooks/use-settings";
+import { useEmailProviders } from "@/hooks/use-email-provider";
 
 import { SelectField, ReadonlyField } from "../form-field";
 import { AwsSesFields } from "./email-provider";
-import { SendGridFields } from "./email-provider-sendgrid";
+import { ApiKeyProviderFields } from "./email-provider-api-key";
 import {
   validateAwsRegion,
   validateAwsAccessKeyId,
   validateAwsSecretAccessKey,
   validateSendGridApiKey,
+  validateResendApiKey,
   validateTestEmail,
 } from "./validation";
-import type { EmailConfig, EditSections, FieldErrors, FieldTouched } from "../types";
+
+import type { EmailConfig, EditSections, FieldErrors, FieldTouched, EmailProvider } from "../types";
 
 const DEFAULT_ERRORS: FieldErrors = {
   region: null,
@@ -31,13 +33,31 @@ const DEFAULT_TOUCHED: FieldTouched = {
   testEmail: false,
 };
 
+const PROVIDER_OPTIONS: { value: EmailProvider; label: string }[] = [
+  { value: "ses", label: "AWS SES" },
+  { value: "sendgrid", label: "SendGrid" },
+  { value: "resend", label: "Resend" },
+];
+
+const PROVIDER_LABELS: Record<EmailProvider, string> = {
+  ses: "AWS SES",
+  sendgrid: "SendGrid",
+  resend: "Resend",
+};
+
+// Validates whichever API key field applies to the given provider. Returns
+// null for providers (ses) that don't use this field at all.
+function validateApiKeyForProvider(provider: EmailProvider, value: string): string | null {
+  if (provider === "sendgrid") return validateSendGridApiKey(value);
+  if (provider === "resend") return validateResendApiKey(value);
+  return null;
+}
+
 export function EmailCard({
-  configuredSections,
   editMode,
   setEditMode,
 }: {
-  configuredSections: { email: boolean; calendar: boolean };
-  editMode: { email: boolean; calendar: boolean };
+  editMode: EditSections;
   setEditMode: React.Dispatch<React.SetStateAction<EditSections>>;
 }) {
   const {
@@ -48,14 +68,14 @@ export function EmailCard({
     isSavingEmail,
     saveEmailError,
     saveEmailSuccess,
-  } = useSettings();
+  } = useEmailProviders();
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
     provider: "ses",
     awsAccessKeyId: "",
     awsSecretAccessKey: "",
     awsRegion: "us-east-1",
-    sendgridApiKey: "",
+    apiKey: "",
     sesFromEmail: "",
     sesLoginUrl: "",
     sesTestEmail: "",
@@ -103,8 +123,11 @@ export function EmailCard({
     if (field === "awsSecretAccessKey" && touched.secretKey) {
       setErrors((prev) => ({ ...prev, secretKey: validateAwsSecretAccessKey(value) }));
     }
-    if (field === "sendgridApiKey" && touched.apiKey) {
-      setErrors((prev) => ({ ...prev, apiKey: validateSendGridApiKey(value) }));
+    if (field === "apiKey" && touched.apiKey) {
+      setErrors((prev) => ({
+        ...prev,
+        apiKey: validateApiKeyForProvider(emailConfig.provider, value),
+      }));
     }
     if (field === "sesTestEmail" && touched.testEmail) {
       setErrors((prev) => ({ ...prev, testEmail: validateTestEmail(value) }));
@@ -136,7 +159,7 @@ export function EmailCard({
     setTouched((prev) => ({ ...prev, apiKey: true }));
     setErrors((prev) => ({
       ...prev,
-      apiKey: validateSendGridApiKey(emailConfig.sendgridApiKey),
+      apiKey: validateApiKeyForProvider(emailConfig.provider, emailConfig.apiKey),
     }));
   };
 
@@ -149,10 +172,9 @@ export function EmailCard({
     setShowSecrets((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const toggleEditMode = (section: "email" | "calendar") => {
+  const toggleEditMode = (section: "email") => {
     setEditMode((prev) => ({ ...prev, [section]: !prev[section] }));
   };
-
   const handleSave = () => {
     const testEmailErr = validateTestEmail(emailConfig.sesTestEmail);
 
@@ -190,8 +212,7 @@ export function EmailCard({
       return;
     }
 
-    // sendgrid
-    const apiKeyErr = validateSendGridApiKey(emailConfig.sendgridApiKey);
+    const apiKeyErr = validateApiKeyForProvider(emailConfig.provider, emailConfig.apiKey);
 
     setTouched({
       region: false,
@@ -211,8 +232,8 @@ export function EmailCard({
     if (apiKeyErr || testEmailErr) return;
 
     saveEmailConfig({
-      provider: "sendgrid",
-      api_key: emailConfig.sendgridApiKey.trim(),
+      provider: emailConfig.provider,
+      api_key: emailConfig.apiKey.trim(),
       from_email: emailConfig.sesFromEmail,
       login_url: emailConfig.sesLoginUrl,
       test_email: emailConfig.sesTestEmail.trim(),
@@ -270,15 +291,12 @@ export function EmailCard({
             label="Email Service Provider"
             value={emailConfig.provider}
             onChange={(value) => handleEmailChange("provider", value)}
-            options={[
-              { value: "ses", label: "AWS SES" },
-              { value: "sendgrid", label: "SendGrid" },
-            ]}
+            options={PROVIDER_OPTIONS}
           />
         ) : (
           <ReadonlyField
             label="Email Service Provider"
-            value={emailConfig.provider === "ses" ? "AWS SES" : "SendGrid"}
+            value={PROVIDER_LABELS[emailConfig.provider]}
           />
         )}
 
@@ -298,7 +316,24 @@ export function EmailCard({
         )}
 
         {emailConfig.provider === "sendgrid" && (
-          <SendGridFields
+          <ApiKeyProviderFields
+            apiKeyLabel="SendGrid API Key"
+            apiKeyPlaceholder="SG.xxxxxxxxxxxxxxxxxxxxxx.yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+            emailConfig={emailConfig}
+            isEditing={isEditing}
+            onChange={handleEmailChange}
+            errors={errors}
+            showSecrets={showSecrets}
+            toggleSecretVisibility={toggleSecretVisibility}
+            onApiKeyBlur={handleApiKeyBlur}
+            onTestEmailBlur={handleTestEmailBlur}
+          />
+        )}
+
+        {emailConfig.provider === "resend" && (
+          <ApiKeyProviderFields
+            apiKeyLabel="Resend API Key"
+            apiKeyPlaceholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
             emailConfig={emailConfig}
             isEditing={isEditing}
             onChange={handleEmailChange}
