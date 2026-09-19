@@ -78,7 +78,7 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 	if err != nil {
 		log.Printf("CreateCandidate: failed to decode encryption key: %v", err)
 	} else {
-		sesCfg, err := email.LoadSESConfig(ctx, h.DB, key)
+		sesCfg, err := email.LoadEmailConfig(ctx, h.DB, key)
 		if err != nil {
 			log.Printf("CreateCandidate: failed to load SES config: %v", err)
 		} else {
@@ -86,7 +86,7 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 				CandidateName: req.FullName,
 				Email:         req.Email,
 				Password:      req.Password,
-				LoginURL:      sesCfg.SESLoginURL,
+				LoginURL:      sesCfg.LoginURL,
 			})
 			if err != nil {
 				log.Printf("CreateCandidate: failed to render email: %v", err)
@@ -94,7 +94,7 @@ func (h *AdminHandlers) CreateCandidate(c *gin.Context) {
 				_, err = email.Enqueue(ctx, h.DB, email.EmailJob{
 					ToEmail:     req.Email,
 					ToName:      req.FullName,
-					FromEmail:   sesCfg.SESFromEmail,
+					FromEmail:   sesCfg.LoginURL,
 					Subject:     "Your Vigilant Account Credentials",
 					BodyHTML:    body,
 					Template:    email.TemplateCandidateCredentials,

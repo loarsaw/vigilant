@@ -43,8 +43,10 @@ To ensure **Vigilant** runs smoothly in a production or staging environment, we 
 ## Upcoming Features & Roadmap
 - [x] Initial system monitoring engine
 - [x] Go-based execution workers
-- [x] Amazon SES email integration
-- [ ] ~**Twilio Integration**~
+- [x] Email Integration
+  - [x] Amazon SES
+  - [x] Twilio SendGrid
+  - [x] Resend
 - [x] **Livekit Integration**
 - [x] Process-level heuristics
 - [x] GitHub Integration

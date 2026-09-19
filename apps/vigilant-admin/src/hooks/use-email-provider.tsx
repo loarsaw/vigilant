@@ -1,0 +1,49 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/axios";
+import { EmailConfigPayload, EmailConfigResponse } from "./types";
+
+async function fetchEmailConfig(): Promise<EmailConfigResponse> {
+  const response = await apiClient.get<EmailConfigResponse>("/email-config");
+  return response.data;
+}
+
+async function saveEmailConfig(payload: EmailConfigPayload): Promise<void> {
+  await apiClient.post("/email-config", payload);
+}
+
+export function useEmailProviders() {
+  const queryClient = useQueryClient();
+
+  const {
+    data: emailConfig,
+    isLoading: isLoadingEmail,
+    isError: isEmailError,
+    error: emailFetchError,
+  } = useQuery<EmailConfigResponse, Error>({
+    queryKey: ["settings", "email-config"],
+    queryFn: fetchEmailConfig,
+    staleTime: 1000 * 60 * 5,
+    retry: false,
+  });
+
+  const saveEmailMutation = useMutation<void, Error, EmailConfigPayload>({
+    mutationFn: saveEmailConfig,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings", "email-config"] });
+    },
+  });
+
+  return {
+    emailConfig,
+    isEmailConfigured: !!emailConfig,
+    isLoadingEmail,
+    isEmailError,
+    emailFetchError: emailFetchError?.message ?? null,
+
+    saveEmailConfig: saveEmailMutation.mutate,
+    saveEmailConfigAsync: saveEmailMutation.mutateAsync,
+    isSavingEmail: saveEmailMutation.isPending,
+    saveEmailError: saveEmailMutation.error?.message ?? null,
+    saveEmailSuccess: saveEmailMutation.isSuccess,
+  };
+}

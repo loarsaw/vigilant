@@ -1,5 +1,7 @@
 // src/hooks/types.ts
 
+import { EmailProvider } from "@/components/admin-settings/types";
+
 export interface SESConfigPayload {
   aws_region: string;
   aws_access_key_id: string;
@@ -838,7 +840,7 @@ export interface RetentionRunsResponse {
 export interface UseDraftPersistenceOptions<T> {
   key: string;
   data: T;
-  enabled: boolean; 
+  enabled: boolean;
   debounceMs?: number;
 }
 
@@ -871,19 +873,19 @@ export interface PositionActivityOverview {
   avg_overall_score: number | null;
   avg_assignment_score: number | null;
 }
- 
+
 export interface PositionActivityRadarDimensions {
   technical_skills: number | null;
   communication: number | null;
   problem_solving: number | null;
   cultural_fit: number | null;
 }
- 
+
 export interface PositionActivityRadar {
   feedback_count: number;
   dimensions: PositionActivityRadarDimensions;
 }
- 
+
 export interface PositionActivity {
   position_id: string;
   position_title: string;
@@ -891,7 +893,7 @@ export interface PositionActivity {
   pipeline: StatusBreakdown;
   radar: PositionActivityRadar;
 }
- 
+
 export interface PositionActivityResponse {
   data: PositionActivity;
 }
@@ -933,4 +935,24 @@ export interface AuditLogFilters {
   from?: string;
   to?: string;
   q?: string;
+}
+
+export interface EmailConfigResponse {
+  provider: EmailProvider;
+  from_email: string;
+  login_url: string;
+  aws_region?: string;
+  aws_access_key_id?: string;
+  api_key_configured?: boolean;
+}
+
+export interface EmailConfigPayload {
+  provider: EmailProvider;
+  from_email: string;
+  login_url: string;
+  test_email: string;
+  aws_region?: string;
+  aws_access_key_id?: string;
+  aws_secret_access_key?: string;
+  api_key?: string;
 }

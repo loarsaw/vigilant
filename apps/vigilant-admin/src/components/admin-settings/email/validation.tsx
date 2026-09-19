@@ -2,6 +2,8 @@ const AWS_REGION_PATTERN = /^[a-z]{2}(-gov|-iso[a-z]*)?-[a-z]+-\d$/;
 const AWS_ACCESS_KEY_PATTERN = /^(AKIA|ASIA|AROA|AIDA)[A-Z0-9]{16}$/;
 const AWS_SECRET_KEY_PATTERN = /^[A-Za-z0-9/+=]{40}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SENDGRID_KEY_PATTERN = /^SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}$/;
+const RESEND_KEY_PATTERN = /^re_[A-Za-z0-9_]{10,}$/;
 
 export function validateAwsRegion(region: string): string | null {
   const trimmed = region.trim();
@@ -32,6 +34,26 @@ export function validateAwsSecretAccessKey(key: string): string | null {
   if (trimmed.length !== 40) return "Secret Access Keys are always 40 characters";
   if (!AWS_SECRET_KEY_PATTERN.test(trimmed)) {
     return "Doesn't look like a valid AWS Secret Access Key";
+  }
+  return null;
+}
+
+export function validateSendGridApiKey(key: string): string | null {
+  const trimmed = key.trim();
+  if (!trimmed) return "SendGrid API Key is required";
+  if (trimmed !== key) return "Remove leading/trailing spaces";
+  if (!SENDGRID_KEY_PATTERN.test(trimmed)) {
+    return "Doesn't look like a valid SendGrid API Key, expected format SG.xxxxx.yyyyy";
+  }
+  return null;
+}
+
+export function validateResendApiKey(key: string): string | null {
+  const trimmed = key.trim();
+  if (!trimmed) return "Resend API Key is required";
+  if (trimmed !== key) return "Remove leading/trailing spaces";
+  if (!RESEND_KEY_PATTERN.test(trimmed)) {
+    return "Doesn't look like a valid Resend API Key, expected format re_xxxxxxxxxxxx";
   }
   return null;
 }

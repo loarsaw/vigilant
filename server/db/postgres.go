@@ -446,11 +446,10 @@ func RunMigrations(db *sql.DB) error {
 		// ========================================
 		`CREATE TABLE IF NOT EXISTS email_config (
 			id SERIAL PRIMARY KEY,
-			aws_region TEXT NOT NULL,
-			aws_access_key_id TEXT NOT NULL,
-			aws_secret_access_key TEXT NOT NULL,
-			ses_from_email TEXT NOT NULL,
-			ses_login_url TEXT NOT NULL,
+			provider TEXT NOT NULL DEFAULT 'ses',
+			from_email TEXT NOT NULL,
+			login_url TEXT NOT NULL,
+			settings_encrypted TEXT NOT NULL,
 
 			created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

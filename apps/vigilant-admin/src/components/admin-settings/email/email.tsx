@@ -1,22 +1,27 @@
 import { useState, useEffect } from "react";
 import { Mail, AlertCircle, Edit3, Save, Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { useSettings } from "@/hooks/use-settings";
+import { useEmailProviders } from "@/hooks/use-email-provider";
 
 import { SelectField, ReadonlyField } from "../form-field";
 import { AwsSesFields } from "./email-provider";
+import { ApiKeyProviderFields } from "./email-provider-api-key";
 import {
   validateAwsRegion,
   validateAwsAccessKeyId,
   validateAwsSecretAccessKey,
+  validateSendGridApiKey,
+  validateResendApiKey,
   validateTestEmail,
 } from "./validation";
-import type { EmailConfig, EditSections, FieldErrors, FieldTouched } from "../types";
+
+import type { EmailConfig, EditSections, FieldErrors, FieldTouched, EmailProvider } from "../types";
 
 const DEFAULT_ERRORS: FieldErrors = {
   region: null,
   accessKey: null,
   secretKey: null,
+  apiKey: null,
   testEmail: null,
 };
 
@@ -24,16 +29,35 @@ const DEFAULT_TOUCHED: FieldTouched = {
   region: false,
   accessKey: false,
   secretKey: false,
+  apiKey: false,
   testEmail: false,
 };
 
+const PROVIDER_OPTIONS: { value: EmailProvider; label: string }[] = [
+  { value: "ses", label: "AWS SES" },
+  { value: "sendgrid", label: "SendGrid" },
+  { value: "resend", label: "Resend" },
+];
+
+const PROVIDER_LABELS: Record<EmailProvider, string> = {
+  ses: "AWS SES",
+  sendgrid: "SendGrid",
+  resend: "Resend",
+};
+
+// Validates whichever API key field applies to the given provider. Returns
+// null for providers (ses) that don't use this field at all.
+function validateApiKeyForProvider(provider: EmailProvider, value: string): string | null {
+  if (provider === "sendgrid") return validateSendGridApiKey(value);
+  if (provider === "resend") return validateResendApiKey(value);
+  return null;
+}
+
 export function EmailCard({
-  configuredSections,
   editMode,
   setEditMode,
 }: {
-  configuredSections: { email: boolean; calendar: boolean };
-  editMode: { email: boolean; calendar: boolean };
+  editMode: EditSections;
   setEditMode: React.Dispatch<React.SetStateAction<EditSections>>;
 }) {
   const {
@@ -44,29 +68,25 @@ export function EmailCard({
     isSavingEmail,
     saveEmailError,
     saveEmailSuccess,
-  } = useSettings();
+  } = useEmailProviders();
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>({
-    provider: "aws",
+    provider: "ses",
     awsAccessKeyId: "",
     awsSecretAccessKey: "",
     awsRegion: "us-east-1",
+    apiKey: "",
     sesFromEmail: "",
     sesLoginUrl: "",
-    acceptIncomingEmails: false,
-    twilioAccountSid: "",
-    twilioAuthToken: "",
-    twilioFromEmail: "",
     sesTestEmail: "",
+    acceptIncomingEmails: false,
   });
 
   const [showSecrets, setShowSecrets] = useState({
     awsSecretAccessKey: false,
-    twilioAuthToken: false,
+    apiKey: false,
   });
 
-  // These two were previously split into 8 separate useState calls, with
-  // `testEmail` missing entirely — that's what broke the blur handler.
   const [errors, setErrors] = useState<FieldErrors>(DEFAULT_ERRORS);
   const [touched, setTouched] = useState<FieldTouched>(DEFAULT_TOUCHED);
 
@@ -74,10 +94,11 @@ export function EmailCard({
     if (fetchedConfig) {
       setEmailConfig((prev) => ({
         ...prev,
+        provider: fetchedConfig.provider ?? "ses",
         awsAccessKeyId: fetchedConfig.aws_access_key_id ?? "",
         awsRegion: fetchedConfig.aws_region ?? "us-east-1",
-        sesFromEmail: fetchedConfig.ses_from_email ?? "",
-        sesLoginUrl: fetchedConfig.ses_login_url ?? "",
+        sesFromEmail: fetchedConfig.from_email ?? "",
+        sesLoginUrl: fetchedConfig.login_url ?? "",
       }));
     }
   }, [fetchedConfig]);
@@ -101,6 +122,12 @@ export function EmailCard({
     }
     if (field === "awsSecretAccessKey" && touched.secretKey) {
       setErrors((prev) => ({ ...prev, secretKey: validateAwsSecretAccessKey(value) }));
+    }
+    if (field === "apiKey" && touched.apiKey) {
+      setErrors((prev) => ({
+        ...prev,
+        apiKey: validateApiKeyForProvider(emailConfig.provider, value),
+      }));
     }
     if (field === "sesTestEmail" && touched.testEmail) {
       setErrors((prev) => ({ ...prev, testEmail: validateTestEmail(value) }));
@@ -128,8 +155,14 @@ export function EmailCard({
     }));
   };
 
-  // This handler didn't exist before, despite being wired up to the
-  // test-email field's onBlur — that's the crash.
+  const handleApiKeyBlur = () => {
+    setTouched((prev) => ({ ...prev, apiKey: true }));
+    setErrors((prev) => ({
+      ...prev,
+      apiKey: validateApiKeyForProvider(emailConfig.provider, emailConfig.apiKey),
+    }));
+  };
+
   const handleTestEmailBlur = () => {
     setTouched((prev) => ({ ...prev, testEmail: true }));
     setErrors((prev) => ({ ...prev, testEmail: validateTestEmail(emailConfig.sesTestEmail) }));
@@ -139,37 +172,71 @@ export function EmailCard({
     setShowSecrets((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
-  const toggleEditMode = (section: "email" | "calendar") => {
+  const toggleEditMode = (section: "email") => {
     setEditMode((prev) => ({ ...prev, [section]: !prev[section] }));
   };
-
   const handleSave = () => {
-    const regionErr = validateAwsRegion(emailConfig.awsRegion);
-    const accessKeyErr = validateAwsAccessKeyId(emailConfig.awsAccessKeyId);
-    const secretKeyErr = validateAwsSecretAccessKey(emailConfig.awsSecretAccessKey);
     const testEmailErr = validateTestEmail(emailConfig.sesTestEmail);
 
-    setTouched({ region: true, accessKey: true, secretKey: true, testEmail: true });
+    if (emailConfig.provider === "ses") {
+      const regionErr = validateAwsRegion(emailConfig.awsRegion);
+      const accessKeyErr = validateAwsAccessKeyId(emailConfig.awsAccessKeyId);
+      const secretKeyErr = validateAwsSecretAccessKey(emailConfig.awsSecretAccessKey);
+
+      setTouched({
+        region: true,
+        accessKey: true,
+        secretKey: true,
+        apiKey: false,
+        testEmail: true,
+      });
+      setErrors({
+        region: regionErr,
+        accessKey: accessKeyErr,
+        secretKey: secretKeyErr,
+        apiKey: null,
+        testEmail: testEmailErr,
+      });
+
+      if (regionErr || accessKeyErr || secretKeyErr || testEmailErr) return;
+
+      saveEmailConfig({
+        provider: "ses",
+        aws_region: emailConfig.awsRegion.trim(),
+        aws_access_key_id: emailConfig.awsAccessKeyId.trim(),
+        aws_secret_access_key: emailConfig.awsSecretAccessKey.trim(),
+        from_email: emailConfig.sesFromEmail,
+        login_url: emailConfig.sesLoginUrl,
+        test_email: emailConfig.sesTestEmail.trim(),
+      });
+      return;
+    }
+
+    const apiKeyErr = validateApiKeyForProvider(emailConfig.provider, emailConfig.apiKey);
+
+    setTouched({
+      region: false,
+      accessKey: false,
+      secretKey: false,
+      apiKey: true,
+      testEmail: true,
+    });
     setErrors({
-      region: regionErr,
-      accessKey: accessKeyErr,
-      secretKey: secretKeyErr,
+      region: null,
+      accessKey: null,
+      secretKey: null,
+      apiKey: apiKeyErr,
       testEmail: testEmailErr,
     });
 
-    if (
-      emailConfig.provider === "aws" &&
-      (regionErr || accessKeyErr || secretKeyErr || testEmailErr)
-    )
-      return;
+    if (apiKeyErr || testEmailErr) return;
 
     saveEmailConfig({
-      aws_region: emailConfig.awsRegion.trim(),
-      aws_access_key_id: emailConfig.awsAccessKeyId.trim(),
-      aws_secret_access_key: emailConfig.awsSecretAccessKey.trim(),
-      ses_from_email: emailConfig.sesFromEmail,
-      ses_login_url: emailConfig.sesLoginUrl,
-      ses_test_email: emailConfig.sesTestEmail.trim(),
+      provider: emailConfig.provider,
+      api_key: emailConfig.apiKey.trim(),
+      from_email: emailConfig.sesFromEmail,
+      login_url: emailConfig.sesLoginUrl,
+      test_email: emailConfig.sesTestEmail.trim(),
     });
   };
 
@@ -224,16 +291,16 @@ export function EmailCard({
             label="Email Service Provider"
             value={emailConfig.provider}
             onChange={(value) => handleEmailChange("provider", value)}
-            options={[{ value: "aws", label: "AWS SES" }]}
+            options={PROVIDER_OPTIONS}
           />
         ) : (
           <ReadonlyField
             label="Email Service Provider"
-            value={emailConfig.provider === "aws" ? "AWS SES" : "Twilio SendGrid"}
+            value={PROVIDER_LABELS[emailConfig.provider]}
           />
         )}
 
-        {emailConfig.provider === "aws" && (
+        {emailConfig.provider === "ses" && (
           <AwsSesFields
             emailConfig={emailConfig}
             isEditing={isEditing}
@@ -244,6 +311,36 @@ export function EmailCard({
             onAccessKeyBlur={handleAccessKeyBlur}
             onSecretKeyBlur={handleSecretKeyBlur}
             onRegionBlur={handleRegionBlur}
+            onTestEmailBlur={handleTestEmailBlur}
+          />
+        )}
+
+        {emailConfig.provider === "sendgrid" && (
+          <ApiKeyProviderFields
+            apiKeyLabel="SendGrid API Key"
+            apiKeyPlaceholder="SG.xxxxxxxxxxxxxxxxxxxxxx.yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+            emailConfig={emailConfig}
+            isEditing={isEditing}
+            onChange={handleEmailChange}
+            errors={errors}
+            showSecrets={showSecrets}
+            toggleSecretVisibility={toggleSecretVisibility}
+            onApiKeyBlur={handleApiKeyBlur}
+            onTestEmailBlur={handleTestEmailBlur}
+          />
+        )}
+
+        {emailConfig.provider === "resend" && (
+          <ApiKeyProviderFields
+            apiKeyLabel="Resend API Key"
+            apiKeyPlaceholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            emailConfig={emailConfig}
+            isEditing={isEditing}
+            onChange={handleEmailChange}
+            errors={errors}
+            showSecrets={showSecrets}
+            toggleSecretVisibility={toggleSecretVisibility}
+            onApiKeyBlur={handleApiKeyBlur}
             onTestEmailBlur={handleTestEmailBlur}
           />
         )}

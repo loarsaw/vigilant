@@ -53,13 +53,15 @@ type InterviewInviteData struct {
 	LoginURL         string
 }
 
-type SESConfigRequest struct {
-	AWSRegion          string `json:"aws_region"`
-	AWSAccessKeyID     string `json:"aws_access_key_id"`
-	AWSSecretAccessKey string `json:"aws_secret_access_key"`
-	SESFromEmail       string `json:"ses_from_email"`
-	SESLoginURL        string `json:"ses_login_url"`
-	TestEmail          string `json:"ses_test_email"`
+type EmailConfigRequest struct {
+	Provider           string `json:"provider"` // "ses" or "sendgrid"
+	AWSRegion          string `json:"aws_region,omitempty"`
+	AWSAccessKeyID     string `json:"aws_access_key_id,omitempty"`
+	AWSSecretAccessKey string `json:"aws_secret_access_key,omitempty"`
+	APIKey             string `json:"api_key,omitempty"` // sendgrid
+	FromEmail          string `json:"from_email"`
+	LoginURL           string `json:"login_url"`
+	TestEmail          string `json:"test_email"`
 }
 
 type SendEmailRequest struct {
@@ -71,7 +73,15 @@ type SendEmailRequest struct {
 }
 
 type ConfigVerificationData struct {
+	Provider  string
 	FromEmail string
 	AWSRegion string
 	LoginURL  string
+}
+
+type EmailConfig struct {
+	Provider  string
+	FromEmail string
+	LoginURL  string
+	Settings  map[string]string
 }

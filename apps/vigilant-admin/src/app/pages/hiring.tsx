@@ -34,7 +34,7 @@ import { useHiringPositions } from "@/hooks/use-hiring";
 import { CreatePositionPayload, HiringPosition } from "@/hooks/types";
 import { BracketCorners } from "@/components/bracket-conner";
 import { PositionDialog } from "@/components/position/position-dialog";
-import { StatCard } from "@/components/admin/dashboard/stat-card";
+import { StatCard } from "@/components/stat-card";
 
 const EMPTY_FORM: CreatePositionPayload = {
   position_title: "",
