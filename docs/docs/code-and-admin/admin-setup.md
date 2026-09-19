@@ -36,15 +36,53 @@ Administrators (HR & Interviewers) log in using their **email and password**.
 
 ## Email System Setup
 
-To enable the email system, navigate to the configuration settings and provide the following:
+Vigilant supports three email providers — choose whichever you already have an account with. Navigate to the configuration settings, pick a provider, and fill in the fields below.
+
+> **⚠️ Before you start: verify your sending domain.**
+> Every provider below will reject emails from an unverified sender or domain — this is the #1 reason the test-send fails during setup. Verify your domain with your chosen provider *before* filling in the form:
+> - **AWS SES**: SES Console → Verified identities → verify your domain or a specific From address
+> - **SendGrid**: Settings → Sender Authentication → verify a domain or single sender
+> - **Resend**: Domains → Add Domain → add the DNS records Resend gives you
+>
+> Domain verification can take anywhere from a few minutes to a few hours depending on DNS propagation, so do this first.
+
+### 1. Select a Provider
+
+| Provider | Best for |
+|---|---|
+| **AWS SES** | Existing AWS infrastructure, high volume, lowest cost at scale |
+| **SendGrid** | Quick setup, generous free tier for testing |
+| **Resend** | Developer-friendly, modern API, simple domain verification |
+
+### 2. AWS SES
 
 | Field | Description |
 |---|---|
 | **AWS Access Key ID** | Your AWS access key ID |
 | **AWS Secret Access Key** | Your AWS secret access key |
 | **AWS Region** | The AWS region (e.g., `us-east-1`) |
-| **From Email** | Sender address (e.g., `noreply@company.com`) |
+| **From Email** | Sender address — must match a verified identity/domain in SES |
 | **Site Login Address** | The login URL of your site |
+
+### 3. SendGrid
+
+| Field | Description |
+|---|---|
+| **SendGrid API Key** | An API key with Mail Send permission (starts with `SG.`) |
+| **From Email** | Sender address — must match a verified sender/domain in SendGrid |
+| **Site Login Address** | The login URL of your site |
+
+### 4. Resend
+
+| Field | Description |
+|---|---|
+| **Resend API Key** | An API key from your Resend dashboard (starts with `re_`) |
+| **From Email** | Sender address — must match a verified domain in Resend |
+| **Site Login Address** | The login URL of your site |
+
+### 5. Verify & Save
+
+Enter a **Test Email** address before saving — Vigilant sends a one-off verification email through your credentials to confirm they work before storing them. If the test send fails, re-check your domain verification status with the provider first — that's the most common cause.
 
 ![Email Configuration](./img/emailConfig.png)
 
