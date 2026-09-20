@@ -1,6 +1,8 @@
+import { Rect, TourStep } from "@/components/types";
 import { type ClassValue, clsx } from "clsx";
 import { Chrome, Code2 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
+import { TOOLTIP_GAP, TOOLTIP_WIDTH } from "./constants";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -178,4 +180,31 @@ export function getProcessMetadata(p: Process) {
     isUnknown: true,
     isElectron: isElectron,
   };
+}
+
+
+
+export function computeTooltipPosition(
+  rect: Rect,
+  placement: TourStep["placement"] = "bottom",
+  padding: number
+) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  const positions: Record<string, { top: number; left: number }> = {
+    bottom: { top: rect.top + rect.height + padding + TOOLTIP_GAP, left: rect.left },
+    top: { top: rect.top - padding - TOOLTIP_GAP - 140, left: rect.left },
+    left: { top: rect.top, left: rect.left - TOOLTIP_WIDTH - padding - TOOLTIP_GAP },
+    right: { top: rect.top, left: rect.left + rect.width + padding + TOOLTIP_GAP },
+  };
+
+  let pos = positions[placement];
+
+  pos = {
+    top: Math.min(Math.max(pos.top, 12), vh - 160),
+    left: Math.min(Math.max(pos.left, 12), vw - TOOLTIP_WIDTH - 12),
+  };
+
+  return pos;
 }

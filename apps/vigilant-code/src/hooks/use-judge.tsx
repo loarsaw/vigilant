@@ -59,11 +59,12 @@ export function useJudge() {
     mutationFn: executeCode,
   });
 
-  const execute = (language: string, code: string) => {
+  const execute = (language: string, code: string, stdin?: string) => {
     const code_b64 = btoa(unescape(encodeURIComponent(code)));
-    executeMutation.mutate({ language, code_b64 });
+    const stdin_b64 = stdin ? btoa(unescape(encodeURIComponent(stdin))) : undefined;
+    executeMutation.mutate({ language, code_b64, stdin_b64 });
   };
-
+  
   return {
     languages: languagesData?.languages ?? [],
     isLoadingLanguages,

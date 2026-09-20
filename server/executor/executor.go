@@ -12,32 +12,23 @@ import (
 )
 
 var runnerURLs = map[models.Language]string{
-    models.LangC:      "http://runner-c:8080/run",
-    models.LangCPP:    "http://runner-cpp:8080/run",
-    models.LangJS:     "http://runner-js:8080/run",
-    models.LangJava:   "http://runner-java:8080/run",
-    models.LangPython: "http://runner-python:8080/run",
+	models.LangC:      "http://runner-c:8080/run",
+	models.LangCPP:    "http://runner-cpp:8080/run",
+	models.LangJS:     "http://runner-js:8080/run",
+	models.LangJava:   "http://runner-java:8080/run",
+	models.LangPython: "http://runner-python:8080/run",
 }
 
-type RunRequest struct {
-	Code string `json:"code"`
-}
-
-type RunResult struct {
-	Stdout   string `json:"stdout"`
-	Stderr   string `json:"stderr"`
-	ExitCode int    `json:"exit_code"`
-	TimeMS   int64  `json:"time_ms"`
-	MemoryKB int64  `json:"memory_kb"`
-}
-
-func Execute(lang models.Language, code string) (*RunResult, error) {
+func Execute(lang models.Language, code string, stdin string) (*models.RunResult, error) {
 	url, ok := runnerURLs[lang]
 	if !ok {
 		return nil, fmt.Errorf("unsupported language: %s", lang)
 	}
 
-	body, _ := json.Marshal(RunRequest{Code: code})
+	body, err := json.Marshal(models.RunRequest{Code: code, Stdin: stdin})
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal run request: %w", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -52,7 +43,7 @@ func Execute(lang models.Language, code string) (*RunResult, error) {
 	if err != nil {
 		// Timeout from context
 		if ctx.Err() == context.DeadlineExceeded {
-			return &RunResult{
+			return &models.RunResult{
 				Stderr:   "execution timed out (15s limit)",
 				ExitCode: 124,
 				TimeMS:   15000,
@@ -62,7 +53,11 @@ func Execute(lang models.Language, code string) (*RunResult, error) {
 	}
 	defer resp.Body.Close()
 
-	var result RunResult
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("runner returned status %d", resp.StatusCode)
+	}
+
+	var result models.RunResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("invalid runner response: %w", err)
 	}

@@ -122,6 +122,7 @@ export interface Submission {
 export interface ExecuteRequest {
   language: string;
   code_b64: string;
+  stdin_b64?: string;
 }
 
 export interface OnboardingPayload {
