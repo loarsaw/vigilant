@@ -1,12 +1,14 @@
 package judge
 
 import (
+	"bytes"
 	"database/sql"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"encoding/base64"
 	"vigilant/executor"
@@ -115,6 +117,8 @@ func listSubmissions(db *sql.DB, limit int) ([]*models.Submission, error) {
 }
 
 func (h *Handlers) ExecuteCode(c *gin.Context) {
+	const maxStdinBytes = 1 << 20 // 1MB
+
 	var req models.ExecuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -134,14 +138,35 @@ func (h *Handlers) ExecuteCode(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "code_b64 must be valid base64"})
 		return
 	}
-
 	code := strings.TrimSpace(string(codeBytes))
 	if code == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "code cannot be empty"})
 		return
 	}
 
-	result, err := executor.Execute(req.Language, code)
+	var stdin string
+	if req.Stdin != "" {
+		stdinBytes, err := base64.StdEncoding.DecodeString(req.Stdin)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "stdin_b64 must be valid base64"})
+			return
+		}
+		if len(stdinBytes) > maxStdinBytes {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "stdin exceeds max size (1MB)"})
+			return
+		}
+		if bytes.ContainsRune(stdinBytes, 0) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "stdin must not contain null bytes"})
+			return
+		}
+		if !utf8.Valid(stdinBytes) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "stdin must be valid UTF-8"})
+			return
+		}
+		stdin = string(stdinBytes)
+	}
+
+	result, err := executor.Execute(req.Language, code, stdin)
 	if err != nil {
 		log.Printf("[judge] execution error lang=%s err=%v", req.Language, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "execution failed"})

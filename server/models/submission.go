@@ -37,4 +37,18 @@ type Submission struct {
 type ExecuteRequest struct {
 	Language Language `json:"language" binding:"required"`
 	Code     string   `json:"code_b64" binding:"required"`
+	Stdin    string   `json:"stdin_b64"`
+}
+
+type RunRequest struct {
+	Code  string `json:"code"`
+	Stdin string `json:"stdin"`
+}
+
+type RunResult struct {
+	Stdout   string `json:"stdout"`
+	Stderr   string `json:"stderr"`
+	ExitCode int    `json:"exit_code"`
+	TimeMS   int64  `json:"time_ms"`
+	MemoryKB int64  `json:"memory_kb"`
 }
