@@ -26,7 +26,7 @@ function WorkspacePanel({ onSubmit }: { onSubmit: (w: string) => void }) {
         <Input
           id="workspace"
           type="text"
-          placeholder="com.abc.entry"
+          placeholder="com.domain.api"
           {...register("workspace", {
             required: "Please enter your workspace",
             pattern: {
