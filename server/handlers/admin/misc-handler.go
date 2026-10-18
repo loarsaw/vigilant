@@ -73,17 +73,6 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 			stats["pipeline"] = pipeline
 		}
 
-		var highRiskSessions int
-		h.DB.QueryRow("SELECT COUNT(*) FROM alert_summary WHERE risk_score > 50").Scan(&highRiskSessions)
-		stats["high_risk_sessions"] = highRiskSessions
-
-		var suspiciousToday int
-		h.DB.QueryRow(`
-            SELECT COUNT(*) FROM process_logs 
-            WHERE is_suspicious = true AND logged_at >= CURRENT_DATE
-        `).Scan(&suspiciousToday)
-		stats["suspicious_processes_today"] = suspiciousToday
-
 		var totalAdmins int
 		h.DB.QueryRow("SELECT COUNT(*) FROM administrators WHERE is_active = true").Scan(&totalAdmins)
 		stats["total_admins"] = totalAdmins
@@ -158,10 +147,6 @@ func (h *AdminHandlers) GetDashboardStats(c *gin.Context) {
 			}
 			stats["pipeline"] = pipeline
 		}
-
-		var highRiskSessions int
-		h.DB.QueryRow("SELECT COUNT(*) FROM alert_summary WHERE risk_score > 50").Scan(&highRiskSessions)
-		stats["high_risk_sessions"] = highRiskSessions
 
 		upcomingRows, err := h.DB.Query(`
             SELECT 

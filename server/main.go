@@ -40,6 +40,9 @@ func main() {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
+	if err := db.RunTimelineMigrations(database); err != nil {
+		log.Fatal(err)
+	}
 	if err := admin.CheckSystemReadiness(context.Background(), database); err != nil {
 		log.Printf("system readiness check failed: %v", err)
 	}

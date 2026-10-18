@@ -14,6 +14,8 @@ import {
   Briefcase,
   MapPin,
   Star,
+  Trophy,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +27,31 @@ import { EmailModal } from "@/components/qa/email-modal";
 import { ScheduleInterviewModal } from "@/components/qa/schedule-interview-modal";
 import { useJobApplicationStatus } from "@/hooks/use-job-application-status";
 import { InterviewHistory } from "@/components/interview-history";
+import { ApplicationTimeline } from "@/components/application-timeline";
 import { STATUS_STYLES, GITHUB_STATUS_STYLES } from "@/lib/utils";
+
+const OPEN_STATUSES = ["applied", "screening", "interviewing"];
+
+const CLOSED_STATUS_DISPLAY: Record<
+  string,
+  { label: string; icon: typeof CheckCircle; className: string }
+> = {
+  hired: {
+    label: "Hired",
+    icon: Trophy,
+    className: "bg-[hsl(var(--chart-4))] text-background",
+  },
+  rejected: {
+    label: "Rejected",
+    icon: XCircle,
+    className: "bg-destructive/10 text-destructive border border-destructive/40",
+  },
+  withdrawn: {
+    label: "Withdrawn",
+    icon: LogOut,
+    className: "bg-muted text-muted-foreground border border-border",
+  },
+};
 
 export function JobApplicationDetails() {
   const { candidateId, applicationId } = useParams();
@@ -38,6 +64,7 @@ export function JobApplicationDetails() {
     isLoading: isLoadingApplications,
     approveApplication,
     rejectApplication,
+    markHired,
     isApprovingOrRejecting,
   } = useJobApplications({ candidate_id: candidateId });
   const candidateData = data?.candidate;
@@ -48,6 +75,12 @@ export function JobApplicationDetails() {
   // The specific application being viewed on this page — applications is
   // scoped to this candidate but can include more than one job posting.
   const currentApplication = applications?.find((app) => app.id === applicationId);
+
+  // Prefer the application list (it's invalidated after approve/reject) so
+  // the header updates immediately; fall back to the status endpoint.
+  const effectiveStatus = currentApplication?.status ?? status ?? "";
+  const isOpen = OPEN_STATUSES.includes(effectiveStatus);
+  const closedDisplay = CLOSED_STATUS_DISPLAY[effectiveStatus];
 
   if (isLoading) {
     return (
@@ -115,7 +148,7 @@ export function JobApplicationDetails() {
         </div>
 
         <div className="flex gap-3">
-          {status == "applied" || status == "interviewing" || status == "screening" ? (
+          {isOpen ? (
             <>
               <Button
                 variant="outline"
@@ -143,21 +176,39 @@ export function JobApplicationDetails() {
                 Approve
               </Button>
             </>
-          ) : (
+          ) : effectiveStatus === "offered" ? (
             <>
               <Button
-                className="bg-[hsl(var(--chart-4))] text-background font-display font-semibold tracking-wide"
-                disabled={true}
+                variant="outline"
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 font-display font-semibold tracking-wide"
+                disabled={isApprovingOrRejecting}
+                onClick={() => rejectApplication(applicationId!)}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Reject
+              </Button>
+              <Button
+                className="bg-[hsl(var(--chart-4))] hover:bg-[hsl(var(--chart-4)/0.85)] text-background font-display font-semibold tracking-wide"
+                disabled={isApprovingOrRejecting}
+                onClick={() => markHired(applicationId!)}
               >
                 {isApprovingOrRejecting ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-4 w-4 mr-2" />
+                  <Trophy className="h-4 w-4 mr-2" />
                 )}
-                Hired
+                Mark as Hired
               </Button>
             </>
-          )}
+          ) : closedDisplay ? (
+            <Button
+              className={`font-display font-semibold tracking-wide disabled:opacity-100 ${closedDisplay.className}`}
+              disabled
+            >
+              <closedDisplay.icon className="h-4 w-4 mr-2" />
+              {closedDisplay.label}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -408,11 +459,6 @@ export function JobApplicationDetails() {
                     {candidateData.is_active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                {/* {candidateData.last_login && (
-                  <p className="text-muted-foreground/60 text-xs mt-1">
-                    Last login: {new Date(candidateData.last_login).toLocaleString()}
-                  </p>
-                )} */}
               </div>
             </CardContent>
           </Card>
@@ -484,6 +530,13 @@ export function JobApplicationDetails() {
           onSchedule={() => {}}
         />
       </div>
+
+      {/* Activity timeline — full width at the bottom, Frappe style */}
+      {applicationId && (
+        <div className="border-t border-border pt-6">
+          <ApplicationTimeline applicationId={applicationId} />
+        </div>
+      )}
     </div>
   );
 }

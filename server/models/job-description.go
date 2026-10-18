@@ -13,5 +13,6 @@ type GenerateJobDescriptionRequest struct {
 }
 
 type GeneratedJobDescription struct {
-	JobDescription string `json:"job_description"`
+	JobDescription string   `json:"job_description"`
+	Skills         []string `json:"skills"`
 }

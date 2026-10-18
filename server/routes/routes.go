@@ -209,8 +209,8 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	}
 
 	// Google credentials
-	g.POST("/google-creds", h.CreateGoogleCredential)
-	g.POST("/credentials/google", h.CreateGoogleCredential)
+	// g.POST("/google-creds", h.CreateGoogleCredential)
+	// g.POST("/credentials/google", h.CreateGoogleCredential)
 
 	// Interview management
 	interviewGroup := g.Group("/")
@@ -237,6 +237,7 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 		applicationGroup.GET("", h.ListJobApplications)
 		applicationGroup.GET("/:id", h.GetJobApplication)
 		applicationGroup.GET("/:id/status", h.GetJobApplicationStatus)
+		applicationGroup.GET("/:id/timeline", h.GetApplicationTimeline)
 		applicationGroup.GET("/:id/interviews/feedback", h.ListApplicationInterviewFeedback)
 		applicationGroup.GET("/:id/submissions", h.ListSubmissionsForApplication)
 		applicationGroup.PATCH("/:id/status", h.UpdateJobApplicationStatus)

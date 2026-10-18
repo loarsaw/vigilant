@@ -223,14 +223,12 @@ export interface DashboardStats {
   upcoming_interviews?: number;
   applications_today?: number;
   pipeline?: Pipeline;
-  high_risk_sessions?: number;
   upcoming_list?: InterviewItem[];
 
   // superadmin only
   total_admins?: number;
   email_pending?: number;
   email_failed_today?: number;
-  suspicious_processes_today?: number;
 
   // interviewer only
   total_interviews_assigned?: number;
@@ -858,6 +856,7 @@ export interface GenerateJobDescriptionInput {
 
 export interface GeneratedJobDescription {
   job_description: string;
+  skills: string[]
 }
 
 
@@ -955,4 +954,40 @@ export interface EmailConfigPayload {
   aws_access_key_id?: string;
   aws_secret_access_key?: string;
   api_key?: string;
+}
+
+
+
+export type TimelineEventType =
+  | "submitted"
+  | "analyzed"
+  | "qualified"
+  | "assignment_emailed"
+  | "github_invited"
+  | "github_invite_failed"
+  | "assignment_submitted"
+  | "assignment_scored"
+  | "shortlisted"
+  | "status_changed"
+  | "repo_deleted"
+  | "interview_scheduled"
+  | "interview_completed"
+  | "interview_cancelled";
+
+export interface TimelineEvent {
+  id: string;
+  type: TimelineEventType | (string & {});
+  title: string;
+  description: string | null;
+  from_status: string | null;
+  to_status: string | null;
+  actor_type: "system" | "admin" | "candidate";
+  actor_name: string | null;
+  metadata: Record<string, unknown> | null;
+  occurred_at: string;
+}
+
+export interface ApplicationTimelineResponse {
+  application_id: string;
+  events: TimelineEvent[];
 }

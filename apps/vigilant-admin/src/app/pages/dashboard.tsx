@@ -35,11 +35,9 @@ export const Dashboard = () => {
     activeInterviews,
     upcomingInterviews,
     applicationsToday,
-    highRiskSessions,
     totalAdmins,
     emailPending,
     emailFailedToday,
-    suspiciousProcessesToday,
     isLoading,
   } = useDashboard();
 
@@ -121,7 +119,7 @@ export const Dashboard = () => {
         </div>
 
         {/* Secondary Metrics — quieter steel brackets: operational feed, not headline numbers */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <StatCard
             tone="muted"
             label="Applications Today"
@@ -143,22 +141,6 @@ export const Dashboard = () => {
               </span>
             }
             icon={<Mail className="h-4 w-4 text-primary" />}
-          />
-          <StatCard
-            tone="muted"
-            label="Security Alerts"
-            value={
-              <span className="flex items-baseline gap-3">
-                <span className="text-2xl">{highRiskSessions}</span>
-                <span className="text-xs font-normal text-muted-foreground">High Risk</span>
-                {suspiciousProcessesToday > 0 && (
-                  <span className="text-base font-semibold text-[hsl(var(--chart-3))]">
-                    {suspiciousProcessesToday} suspicious
-                  </span>
-                )}
-              </span>
-            }
-            icon={<AlertTriangle className="h-4 w-4 text-[hsl(var(--chart-3))]" />}
           />
         </div>
 

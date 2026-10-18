@@ -17,14 +17,7 @@ func (s *Scheduler) CancelUnstartedInterviews() error {
 	if err != nil {
 		return fmt.Errorf("cancel interview_sessions: %w", err)
 	}
-
-	_, err = s.db.Exec(`
-		UPDATE standalone_interviews
-		SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
-		WHERE status = 'scheduled'
-		  AND scheduled_at < NOW() - INTERVAL '1 day'
-	`)
-	return err
+	return nil
 }
 
 func (s *Scheduler) ExpireCandidateSessions() error {
@@ -58,12 +51,15 @@ func (s *Scheduler) RetryStuckEmailJobs() error {
 	return err
 }
 
+// ArchiveOldProcessLogs prunes proctoring snapshots older than 90 days for
+// finished sessions. process_logs was replaced by process_reports (see
+// migration 14), which is keyed by the text session_id.
 func (s *Scheduler) ArchiveOldProcessLogs() error {
 	_, err := s.db.Exec(`
-		DELETE FROM process_logs
-		WHERE logged_at < NOW() - INTERVAL '90 days'
-		  AND interview_session_id IN (
-			  SELECT id FROM interview_sessions
+		DELETE FROM process_reports
+		WHERE reported_at < NOW() - INTERVAL '90 days'
+		  AND session_id IN (
+			  SELECT session_id FROM interview_sessions
 			  WHERE status IN ('completed', 'cancelled')
 		  )
 	`)
@@ -122,7 +118,6 @@ func (s *Scheduler) SendInterviewReminders() error {
 
 	return rows.Err()
 }
-
 
 func (s *Scheduler) enqueueReminderEmail(r models.InterviewReminder) error {
 	tx, err := s.db.Begin()
@@ -183,14 +178,15 @@ func (s *Scheduler) enqueueReminderEmail(r models.InterviewReminder) error {
 	err = tx.QueryRow(`
 		INSERT INTO email_jobs (to_email, to_name, from_email, subject, body_html,
 		                        entity_type, entity_id, triggered_by, status)
-		SELECT $1, $2, ec.ses_from_email, $3, $4,
+		SELECT $1, $2, ec.from_email, $3, $4,
 		       'interview_session', $5, 'cron:reminder', 'pending'
 		FROM email_config ec
+		ORDER BY ec.id DESC
 		LIMIT 1
 		RETURNING id
 	`, r.CandidateEmail, candidateName, subject, bodyHTML, r.SessionID).Scan(&jobID)
 	if err != nil {
-		return fmt.Errorf("insert email job: %w", err)
+		return fmt.Errorf("insert email job (is email_config set up?): %w", err)
 	}
 
 	_, err = tx.Exec(`

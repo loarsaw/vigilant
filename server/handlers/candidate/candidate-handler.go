@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 	"vigilant/config"
+	"vigilant/timeline"
 	"vigilant/utils"
 
 	"vigilant/models"
@@ -687,6 +688,9 @@ func parseGithubOwnerRepo(rawURL string) (owner, repo string, err error) {
 	return parts[0], strings.TrimSuffix(parts[1], ".git"), nil
 }
 
+// Add to this file's imports:
+//	"vigilant/timeline"
+
 func (h *Handlers) ApplyForPosition(c *gin.Context) {
 	positionID := c.Param("id")
 	if positionID == "" {
@@ -814,6 +818,22 @@ func (h *Handlers) ApplyForPosition(c *gin.Context) {
 			return
 		}
 		log.Printf("Error recording application repos: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
+		return
+	}
+
+	// Timeline: "<candidate> submitted the application". Written in the same
+	// transaction, so the event exists if and only if the application does.
+	if err := timeline.Record(c.Request.Context(), tx, timeline.Event{
+		ApplicationID: app.ID,
+		Type:          timeline.EventSubmitted,
+		ActorType:     timeline.ActorCandidate,
+		ActorID:       candidateID,
+		Metadata: map[string]any{
+			"github_urls": normalizedURLs,
+		},
+	}); err != nil {
+		log.Printf("Error recording timeline event: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to submit application"})
 		return
 	}

@@ -4,13 +4,13 @@ package admin
 import (
 	"log"
 	"net/http"
+	"strings"
 
 	"vigilant/models"
 
 	"github.com/gin-gonic/gin"
 )
 
-// POST /api/v1/admin/ai/positions/generate-description
 func (h *AdminHandlers) GenerateJobDescription(c *gin.Context) {
 	if h.AIService == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI service not configured"})
@@ -33,5 +33,28 @@ func (h *AdminHandlers) GenerateJobDescription(c *gin.Context) {
 		return
 	}
 
+	result.Skills = normalizeSkills(result.Skills, 15)
+
 	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+func normalizeSkills(in []string, max int) []string {
+	out := make([]string, 0, len(in))
+	seen := make(map[string]struct{}, len(in))
+	for _, s := range in {
+		s = strings.TrimSpace(strings.ReplaceAll(s, ",", " "))
+		if s == "" || len(s) > 50 {
+			continue
+		}
+		key := strings.ToLower(s)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, s)
+		if len(out) == max {
+			break
+		}
+	}
+	return out
 }

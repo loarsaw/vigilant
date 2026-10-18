@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/axios";
+import { APPLICATION_TIMELINE_KEY } from "./use-application-timeline";
 import {
   JobApplication,
   JobApplicationsFilters,
@@ -24,8 +25,6 @@ const fetchJobApplications = async (
   if (filters.include_stats) params.set("include_stats", "true");
 
   const response = await apiClient.get(`/applications?${params.toString()}`);
-
-  // console.log(params.toString() , "params");
 
   if (Array.isArray(response.data)) {
     return { applications: response.data } as JobApplicationsResponse;
@@ -62,8 +61,9 @@ export function useJobApplications(filters: JobApplicationsFilters = {}) {
     { id: string; payload: UpdateApplicationStatusPayload }
   >({
     mutationFn: updateApplicationStatus,
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["job-applications"] });
+      queryClient.invalidateQueries({ queryKey: [APPLICATION_TIMELINE_KEY, id] });
     },
   });
 
@@ -72,6 +72,9 @@ export function useJobApplications(filters: JobApplicationsFilters = {}) {
 
   const rejectApplication = (id: string, notes?: string) =>
     updateStatusMutation.mutate({ id, payload: { status: "rejected", notes } });
+
+  const markHired = (id: string, notes?: string) =>
+    updateStatusMutation.mutate({ id, payload: { status: "hired", notes } });
 
   const approveApplicationAsync = (id: string, notes?: string) =>
     updateStatusMutation.mutateAsync({
@@ -109,6 +112,7 @@ export function useJobApplications(filters: JobApplicationsFilters = {}) {
     approveApplicationAsync,
     rejectApplication,
     rejectApplicationAsync,
+    markHired,
     isApprovingOrRejecting: updateStatusMutation.isPending,
   };
 }

@@ -3,14 +3,15 @@ import { apiClient } from "@/lib/axios";
 import { GenerateJobDescriptionInput, GeneratedJobDescription } from "./types";
 
 const jobDescriptionApi = {
-  generate: async (
-    input: GenerateJobDescriptionInput,
-  ): Promise<GeneratedJobDescription> => {
+  generate: async (input: GenerateJobDescriptionInput): Promise<GeneratedJobDescription> => {
     const { data } = await apiClient.post<{ data: GeneratedJobDescription }>(
       `/ai/positions/generate-description`,
       input,
     );
-    return data.data;
+    return {
+      ...data.data,
+      skills: Array.isArray(data.data?.skills) ? data.data.skills : [],
+    };
   },
 };
 
@@ -37,6 +38,7 @@ export function useGenerateJobDescription() {
     generateJobDescription,
     generateJobDescriptionAsync,
     generatedDescription,
+    generatedSkills: generatedDescription?.skills ?? [],
     isGeneratingDescription,
     generateDescriptionError,
     generateDescriptionSuccess,

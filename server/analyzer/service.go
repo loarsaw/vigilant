@@ -40,8 +40,11 @@ func NewService(db *sql.DB, encryptionSecret string, aiSvc *ai.Service, notifSvc
 
 func (s *Service) fromEmail() string {
 	var addr string
-	err := s.db.QueryRow(`SELECT ses_from_email FROM email_config LIMIT 1`).Scan(&addr)
+	err := s.db.QueryRow(`SELECT from_email FROM email_config ORDER BY id DESC LIMIT 1`).Scan(&addr)
 	if err != nil || addr == "" {
+		if err != nil {
+			log.Printf("analyzer: could not read from_email from email_config: %v", err)
+		}
 		return "no-reply@localhost"
 	}
 	return addr

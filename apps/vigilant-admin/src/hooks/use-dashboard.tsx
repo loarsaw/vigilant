@@ -26,13 +26,11 @@ export function useDashboard() {
     activeInterviews: data?.active_interviews ?? 0,
     upcomingInterviews: data?.upcoming_interviews ?? 0,
     applicationsToday: data?.applications_today ?? 0,
-    highRiskSessions: data?.high_risk_sessions ?? 0,
 
     // superadmin only
     totalAdmins: data?.total_admins ?? 0,
     emailPending: data?.email_pending ?? 0,
     emailFailedToday: data?.email_failed_today ?? 0,
-    suspiciousProcessesToday: data?.suspicious_processes_today ?? 0,
 
     // interviewer only
     totalInterviewsAssigned: data?.total_interviews_assigned ?? 0,

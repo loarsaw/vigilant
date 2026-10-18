@@ -1,7 +1,7 @@
 {
   "name": "vigilant-admin",
   "productName": "vigilant-admin",
-  "version": "v0.1.0-alpha.2",
+  "version": "0.1.0-alpha.2",
   "description": "Vigilant candidate monitoring client",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -48,6 +48,7 @@
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",
     "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.8",
