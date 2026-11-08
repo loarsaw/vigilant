@@ -1067,6 +1067,41 @@ $$ LANGUAGE plpgsql`,
 		// ========================================
 		`ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS do_not_prune BOOLEAN NOT NULL DEFAULT FALSE`,
 		`CREATE INDEX IF NOT EXISTS idx_job_applications_do_not_prune ON job_applications(do_not_prune) WHERE do_not_prune = TRUE`,
+
+		// ========================================
+		// MIGRATION 41: Slack integration
+		// Single-row settings (id always 1). The incoming-webhook URL is a
+		// bearer secret, so it is stored AES-GCM encrypted like the GitHub PAT.
+		// last_digest_at is the compare-and-swap token that makes the daily
+		// digest fire exactly once; last_error/last_success_at let the
+		// settings page show delivery health.
+		// ========================================
+		`CREATE TABLE IF NOT EXISTS slack_settings (
+    id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    webhook_url_encrypted TEXT NOT NULL,
+    notify_shortlisted BOOLEAN NOT NULL DEFAULT TRUE,
+    notify_hired BOOLEAN NOT NULL DEFAULT TRUE,
+    daily_digest_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    daily_digest_hour SMALLINT NOT NULL DEFAULT 18 CHECK (daily_digest_hour BETWEEN 0 AND 23),
+    timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Kolkata',
+    last_digest_at TIMESTAMPTZ,
+    last_success_at TIMESTAMPTZ,
+    last_error TEXT,
+    last_error_at TIMESTAMPTZ,
+    created_by UUID,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+)`,
+
+		// ========================================
+		// MIGRATION 42: When did a candidate get shortlisted / hired?
+		// Needed so the daily digest can answer "how many today". Existing
+		// rows are intentionally not backfilled.
+		// ========================================
+		`ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS shortlisted_at TIMESTAMPTZ`,
+		`ALTER TABLE job_applications ADD COLUMN IF NOT EXISTS hired_at TIMESTAMPTZ`,
+		`CREATE INDEX IF NOT EXISTS idx_job_applications_shortlisted_at ON job_applications(shortlisted_at) WHERE shortlisted_at IS NOT NULL`,
+		`CREATE INDEX IF NOT EXISTS idx_job_applications_hired_at ON job_applications(hired_at) WHERE hired_at IS NOT NULL`,
 	}
 
 	for i, migration := range migrations {

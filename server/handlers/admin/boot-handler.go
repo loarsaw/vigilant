@@ -15,6 +15,7 @@ import (
 	"vigilant/middleware"
 	"vigilant/models"
 	"vigilant/notifications"
+	"vigilant/slack"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,6 +33,7 @@ type AdminHandlers struct {
 	AnalyzerService *analyzer.Service
 	Notifications   *notifications.Service
 	LiveKitService  *livekit.Service
+	Slack           *slack.Service
 }
 
 func (h *AdminHandlers) loadMailer(c *gin.Context) (email.Provider, *email.EmailConfig, error) {

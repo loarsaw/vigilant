@@ -5,6 +5,7 @@ export interface EditSections {
   twilio: boolean;
   livekit: boolean;
   github: boolean;
+  slack: boolean;
   retention: boolean;
 }
 
@@ -43,6 +44,11 @@ export interface ShowSecrets {
 }
 
 export interface GithubCardProps {
+  editMode: EditSections;
+  setEditMode: React.Dispatch<React.SetStateAction<EditSections>>;
+}
+
+export interface SlackCardProps {
   editMode: EditSections;
   setEditMode: React.Dispatch<React.SetStateAction<EditSections>>;
 }

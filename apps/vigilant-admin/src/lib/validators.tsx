@@ -39,3 +39,32 @@ export function getGithubOrgNameError(orgName: string): string | null {
   }
   return null;
 }
+
+
+// Mirrors the server's ValidateWebhookURL: only genuine Slack incoming
+// webhooks are accepted (the server rejects anything else, so failing fast
+// here just saves a round trip).
+export function getSlackWebhookError(value: string): string | null {
+  const v = value.trim();
+  if (!v) return "Webhook URL is required";
+  let u: URL;
+  try {
+    u = new URL(v);
+  } catch {
+    return "Not a valid URL";
+  }
+  if (u.protocol !== "https:" || u.hostname !== "hooks.slack.com" || u.port) {
+    return "Must be a https://hooks.slack.com/services/… webhook URL";
+  }
+  const parts = u.pathname.replace(/^\/services\//, "").split("/");
+  if (
+    !u.pathname.startsWith("/services/") ||
+    parts.length !== 3 ||
+    parts.some((p) => !p) ||
+    u.search ||
+    u.hash
+  ) {
+    return "Must look like https://hooks.slack.com/services/T…/B…/…";
+  }
+  return null;
+}

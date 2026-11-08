@@ -1,13 +1,16 @@
 package cron
 
 import (
+	"context"
 	"database/sql"
 	"log"
+	"time"
 
 	"vigilant/ai"
 	"vigilant/analyzer"
 	"vigilant/config"
 	"vigilant/notifications"
+	"vigilant/slack"
 
 	"github.com/robfig/cron/v3"
 )
@@ -17,14 +20,20 @@ type Scheduler struct {
 	db            *sql.DB
 	analyzerSvc   *analyzer.Service
 	encryptionKey string
+	slack         *slack.Service
 }
 
 func NewScheduler(db *sql.DB, cfg *config.Config) *Scheduler {
+	slackSvc, err := slack.NewFromConfig(db, cfg.EncryptionKey)
+	if err != nil {
+		log.Printf("cron: slack disabled: %v", err)
+	}
 	return &Scheduler{
 		c:             cron.New(),
 		db:            db,
-		analyzerSvc:   analyzer.NewService(db, cfg.EncryptionKey, ai.NewService(db), notifications.NewService(db)),
+		analyzerSvc:   analyzer.NewService(db, cfg.EncryptionKey, ai.NewService(db), notifications.NewService(db)).WithSlack(slackSvc),
 		encryptionKey: cfg.EncryptionKey,
+		slack:         slackSvc,
 	}
 }
 func (s *Scheduler) Start() {
@@ -88,6 +97,17 @@ func (s *Scheduler) Start() {
 	s.c.AddFunc("0 6 * * *", func() {
 		if err := s.PruneExpiredApplications(); err != nil {
 			log.Printf("cron: prune expired applications: %v", err)
+		}
+	})
+
+	// Slack daily digest. Runs often, but RunDigestIfDue only sends once per
+	// day at the hour/timezone configured in settings (so changing the hour in
+	// the UI needs no restart).
+	s.c.AddFunc("*/10 * * * *", func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if err := s.slack.RunDigestIfDue(ctx); err != nil {
+			log.Printf("cron: slack digest: %v", err)
 		}
 	})
 

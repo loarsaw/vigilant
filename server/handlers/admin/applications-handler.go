@@ -76,7 +76,8 @@ func (h *AdminHandlers) UpdateJobApplicationStatus(c *gin.Context) {
 	var updatedAt time.Time
 	err = h.DB.QueryRow(`
 		UPDATE job_applications
-		SET status = $1, notes = $2, updated_at = CURRENT_TIMESTAMP
+		SET status = $1::varchar, notes = $2, updated_at = CURRENT_TIMESTAMP,
+		    hired_at = CASE WHEN $1::varchar = 'hired' THEN COALESCE(hired_at, CURRENT_TIMESTAMP) ELSE NULL END
 		WHERE id = $3::uuid
 		RETURNING updated_at
 	`, req.Status, req.Notes, applicationID).Scan(&updatedAt)
@@ -115,6 +116,12 @@ func (h *AdminHandlers) UpdateJobApplicationStatus(c *gin.Context) {
 
 	if err != nil {
 		log.Printf("Warning: Failed to create audit log: %v", err)
+	}
+
+	// Only on the transition into "hired", so re-saving notes on an already
+	// hired application doesn't re-announce it.
+	if req.Status == "hired" && currentApp.Status != "hired" {
+		h.Slack.NotifyHired(applicationID, c.GetString("admin_full_name"))
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -3,6 +3,9 @@ import { useState } from "react";
 import { EmailCard } from "@/components/admin-settings/email/email";
 import { LiveKitCard } from "@/components/admin-settings/livekit";
 import { GithubCard } from "@/components/admin-settings/github";
+import { SlackCard } from "@/components/admin-settings/slack";
+import { useSlack } from "@/hooks/use-slack";
+import { useAdminAuth } from "@/hooks/use-auth";
 import { useLiveKit } from "@/hooks/use-livekit";
 import { useGithub } from "@/hooks/use-github";
 import { AIProvidersCard } from "@/components/ai-providers";
@@ -16,18 +19,28 @@ import {
   History,
   Mail,
   Settings2,
+  Slack,
   Trash2,
   Video,
 } from "lucide-react";
 import { AuditLogCard } from "@/components/admin-settings/audit-log";
 import { useEmailProviders } from "@/hooks/use-email-provider";
 
-type SectionKey = "email" | "twilio" | "livekit" | "github" | "ai" | "retention" | "audit";
+type SectionKey =
+  | "email"
+  | "twilio"
+  | "livekit"
+  | "github"
+  | "slack"
+  | "ai"
+  | "retention"
+  | "audit";
 
 const SECTIONS: { key: SectionKey; label: string; icon: React.ElementType }[] = [
   { key: "email", label: "Email", icon: Mail },
   { key: "livekit", label: "LiveKit", icon: Video },
   { key: "github", label: "GitHub", icon: Github },
+  { key: "slack", label: "Slack", icon: Slack },
   { key: "ai", label: "AI Provider", icon: Bot },
   { key: "retention", label: "Data Retention", icon: Trash2 },
   { key: "audit", label: "Audit Log", icon: History },
@@ -41,6 +54,7 @@ export function Settings() {
     twilio: true,
     livekit: true,
     github: true,
+    slack: true,
     retention: true,
   });
 
@@ -50,11 +64,20 @@ export function Settings() {
   const { isLiveKitConfigured } = useLiveKit();
   const { isGithubConfigured } = useGithub();
 
+  // The server only lets HR and super admins manage integrations, so don't
+  // show (or query) Slack for interviewers.
+  const { hasRole } = useAdminAuth();
+  const canManageSlack = hasRole(["hr", "superadmin"]);
+  const { isSlackConfigured } = useSlack(canManageSlack);
+
+  const visibleSections = SECTIONS.filter(({ key }) => key !== "slack" || canManageSlack);
+
   const statusMap: Record<SectionKey, boolean> = {
     email: isEmailConfigured,
     twilio: false,
     livekit: isLiveKitConfigured,
     github: isGithubConfigured,
+    slack: isSlackConfigured,
     ai: false,
 
     retention: isRetentionConfigured,
@@ -79,7 +102,7 @@ export function Settings() {
         <div className="flex flex-col md:flex-row gap-6">
           <nav className="md:w-56 shrink-0">
             <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-              {SECTIONS.map(({ key, label, icon: Icon }) => {
+              {visibleSections.map(({ key, label, icon: Icon }) => {
                 const isActive = activeSection === key;
                 const isConfigured = statusMap[key];
                 return (
@@ -117,6 +140,9 @@ export function Settings() {
             )}
             {activeSection === "github" && (
               <GithubCard editMode={editMode} setEditMode={setEditMode} />
+            )}
+            {activeSection === "slack" && canManageSlack && (
+              <SlackCard editMode={editMode} setEditMode={setEditMode} />
             )}
             {activeSection === "ai" && <AIProvidersCard />}
 

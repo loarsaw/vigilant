@@ -714,6 +714,39 @@ export interface SaveGithubCredentialsPayload {
   token: string;
 }
 
+export interface SlackConfigResponse {
+  configured: boolean;
+  // Only present once configured. The full webhook URL is a secret and is
+  // never returned by the server — only a masked version.
+  webhook_url_masked?: string;
+  notify_shortlisted?: boolean;
+  notify_hired?: boolean;
+  daily_digest_enabled?: boolean;
+  daily_digest_hour?: number; // 0-23, in `timezone`
+  timezone?: string; // IANA name, e.g. "Asia/Kolkata"
+  updated_at?: string;
+  last_success_at?: string | null;
+  last_error?: string | null;
+  last_error_at?: string | null;
+}
+
+// Every field is optional after the first save: omit webhook_url to keep the
+// stored one and only change the toggles.
+export interface SaveSlackConfigPayload {
+  webhook_url?: string;
+  notify_shortlisted?: boolean;
+  notify_hired?: boolean;
+  daily_digest_enabled?: boolean;
+  daily_digest_hour?: number;
+  timezone?: string;
+}
+
+export interface TestSlackPayload {
+  kind?: "ping" | "digest";
+  // Lets the admin test a pasted URL before saving it.
+  webhook_url?: string;
+}
+
 
 
 export type InterviewRecommendation = "hire" | "consider" | "no_hire";

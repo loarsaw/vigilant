@@ -17,6 +17,7 @@ import (
 	"vigilant/githubapi"
 	"vigilant/models"
 	"vigilant/notifications"
+	"vigilant/slack"
 
 	"github.com/lib/pq"
 )
@@ -32,6 +33,14 @@ type Service struct {
 	encryptionSecret string
 	aiService        *ai.Service
 	notifSvc         *notifications.Service
+	slackSvc         *slack.Service // optional; nil-safe
+}
+
+// WithSlack enables Slack notifications. Chainable so existing NewService
+// call sites don't change.
+func (s *Service) WithSlack(sl *slack.Service) *Service {
+	s.slackSvc = sl
+	return s
 }
 
 func NewService(db *sql.DB, encryptionSecret string, aiSvc *ai.Service, notifSvc *notifications.Service) *Service {
@@ -360,7 +369,9 @@ func (s *Service) seedAssignmentReadme(jobApplicationID string, client *githubap
 func (s *Service) markShortlisted(jobApplicationID string) error {
 	_, err := s.db.Exec(`
 		UPDATE job_applications
-		SET is_shortlisted = true, updated_at = CURRENT_TIMESTAMP
+		SET is_shortlisted = true,
+		    shortlisted_at = COALESCE(shortlisted_at, CURRENT_TIMESTAMP),
+		    updated_at = CURRENT_TIMESTAMP
 		WHERE id = $1::uuid
 	`, jobApplicationID)
 	return err
@@ -517,6 +528,8 @@ func (s *Service) scoreOneAssignmentRepo(jobApplicationID, repoURL, token string
 				log.Printf("warning: failed to notify HR for %s: %v", jobApplicationID, err)
 			}
 		}
+
+		s.slackSvc.NotifyShortlisted(jobApplicationID, combinedScore)
 
 		if err := s.logAssignmentShortlist(jobApplicationID, combinedScore, combinedTier); err != nil {
 			log.Printf("warning: failed to write audit log for %s: %v", jobApplicationID, err)

@@ -3,6 +3,7 @@ package routes
 
 import (
 	"database/sql"
+	"log"
 	"vigilant/ai"
 	"vigilant/analyzer"
 	"vigilant/config"
@@ -12,6 +13,7 @@ import (
 	"vigilant/livekit"
 	"vigilant/middleware"
 	"vigilant/notifications"
+	"vigilant/slack"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +22,10 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 	aiService := ai.NewService(db)
 	notifSvc := notifications.NewService(db)
 	liveKitSvc := livekit.NewService(db)
+	slackSvc, err := slack.NewFromConfig(db, cfg.EncryptionKey)
+	if err != nil {
+		log.Fatalf("slack: %v", err)
+	}
 
 	adminH := &admin.AdminHandlers{
 		DB:              db,
@@ -27,7 +33,8 @@ func Register(r *gin.Engine, db *sql.DB, cfg *config.Config) {
 		AIService:       aiService,
 		Notifications:   notifSvc,
 		LiveKitService:  liveKitSvc,
-		AnalyzerService: analyzer.NewService(db, cfg.EncryptionKey, aiService, notifSvc),
+		AnalyzerService: analyzer.NewService(db, cfg.EncryptionKey, aiService, notifSvc).WithSlack(slackSvc),
+		Slack:           slackSvc,
 	}
 	candidateH := &candidate.Handlers{DB: db, Cfg: cfg}
 	judgeH := &judge.Handlers{DB: db, Cfg: cfg}
@@ -119,6 +126,12 @@ func registerAdminRoutes(g *gin.RouterGroup, h *admin.AdminHandlers, judgeH *jud
 	// GitHub config (org + PAT used for creating assignment repos and invites)
 	g.POST("/github-config", h.SaveGithubConfig)
 	g.GET("/github-config", h.GetGithubConfig)
+
+	// Slack integration (incoming webhook; HR / super admin only)
+	g.GET("/slack-config", h.GetSlackConfig)
+	g.PUT("/slack-config", h.SaveSlackConfig)
+	g.DELETE("/slack-config", h.DeleteSlackConfig)
+	g.POST("/slack-config/test", h.TestSlack)
 
 	retentionGroup := g.Group("/retention-policies")
 	{
