@@ -299,7 +299,7 @@ export function InterviewDetail() {
         <Dialog open={showEndModal} onOpenChange={setShowEndModal}>
           <DialogContent className="bg-card border-border/60 text-foreground sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 font-display tracking-wide text-foreground">
+              <DialogTitle className="flex items-center gap-2 font-display tracking-tight text-foreground">
                 <AlertTriangle className="h-5 w-5 text-[hsl(var(--chart-3))]" />
                 End interview session
               </DialogTitle>
@@ -321,7 +321,7 @@ export function InterviewDetail() {
               <Button
                 variant="ghost"
                 onClick={() => setShowEndModal(false)}
-                className="font-display font-semibold tracking-wide text-muted-foreground hover:text-foreground"
+                className="font-display font-semibold tracking-tight text-muted-foreground hover:text-foreground"
                 disabled={isEndingSession}
               >
                 Cancel
@@ -329,7 +329,7 @@ export function InterviewDetail() {
               <Button
                 onClick={handleEndInterview}
                 disabled={isEndingSession}
-                className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.9)] text-[hsl(var(--destructive-foreground))] font-display font-semibold tracking-wide gap-2"
+                className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.9)] text-[hsl(var(--destructive-foreground))] font-display font-semibold tracking-tight gap-2"
               >
                 {isEndingSession ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -355,12 +355,12 @@ export function InterviewDetail() {
             </Button>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+                <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
                   {candidateData.full_name}
                 </h1>
                 {interviewStatus && (
                   <Badge
-                    className={`font-display font-semibold tracking-wide ${statusBadgeClass(interviewStatus)}`}
+                    className={`font-display font-semibold tracking-tight ${statusBadgeClass(interviewStatus)}`}
                   >
                     {formatStatus(interviewStatus)}
                   </Badge>
@@ -383,7 +383,7 @@ export function InterviewDetail() {
           <div className="lg:col-span-2 space-y-6">
             <Card className="border-border/60">
               <CardHeader>
-                <CardTitle className="font-display text-lg tracking-wide flex items-center gap-2">
+                <CardTitle className="font-display text-lg tracking-tight flex items-center gap-2">
                   <Award className="h-5 w-5 text-primary" />
                   Profile Overview
                 </CardTitle>
@@ -473,7 +473,7 @@ export function InterviewDetail() {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-sm">Account Status</span>
                     <Badge
-                      className={`font-display font-semibold tracking-wide ${
+                      className={`font-display font-semibold tracking-tight ${
                         candidateData.is_active
                           ? "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]"
                           : "bg-muted text-muted-foreground border border-border"
@@ -503,11 +503,11 @@ export function InterviewDetail() {
             <Card className="relative border-border/60">
               <BracketCorners tone="primary" />
               <CardHeader>
-                <CardTitle className="font-display text-lg tracking-wide flex items-center justify-between">
+                <CardTitle className="font-display text-lg tracking-tight flex items-center justify-between">
                   Quick Actions
                   {interviewStatus && (
                     <Badge
-                      className={`font-display font-semibold tracking-wide text-[11px] ${statusBadgeClass(interviewStatus)}`}
+                      className={`font-display font-semibold tracking-tight text-[11px] ${statusBadgeClass(interviewStatus)}`}
                     >
                       {formatStatus(interviewStatus)}
                     </Badge>
@@ -518,7 +518,7 @@ export function InterviewDetail() {
                 <Button
                   disabled={!sessionId || isFetchingRoomToken}
                   onClick={handleJoinInterview}
-                  className="w-full font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="w-full font-display font-semibold tracking-tight shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isFetchingRoomToken ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

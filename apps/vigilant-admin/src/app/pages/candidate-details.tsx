@@ -79,7 +79,7 @@ export function CandidateDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="font-display text-3xl font-bold tracking-wide text-foreground">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">
               {candidateData.full_name}
             </h2>
             <div className="flex items-center gap-2 mt-1">
@@ -100,7 +100,7 @@ export function CandidateDetail() {
         <div className="lg:col-span-2 space-y-6">
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="font-display tracking-wide text-foreground flex items-center gap-2">
+              <CardTitle className="font-display tracking-tight text-foreground flex items-center gap-2">
                 <Award className="h-5 w-5 text-primary" />
                 Profile Overview
               </CardTitle>
@@ -197,8 +197,8 @@ export function CandidateDetail() {
                   <Badge
                     className={
                       candidateData.is_active
-                        ? "bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide"
-                        : "bg-muted text-muted-foreground border border-border font-display font-semibold tracking-wide"
+                        ? "bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-tight"
+                        : "bg-muted text-muted-foreground border border-border font-display font-semibold tracking-tight"
                     }
                   >
                     {candidateData.is_active ? "Active" : "Inactive"}
@@ -222,14 +222,14 @@ export function CandidateDetail() {
           {/* Quick Actions */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="font-display tracking-wide text-foreground">
+              <CardTitle className="font-display tracking-tight text-foreground">
                 Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
                 disabled={!data.candidate.onboarding_complete}
-                className="w-full font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
+                className="w-full font-display font-semibold tracking-tight shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
                 onClick={() => setShowScheduleDialog(true)}
               >
                 <Calendar className="h-4 w-4 mr-2" />
@@ -237,7 +237,7 @@ export function CandidateDetail() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full font-display font-semibold tracking-wide"
+                className="w-full font-display font-semibold tracking-tight"
                 onClick={() => setShowEmailModal(true)}
               >
                 <Mail className="h-4 w-4 mr-2" />
@@ -246,7 +246,7 @@ export function CandidateDetail() {
               {candidateData.resume_url && (
                 <Button
                   variant="outline"
-                  className="w-full font-display font-semibold tracking-wide"
+                  className="w-full font-display font-semibold tracking-tight"
                   onClick={() => window.open(candidateData.resume_url, "_blank")}
                 >
                   <FileText className="h-4 w-4 mr-2" />

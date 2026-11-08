@@ -116,7 +116,7 @@ export function CandidatesList() {
     <div className="space-y-6 p-10 bg-background min-h-screen">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-3xl font-bold tracking-wide text-foreground">
+          <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">
             Candidates
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -181,7 +181,7 @@ export function CandidatesList() {
 
       {/* Main Content */}
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="bg-card border border-border font-display font-semibold tracking-wide">
+        <TabsList className="bg-card border border-border font-display font-semibold tracking-tight">
           <TabsTrigger value="all">List View</TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
         </TabsList>
@@ -247,7 +247,7 @@ export function CandidatesList() {
                               {displayName}
                             </h3>
                             {candidate.is_online && (
-                              <Badge className="bg-[hsl(var(--chart-4)/0.12)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] text-[10px] h-5 font-display font-semibold tracking-wide">
+                              <Badge className="bg-[hsl(var(--chart-4)/0.12)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] text-[10px] h-5 font-display font-semibold tracking-tight">
                                 Live
                               </Badge>
                             )}
@@ -339,7 +339,7 @@ export function CandidatesList() {
                     {/* Status Section */}
                     <div className="flex flex-col items-end gap-2 flex-shrink-0">
                       {latest?.is_shortlisted && (
-                        <Badge className="bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide">
+                        <Badge className="bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-tight">
                           Shortlisted
                         </Badge>
                       )}
@@ -385,7 +385,7 @@ export function CandidatesList() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="font-display font-semibold tracking-wide"
+                  className="font-display font-semibold tracking-tight"
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
                 >
@@ -394,7 +394,7 @@ export function CandidatesList() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="font-display font-semibold tracking-wide"
+                  className="font-display font-semibold tracking-tight"
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
                 >

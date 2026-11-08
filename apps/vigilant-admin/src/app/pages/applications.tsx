@@ -104,7 +104,7 @@ export function JobApplicationsList() {
       <div className="container mx-auto px-6 py-8 max-w-[1440px] space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+            <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
               Job Applications
             </h1>
             <p className="text-muted-foreground text-sm mt-0.5">
@@ -200,7 +200,7 @@ export function JobApplicationsList() {
 
             <Button
               variant="outline"
-              className="font-display font-semibold tracking-wide shrink-0"
+              className="font-display font-semibold tracking-tight shrink-0"
               onClick={toggleSortOrder}
               title="Toggle sort direction"
             >
@@ -230,13 +230,13 @@ export function JobApplicationsList() {
 
         <Tabs defaultValue="all" className="space-y-4">
           <TabsList className="bg-card border border-border/60">
-            <TabsTrigger value="all" className="font-display font-semibold tracking-wide">
+            <TabsTrigger value="all" className="font-display font-semibold tracking-tight">
               All
             </TabsTrigger>
-            <TabsTrigger value="active" className="font-display font-semibold tracking-wide">
+            <TabsTrigger value="active" className="font-display font-semibold tracking-tight">
               Active
             </TabsTrigger>
-            <TabsTrigger value="closed" className="font-display font-semibold tracking-wide">
+            <TabsTrigger value="closed" className="font-display font-semibold tracking-tight">
               Closed
             </TabsTrigger>
           </TabsList>
@@ -288,7 +288,7 @@ export function JobApplicationsList() {
                                 </span>
                               </div>
                               <div className="min-w-0">
-                                <p className="text-foreground font-display font-semibold tracking-wide group-hover:text-primary transition-colors truncate">
+                                <p className="text-foreground font-display font-semibold tracking-tight group-hover:text-primary transition-colors truncate">
                                   {app.candidate_name}
                                 </p>
                                 <p className="text-muted-foreground text-sm truncate">
@@ -332,7 +332,7 @@ export function JobApplicationsList() {
 
                           <div className="flex flex-col items-end gap-2 shrink-0">
                             <Badge
-                              className={`font-display font-semibold tracking-wide border capitalize ${getStatusStyle(app.status)}`}
+                              className={`font-display font-semibold tracking-tight border capitalize ${getStatusStyle(app.status)}`}
                             >
                               {app.status}
                             </Badge>
@@ -365,7 +365,7 @@ export function JobApplicationsList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setPage(1)}
                 disabled={currentPage === 1 || isFetching}
               >
@@ -374,7 +374,7 @@ export function JobApplicationsList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={!pagination?.has_prev || isFetching}
               >
@@ -384,7 +384,7 @@ export function JobApplicationsList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={!pagination?.has_next || isFetching}
               >
@@ -393,7 +393,7 @@ export function JobApplicationsList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setPage(totalPages)}
                 disabled={currentPage === totalPages || isFetching}
               >

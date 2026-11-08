@@ -37,7 +37,7 @@ export function AddCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white">
+      <DialogContent className="bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle>Add New Candidate</DialogTitle>
         </DialogHeader>
@@ -48,7 +48,7 @@ export function AddCandidateDialog({
               placeholder="John Doe"
               value={formData.full_name}
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              className="bg-[#0f1419] border-gray-700 mt-1"
+              className="bg-background border-border mt-1"
             />
           </div>
           <div>
@@ -58,7 +58,7 @@ export function AddCandidateDialog({
               placeholder="john@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="bg-[#0f1419] border-gray-700 mt-1"
+              className="bg-background border-border mt-1"
             />
           </div>
           <div>
@@ -68,12 +68,12 @@ export function AddCandidateDialog({
               placeholder="••••••••"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="bg-[#0f1419] border-gray-700 mt-1"
+              className="bg-background border-border mt-1"
             />
           </div>
           <div className="flex gap-3 pt-4">
             <Button
-              className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+              className="flex-1 bg-primary hover:bg-primary-hover text-primary-foreground"
               onClick={handleSubmit}
               disabled={isLoading || !formData.full_name || !formData.email}
             >
@@ -81,7 +81,7 @@ export function AddCandidateDialog({
             </Button>
             <Button
               variant="outline"
-              className="flex-1 border-gray-700 text-white"
+              className="flex-1 border-border text-foreground"
               onClick={() => onOpenChange(false)}
             >
               Cancel

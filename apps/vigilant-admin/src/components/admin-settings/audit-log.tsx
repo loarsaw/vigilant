@@ -25,7 +25,7 @@ const ACTOR_ICON: Record<string, React.ElementType> = {
 const ACTOR_STYLE: Record<string, string> = {
   admin: "bg-primary/10 text-primary border-primary/20",
   candidate: "bg-muted text-muted-foreground border-border",
-  system: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  system: "bg-warning/10 text-warning border-warning/20",
 };
 
 function humanizeAction(action: string) {
@@ -68,7 +68,7 @@ export function AuditLogCard() {
           <History className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
             Audit Log
           </h2>
           <p className="text-sm text-muted-foreground mt-1">

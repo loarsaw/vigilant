@@ -25,12 +25,12 @@ export const getStatusBadge = (status: string) => {
     scheduled: {
       label: "Scheduled",
       className:
-        "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
+        "bg-info/15 text-info border border-info/30",
     },
     in_progress: {
       label: "In Progress",
       className:
-        "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
+        "bg-success/15 text-success border border-success/30",
     },
     completed: {
       label: "Completed",
@@ -39,7 +39,7 @@ export const getStatusBadge = (status: string) => {
   };
   const config = statusConfig[status] ?? statusConfig.scheduled;
   return (
-    <Badge className={`font-display font-semibold tracking-wide ${config.className}`}>
+    <Badge className={`font-medium ${config.className}`}>
       {config.label}
     </Badge>
   );
@@ -49,13 +49,13 @@ export const getStatusBadge = (status: string) => {
 export const STATUS_STYLES: Record<string, string> = {
   applied: "bg-muted text-muted-foreground border border-border",
   screening:
-    "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
+    "bg-info/15 text-info border border-info/30",
   interviewing:
-    "bg-[hsl(var(--chart-2)/0.15)] text-[hsl(var(--chart-2))] border border-[hsl(var(--chart-2)/0.3)]",
+    "bg-primary/15 text-primary border border-primary/30",
   offered:
-    "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)]",
+    "bg-warning/15 text-warning border border-warning/30",
   hired:
-    "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
+    "bg-success/15 text-success border border-success/30",
   rejected: "bg-destructive/15 text-destructive border border-destructive/30",
   withdrawn: "bg-muted text-muted-foreground/70 border border-border",
 };
@@ -63,9 +63,9 @@ export const STATUS_STYLES: Record<string, string> = {
 // Badge color per github invite status (invited / accepted / failed / pending).
 export const GITHUB_STATUS_STYLES: Record<string, string> = {
   invited:
-    "bg-[hsl(var(--chart-1)/0.15)] text-[hsl(var(--chart-1))] border border-[hsl(var(--chart-1)/0.3)]",
+    "bg-info/15 text-info border border-info/30",
   accepted:
-    "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]",
+    "bg-success/15 text-success border border-success/30",
   failed: "bg-destructive/15 text-destructive border border-destructive/30",
   pending: "bg-muted text-muted-foreground border border-border",
 };
@@ -81,11 +81,11 @@ export function formatStatus(status: string) {
 export function statusBadgeClass(status: string) {
   switch (status) {
     case "in_progress":
-      return "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]";
+      return "bg-success/15 text-success border border-success/30";
     case "completed":
       return "bg-muted text-muted-foreground border border-border";
     case "scheduled":
     default:
-      return "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)]";
+      return "bg-warning/15 text-warning border border-warning/30";
   }
 }

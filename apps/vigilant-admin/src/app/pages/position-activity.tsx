@@ -75,7 +75,7 @@ export function PositionActivity() {
               <Trophy className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+              <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
                 {activity.position_title}
               </h1>
               <p className="text-muted-foreground text-sm mt-0.5">Position activity</p>
@@ -112,7 +112,7 @@ export function PositionActivity() {
           <Card className="relative lg:col-span-1 border-border/60 bg-card">
             <BracketCorners tone="primary" />
             <CardHeader>
-              <CardTitle className="font-display text-base font-semibold tracking-wide">
+              <CardTitle className="font-display text-base font-semibold tracking-tight">
                 Pipeline
               </CardTitle>
             </CardHeader>
@@ -123,7 +123,7 @@ export function PositionActivity() {
               {Object.entries(activity.pipeline).map(([status, count]) => (
                 <div key={status} className="flex items-center justify-between">
                   <Badge
-                    className={`font-display font-semibold tracking-wide ${
+                    className={`font-display font-semibold tracking-tight ${
                       STATUS_STYLES[status] ?? STATUS_STYLES.applied
                     }`}
                   >
@@ -139,7 +139,7 @@ export function PositionActivity() {
           <Card className="relative lg:col-span-2 border-border/60 bg-card">
             <BracketCorners tone="primary" />
             <CardHeader>
-              <CardTitle className="font-display text-base font-semibold tracking-wide">
+              <CardTitle className="font-display text-base font-semibold tracking-tight">
                 Average Interview Scorecard
               </CardTitle>
             </CardHeader>
@@ -152,7 +152,7 @@ export function PositionActivity() {
         {/* Applications list */}
         <Card className="border-border/60 bg-card">
           <CardHeader>
-            <CardTitle className="font-display text-base font-semibold tracking-wide">
+            <CardTitle className="font-display text-base font-semibold tracking-tight">
               Applications ({applications.length})
             </CardTitle>
           </CardHeader>
@@ -194,7 +194,7 @@ export function PositionActivity() {
                     </span>
                   )}
                   <Badge
-                    className={`font-display font-semibold tracking-wide text-xs ${
+                    className={`font-display font-semibold tracking-tight text-xs ${
                       STATUS_STYLES[app.status] ?? STATUS_STYLES.applied
                     }`}
                   >

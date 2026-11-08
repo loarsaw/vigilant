@@ -26,11 +26,11 @@ export const PreInterviewModal: React.FC<PreInterviewModalProps> = ({
   formatStatus,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 h-screen w-screen bg-[#0a0d14] flex items-center justify-center px-4">
+    <div className="dark fixed inset-0 z-50 h-screen w-screen bg-background flex items-center justify-center px-4">
       <button
         type="button"
         onClick={handleLeaveRoom}
-        className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-sm text-slate-200 hover:bg-black/70 hover:text-white transition-colors"
+        className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-sm text-foreground hover:bg-black/70 hover:text-white transition-colors"
       >
         <PhoneOff className="w-4 h-4" />
         <span className="hidden sm:inline">Leave &amp; back to details</span>
@@ -44,19 +44,19 @@ export const PreInterviewModal: React.FC<PreInterviewModalProps> = ({
         </div>
 
         <div className="space-y-2">
-          <h2 className="font-display text-xl font-semibold tracking-wide text-white">
+          <h2 className="font-display text-xl font-semibold tracking-tight text-foreground">
             Ready to start the interview?
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             You&apos;ve joined the room with{" "}
-            <span className="text-slate-200">{candidateData.full_name}</span>. The call, notes, and
+            <span className="text-foreground">{candidateData.full_name}</span>. The call, notes, and
             session tools stay hidden until you start the interview.
           </p>
         </div>
 
         <div className="flex items-center justify-center">
           <Badge
-            className={`font-display font-semibold tracking-wide ${statusBadgeClass(
+            className={`font-display font-semibold tracking-tight ${statusBadgeClass(
               interviewStatus,
             )}`}
           >
@@ -70,7 +70,7 @@ export const PreInterviewModal: React.FC<PreInterviewModalProps> = ({
           onClick={handleStartInterview}
           disabled={isStartingSession}
           size="lg"
-          className="w-full font-display font-semibold tracking-wide gap-2"
+          className="w-full font-display font-semibold tracking-tight gap-2"
         >
           {isStartingSession ? (
             <Loader2 className="h-4 w-4 animate-spin" />

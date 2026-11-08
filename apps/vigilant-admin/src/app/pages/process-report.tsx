@@ -12,23 +12,23 @@ export function SystemDiagnostics({ sessionId }: { sessionId: string | null }) {
   return (
     <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="font-display text-lg tracking-wide flex items-center gap-2">
+        <CardTitle className="font-display text-lg tracking-tight flex items-center gap-2">
           <Terminal className="h-5 w-5 text-primary" />
           System Diagnostics
           {connected && (
             <span className="ml-auto flex items-center gap-1.5">
               {hasUnknownProcesses ? (
-                <Badge className="bg-[hsl(var(--destructive)/0.15)] text-[hsl(var(--destructive))] border border-[hsl(var(--destructive)/0.3)] font-display font-semibold tracking-wide animate-pulse">
+                <Badge className="bg-[hsl(var(--destructive)/0.15)] text-[hsl(var(--destructive))] border border-[hsl(var(--destructive)/0.3)] font-display font-semibold tracking-tight animate-pulse">
                   <AlertTriangle className="h-3 w-3 mr-1" />
                   Unknown Process Detected
                 </Badge>
               ) : hasAnyAlerts ? (
-                <Badge className="bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)] font-display font-semibold tracking-wide">
+                <Badge className="bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border border-[hsl(var(--chart-3)/0.3)] font-display font-semibold tracking-tight">
                   <AlertTriangle className="h-3 w-3 mr-1" />
                   Alerts Active
                 </Badge>
               ) : (
-                <Badge className="bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] font-display font-semibold tracking-wide">
+                <Badge className="bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] font-display font-semibold tracking-tight">
                   <CheckCircle className="h-3 w-3 mr-1" />
                   All Clear
                 </Badge>
@@ -81,7 +81,7 @@ export function SystemDiagnostics({ sessionId }: { sessionId: string | null }) {
                   <span className="text-muted-foreground text-xs">{p.memory.toFixed(1)} MB</span>
                   {p.status !== "normal" && (
                     <Badge
-                      className={`text-xs font-display font-semibold tracking-wide border ${
+                      className={`text-xs font-display font-semibold tracking-tight border ${
                         p.badgeColor ??
                         "bg-[hsl(var(--chart-3)/0.15)] text-[hsl(var(--chart-3))] border-[hsl(var(--chart-3)/0.3)]"
                       }`}

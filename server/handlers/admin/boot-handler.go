@@ -64,6 +64,10 @@ func (h *AdminHandlers) VerifyToken(c *gin.Context) {
 			"success":       true,
 			"message":       "Token is valid",
 			"authenticated": true,
+			"id":            middleware.SuperAdminUUID,
+			"email":         "superadmin@system",
+			"full_name":     "Super Admin",
+			"role":          "superadmin",
 		})
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{

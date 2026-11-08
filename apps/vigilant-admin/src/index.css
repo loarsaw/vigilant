@@ -2,6 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* ------------------------------------------------------------------
+     Vigilant theme tokens (HSL channels, used as hsl(var(--token)))
+     :root = light, .dark = dark. Default theme is dark (see use-theme).
+     ------------------------------------------------------------------ */
+  :root {
+    color-scheme: light;
+
+    --background: 220 23% 97%;
+    --foreground: 212 36% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 212 36% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 212 36% 9%;
+
+    /* Brand accent (teal). Links, primary buttons, active nav. */
+    --primary: 192 91% 36%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 193 82% 31%;
+
+    /* accent = subtle selected / hover surface (shadcn convention) */
+    --accent: 189 77% 93%;
+    --accent-foreground: 193 82% 24%;
+
+    --secondary: 216 22% 94%;
+    --secondary-foreground: 212 36% 9%;
+    --muted: 216 22% 94%;
+    --muted-foreground: 216 13% 41%;
+
+    --border: 216 22% 91%;
+    --input: 216 22% 88%;
+    --ring: 192 91% 36%;
+
+    /* Semantic status colours. Never use --primary for status. */
+    --success: 161 94% 30%;
+    --success-foreground: 0 0% 100%;
+    --warning: 26 90% 37%;
+    --warning-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 100%;
+
+    /* Charts double as status colours across the app:
+       1 info, 2 accent, 3 warning, 4 success, 5 danger */
+    --chart-1: 221 83% 53%;
+    --chart-2: 192 91% 36%;
+    --chart-3: 26 90% 37%;
+    --chart-4: 161 94% 30%;
+    --chart-5: 0 72% 51%;
+
+    --radius: 0.625rem; /* 10px cards; md = 8px, sm = 6px */
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 212 36% 9%;
+    --sidebar-primary: 192 91% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 189 77% 93%;
+    --sidebar-accent-foreground: 193 82% 24%;
+    --sidebar-border: 216 22% 91%;
+    --sidebar-ring: 192 91% 36%;
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    --background: 213 29% 6%;
+    --foreground: 216 25% 92%;
+    --card: 215 26% 9%;
+    --card-foreground: 216 25% 92%;
+    --popover: 214 26% 12%;
+    --popover-foreground: 216 25% 92%;
+
+    --primary: 188 86% 53%;
+    --primary-foreground: 213 29% 6%;
+    --primary-hover: 187 92% 69%;
+
+    --accent: 195 57% 13%;
+    --accent-foreground: 187 92% 69%;
+
+    --secondary: 214 26% 12%;
+    --secondary-foreground: 216 25% 92%;
+    --muted: 214 26% 12%;
+    --muted-foreground: 216 15% 60%;
+
+    --border: 214 28% 20%;
+    --input: 214 26% 14%;
+    --ring: 188 86% 53%;
+
+    --success: 158 64% 52%;
+    --success-foreground: 213 29% 6%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 213 29% 6%;
+    --destructive: 0 91% 71%;
+    --destructive-foreground: 213 29% 6%;
+    --info: 213 94% 68%;
+    --info-foreground: 213 29% 6%;
+
+    --chart-1: 213 94% 68%;
+    --chart-2: 188 86% 53%;
+    --chart-3: 43 96% 56%;
+    --chart-4: 158 64% 52%;
+    --chart-5: 0 91% 71%;
+
+    --sidebar-background: 215 26% 9%;
+    --sidebar-foreground: 216 25% 92%;
+    --sidebar-primary: 188 86% 53%;
+    --sidebar-primary-foreground: 213 29% 6%;
+    --sidebar-accent: 195 57% 13%;
+    --sidebar-accent-foreground: 187 92% 69%;
+    --sidebar-border: 214 28% 20%;
+    --sidebar-ring: 188 86% 53%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  /* Visible keyboard focus everywhere: 2px accent ring, 2px offset */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
 @layer components {
   @keyframes fade-in {
     from {
@@ -28,95 +181,34 @@
   }
 
   .animate-fade-in {
-    animation: fade-in 0.5s ease-out;
+    animation: fade-in 0.25s ease-out;
   }
 
   .animate-shake {
     animation: shake 0.4s ease-in-out;
   }
+
+  /* Table column labels: muted, small, uppercase */
+  .table-label {
+    @apply text-xs font-medium uppercase tracking-wide text-muted-foreground;
+  }
 }
-
-body {
-  font-family: 'Inter', Arial, Helvetica, sans-serif;
-}
-
-
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
-@layer base {
-  :root {
-    --background: 222 38% 5%;
-    --foreground: 218 62% 95%;
-    --card: 223 38% 11%;
-    --card-foreground: 218 62% 95%;
-    --popover: 223 38% 11%;
-    --popover-foreground: 218 62% 95%;
-    --primary: 210 100% 62%;
-    --primary-foreground: 222 38% 5%;
-    --secondary: 223 38% 15%;
-    --secondary-foreground: 218 62% 95%;
-    --muted: 223 38% 15%;
-    --muted-foreground: 217 20% 62%;
-    --accent: 199 95% 74%;
-    --accent-foreground: 222 38% 5%;
-    --destructive: 353 86% 62%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 222 30% 22%;
-    --input: 223 38% 15%;
-    --ring: 210 100% 62%;
-    --chart-1: 210 100% 62%;
-    --chart-2: 199 95% 74%;
-    --chart-3: 37 91% 55%;
-    --chart-4: 160 66% 52%;
-    --chart-5: 353 86% 62%;
-    --radius: 0.5rem;
-    --sidebar-background: 223 38% 11%;
-    --sidebar-foreground: 218 62% 95%;
-    --sidebar-primary: 210 100% 62%;
-    --sidebar-primary-foreground: 222 38% 5%;
-    --sidebar-accent: 223 33% 17%;
-    --sidebar-accent-foreground: 218 62% 95%;
-    --sidebar-border: 222 30% 22%;
-    --sidebar-ring: 210 100% 62%;
-  }
-  .dark {
-    /* same values — app is dark-only by design, mirrors :root */
-    --background: 222 38% 5%;
-    --foreground: 218 62% 95%;
-    --card: 223 38% 11%;
-    --card-foreground: 218 62% 95%;
-    --popover: 223 38% 11%;
-    --popover-foreground: 218 62% 95%;
-    --primary: 210 100% 62%;
-    --primary-foreground: 222 38% 5%;
-    --secondary: 223 38% 15%;
-    --secondary-foreground: 218 62% 95%;
-    --muted: 223 38% 15%;
-    --muted-foreground: 217 20% 62%;
-    --accent: 199 95% 74%;
-    --accent-foreground: 222 38% 5%;
-    --destructive: 353 86% 62%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 222 30% 22%;
-    --input: 223 38% 15%;
-    --ring: 210 100% 62%;
-  }
-}
 
-
-.font-display {
-  font-family: 'Rajdhani', sans-serif;
-}
-
-@layer base {
-  * {
-    @apply border-border;
+  /* "font-display" is kept so existing markup keeps working. It now maps to
+     the UI font (Inter, headings semibold) instead of Rajdhani. */
+  .font-display {
+    font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  /* Monospace for IDs, webhook masks, logs, timestamps */
+  .font-data {
+    font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SFMono-Regular',
+      Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
   }
 }

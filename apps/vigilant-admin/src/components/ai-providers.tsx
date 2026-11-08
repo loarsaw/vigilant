@@ -133,7 +133,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
         {isProviderConfigured && (
           <button
             onClick={() => setIsEditingLocal((p) => !p)}
-            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 shrink-0 font-display font-semibold tracking-wide"
+            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 shrink-0 font-display font-semibold tracking-tight"
           >
             <Edit3 className="h-4 w-4" />
             {isEditingLocal ? "Cancel" : "Edit"}
@@ -256,7 +256,7 @@ function ProviderPanel({ providerKey }: { providerKey: ProviderKey }) {
         <button
           onClick={handleSave}
           disabled={isSavingProvider || !form.apiKey || !form.model}
-          className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-wide text-sm rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.5)]"
+          className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-tight text-sm rounded-md transition-colors flex items-center justify-center gap-2"
         >
           {isSavingProvider ? (
             <>
@@ -295,7 +295,7 @@ export function AIProvidersCard() {
           <Bot className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
             AI Provider
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -313,7 +313,7 @@ export function AIProvidersCard() {
             <button
               key={key}
               onClick={() => setActiveProvider(key)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold tracking-wide border-b-2 -mb-px transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-display font-semibold tracking-tight border-b-2 -mb-px transition-colors ${
                 isActive
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"

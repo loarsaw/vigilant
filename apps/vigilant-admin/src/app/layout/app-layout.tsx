@@ -14,6 +14,7 @@ import {
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAdminAuth } from "@/hooks/use-auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function SidebarLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -33,23 +34,23 @@ export function SidebarLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside
-        className={`relative z-10 flex flex-col bg-sidebar border-r border-sidebar-border/60 shadow-xl transition-all duration-200 ease-in-out flex-shrink-0
+        className={`relative z-10 flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-200 ease-in-out flex-shrink-0
         ${collapsed ? "w-[72px]" : "w-60"}`}
       >
         {/* Logo */}
         <div
-          className={`flex items-center gap-2.5 border-b border-sidebar-border/60 py-6 overflow-hidden
+          className={`flex items-center gap-2.5 border-b border-sidebar-border py-5 overflow-hidden
           ${collapsed ? "justify-center px-0" : "px-6"}`}
         >
           <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
             <img
               src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
               alt="Vigilant Logo"
-              className="w-8 h-8 object-contain drop-shadow-[0_0_8px_hsl(var(--primary)/0.5)]"
+              className="w-8 h-8 object-contain"
             />
           </div>
           {!collapsed && (
-            <span className="font-display font-bold text-base tracking-wide text-sidebar-foreground whitespace-nowrap">
+            <span className="font-display font-semibold text-base tracking-tight text-sidebar-foreground whitespace-nowrap">
               Vigilant
             </span>
           )}
@@ -65,8 +66,8 @@ export function SidebarLayout() {
                 ${collapsed ? "justify-center px-0 py-3" : "px-4 py-2.5"}
                 ${
                   isActive
-                    ? "bg-primary/15 text-sidebar-foreground font-display font-semibold tracking-wide border-primary"
-                    : "text-sidebar-foreground/50 hover:text-sidebar-foreground/85 hover:bg-sidebar-accent/60 border-transparent font-normal"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-primary"
+                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 border-transparent font-medium"
                 }
               `}
             >
@@ -76,8 +77,8 @@ export function SidebarLayout() {
                     size={18}
                     className={`flex-shrink-0 transition-colors ${
                       isActive
-                        ? "text-primary drop-shadow-[0_0_4px_hsl(var(--primary)/0.6)]"
-                        : "text-sidebar-foreground/40"
+                        ? "text-primary"
+                        : "text-sidebar-foreground/50"
                     }`}
                   />
                   {!collapsed && <span className="whitespace-nowrap">{label}</span>}
@@ -87,7 +88,8 @@ export function SidebarLayout() {
           ))}
         </nav>
 
-        <div className="p-2 border-t border-sidebar-border/60">
+        <div className="p-2 border-t border-sidebar-border space-y-2">
+          <ThemeToggle collapsed={collapsed} />
           <Button
             variant="ghost"
             onClick={() => {
@@ -95,7 +97,7 @@ export function SidebarLayout() {
                 navigate("/");
               });
             }}
-            className={`w-full flex items-center gap-3 text-sidebar-foreground/40 hover:bg-destructive/10 hover:text-destructive h-auto font-display font-semibold tracking-wide
+            className={`w-full flex items-center gap-3 text-sidebar-foreground/60 hover:bg-destructive/10 hover:text-destructive h-auto font-medium
               ${collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"}`}
           >
             <LogOut size={18} className="flex-shrink-0" />
@@ -107,7 +109,7 @@ export function SidebarLayout() {
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           className="absolute top-1/2 -right-3 -translate-y-1/2 z-20 w-6 h-6 rounded-full bg-sidebar-accent
-            border border-sidebar-border/60 text-sidebar-foreground/60 hover:bg-sidebar-accent/70 flex items-center justify-center transition-colors"
+            border border-sidebar-border text-sidebar-foreground/60 hover:bg-sidebar-accent flex items-center justify-center transition-colors"
         >
           {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
         </button>

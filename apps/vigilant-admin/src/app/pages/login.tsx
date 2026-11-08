@@ -137,11 +137,11 @@ export default function LoginPage() {
               <img
                 src="https://raw.githubusercontent.com/loarsaw/vigilant/master/apps/vigilant/assets/icons/png/512x512.png"
                 alt="Vigilant Logo"
-                className="w-14 h-14 object-contain drop-shadow-[0_0_16px_hsl(var(--primary)/0.55)]"
+                className="w-14 h-14 object-contain"
               />
             </div>
           </div>
-          <CardTitle className="font-display text-3xl font-bold tracking-wide text-foreground">
+          <CardTitle className="font-display text-3xl font-bold tracking-tight text-foreground">
             Vigilant <span className="text-primary">Admin</span>
           </CardTitle>
           <CardDescription className="text-muted-foreground">Admin Dashboard</CardDescription>
@@ -149,7 +149,7 @@ export default function LoginPage() {
 
         <CardContent>
           <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4 font-display font-semibold tracking-wide">
+            <TabsList className="grid w-full grid-cols-2 mb-4 font-display font-semibold tracking-tight">
               <TabsTrigger value="email">Email Login</TabsTrigger>
               <TabsTrigger value="token">Token Login</TabsTrigger>
             </TabsList>
@@ -213,7 +213,7 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full font-display font-bold tracking-wide mt-6 shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.55)]"
+                  className="w-full font-display font-bold tracking-tight mt-6 shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.55)]"
                   disabled={isLoggingIn}
                 >
                   {isLoggingIn ? "Logging in..." : "Login"}
@@ -267,7 +267,7 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full font-display font-bold tracking-wide mt-6 shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.55)]"
+                  className="w-full font-display font-bold tracking-tight mt-6 shadow-[0_6px_20px_-4px_hsl(var(--primary)/0.55)]"
                   disabled={isLoggingInWithToken}
                 >
                   {isLoggingInWithToken ? "Logging in..." : "Login with Token"}

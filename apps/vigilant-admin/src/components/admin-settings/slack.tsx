@@ -11,6 +11,7 @@ import {
   CalendarClock,
   Unplug,
   Minus,
+  Lock,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -100,7 +101,7 @@ function StatusRow({ label, on, detail }: { label: string; on: boolean; detail?:
   return (
     <div className="flex items-center gap-2.5 text-sm">
       {on ? (
-        <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+        <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
       ) : (
         <Minus className="h-4 w-4 text-muted-foreground/50 shrink-0" />
       )}
@@ -114,7 +115,7 @@ function Banner({ tone, children }: { tone: "error" | "success"; children: React
   const styles =
     tone === "error"
       ? "bg-destructive/10 border-destructive/30 text-destructive"
-      : "bg-primary/10 border-primary/30 text-primary";
+      : "bg-success/10 border-success/30 text-success";
   const Icon = tone === "error" ? AlertCircle : CheckCircle2;
   return (
     <div className={`flex items-start gap-2 px-3.5 py-2.5 border rounded-md text-sm ${styles}`}>
@@ -259,7 +260,7 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
           <SlackIcon className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
             Slack
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -269,7 +270,7 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
         {isSlackConfigured && (
           <button
             onClick={handleToggleEdit}
-            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 shrink-0 font-display font-semibold tracking-wide"
+            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 shrink-0 font-display font-semibold tracking-tight"
           >
             <Edit3 className="h-4 w-4" />
             {editMode.slack ? "Cancel" : "Edit"}
@@ -420,7 +421,7 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
             type="button"
             onClick={handleTestPing}
             disabled={!canTestPing}
-            className="px-3.5 py-2 text-sm border border-border hover:bg-muted/40 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-wide"
+            className="px-3.5 py-2 text-sm border border-border hover:bg-muted/40 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-tight"
           >
             {isTestingSlack && testSlackKind === "ping" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -435,7 +436,7 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
               type="button"
               onClick={handleTestDigest}
               disabled={isTestingSlack}
-              className="px-3.5 py-2 text-sm border border-border hover:bg-muted/40 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-wide"
+              className="px-3.5 py-2 text-sm border border-border hover:bg-muted/40 disabled:opacity-50 disabled:cursor-not-allowed text-foreground rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-tight"
             >
               {isTestingSlack && testSlackKind === "digest" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -455,7 +456,7 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
                     type="button"
                     onClick={() => disconnectSlack()}
                     disabled={isDisconnectingSlack}
-                    className="px-3 py-1.5 bg-destructive hover:bg-destructive/90 disabled:opacity-60 text-destructive-foreground rounded-md font-display font-semibold tracking-wide flex items-center gap-2"
+                    className="px-3 py-1.5 bg-destructive hover:bg-destructive/90 disabled:opacity-60 text-destructive-foreground rounded-md font-display font-semibold tracking-tight flex items-center gap-2"
                   >
                     {isDisconnectingSlack && <Loader2 className="h-4 w-4 animate-spin" />}
                     Disconnect
@@ -486,7 +487,7 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
           <button
             onClick={handleSave}
             disabled={isSavingSlack || (!isSlackConfigured && !webhook)}
-            className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-wide text-sm rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.5)]"
+            className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-tight text-sm rounded-md transition-colors flex items-center justify-center gap-2"
           >
             {isSavingSlack ? (
               <>
@@ -501,6 +502,32 @@ export function SlackCard({ editMode, setEditMode }: SlackCardProps) {
             )}
           </button>
         )}
+      </div>
+    </Card>
+  );
+}
+
+/** Shown instead of the card to roles the server won't let manage Slack. */
+export function SlackRestricted({ role }: { role: string | null }) {
+  return (
+    <Card className="border rounded-xl p-6 bg-card/80 border-border">
+      <div className="flex items-start gap-4">
+        <div className="p-2.5 bg-muted rounded-lg shrink-0 border border-border">
+          <Lock className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <div className="flex-1">
+          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+            Slack
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Slack settings can only be managed by HR or super admins.
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-3">
+            You are signed in as{" "}
+            <span className="mono text-muted-foreground">{role ?? "unknown"}</span>. Ask an HR admin
+            or super admin to set up the integration.
+          </p>
+        </div>
       </div>
     </Card>
   );

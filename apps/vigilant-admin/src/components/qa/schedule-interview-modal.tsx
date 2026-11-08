@@ -110,14 +110,14 @@ export function ScheduleInterviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border text-foreground max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="mb-4">
           <DialogTitle>Schedule Interview with {candidateName}</DialogTitle>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#0f1419] rounded-lg border border-gray-800 p-4 h-fit">
-            <h3 className="text-white font-medium mb-3">Select Date</h3>
+          <div className="bg-background rounded-lg border border-border p-4 h-fit">
+            <h3 className="text-foreground font-medium mb-3">Select Date</h3>
             <CalendarComponent
               mode="single"
               selected={selectedDate}
@@ -128,13 +128,13 @@ export function ScheduleInterviewModal({
 
           <div className="space-y-4">
             <div>
-              <Label className="text-gray-300">Application</Label>
+              <Label className="text-foreground/80">Application</Label>
               <Select
                 value={selectedApplicationId}
                 onValueChange={setSelectedApplicationId}
                 disabled={isLoadingApplications}
               >
-                <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
+                <SelectTrigger className="bg-background border-border text-foreground mt-1">
                   <SelectValue
                     placeholder={
                       isLoadingApplications
@@ -156,18 +156,18 @@ export function ScheduleInterviewModal({
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-gray-300">Time</Label>
+                <Label className="text-foreground/80">Time</Label>
                 <Input
                   type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  className="bg-[#0f1419] border-gray-700 text-white mt-1"
+                  className="bg-background border-border text-foreground mt-1"
                 />
               </div>
               <div>
-                <Label className="text-gray-300">Duration</Label>
+                <Label className="text-foreground/80">Duration</Label>
                 <Select value={duration} onValueChange={setDuration}>
-                  <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
+                  <SelectTrigger className="bg-background border-border text-foreground mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -181,9 +181,9 @@ export function ScheduleInterviewModal({
             </div>
 
             <div>
-              <Label className="text-gray-300">Interview Type</Label>
+              <Label className="text-foreground/80">Interview Type</Label>
               <Select value={interviewType} onValueChange={setInterviewType}>
-                <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
+                <SelectTrigger className="bg-background border-border text-foreground mt-1">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,13 +195,13 @@ export function ScheduleInterviewModal({
             </div>
 
             <div>
-              <Label className="text-gray-300">Interviewer</Label>
+              <Label className="text-foreground/80">Interviewer</Label>
               <Select
                 value={interviewerId}
                 onValueChange={setInterviewerId}
                 disabled={isLoadingInterviewers}
               >
-                <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white">
+                <SelectTrigger className="bg-background border-border text-foreground">
                   <SelectValue
                     placeholder={isLoadingInterviewers ? "Loading..." : "Select interviewer"}
                   />
@@ -217,18 +217,18 @@ export function ScheduleInterviewModal({
             </div>
 
             <div>
-              <Label className="text-gray-300">Notes (Optional)</Label>
+              <Label className="text-foreground/80">Notes (Optional)</Label>
               <Textarea
                 placeholder="Add any additional notes..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="min-h-20 bg-[#0f1419] border-gray-700 text-white mt-1"
+                className="min-h-20 bg-background border-border text-foreground mt-1"
               />
             </div>
 
             <div className="flex gap-3 pt-4">
               <Button
-                className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+                className="flex-1 bg-primary hover:bg-primary-hover text-primary-foreground"
                 onClick={handleConfirm}
                 disabled={isScheduling}
               >
@@ -241,7 +241,7 @@ export function ScheduleInterviewModal({
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 border-gray-700 text-gray-300"
+                className="flex-1 border-border text-foreground/80"
                 onClick={onClose}
                 disabled={isScheduling}
               >

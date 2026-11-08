@@ -1,5 +1,8 @@
 import ReactDOM from "react-dom/client";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
+import { applyTheme, getStoredTheme } from "./hooks/use-theme";
 import Login from "./app/pages/login";
 import { Dashboard } from "./app/pages/dashboard";
 import { HashRouter, Route, Routes } from "react-router-dom";
@@ -16,6 +19,8 @@ import { InterviewDetail } from "./app/pages/interview-details";
 import { InterviewList } from "./app/pages/interviews";
 import { NotificationsPage } from "./app/pages/notifications";
 import { PositionActivity } from "./app/pages/position-activity";
+
+applyTheme(getStoredTheme());
 
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 

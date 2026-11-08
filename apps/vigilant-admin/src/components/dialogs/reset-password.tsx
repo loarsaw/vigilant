@@ -35,7 +35,7 @@ export function ResetPasswordDialog({
 
   return (
     <Dialog open={!!adminId} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white">
+      <DialogContent className="bg-card border-border text-foreground">
         <DialogHeader>
           <DialogTitle>Reset Password</DialogTitle>
         </DialogHeader>
@@ -46,12 +46,12 @@ export function ResetPasswordDialog({
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="bg-[#0f1419] border-gray-700 mt-1"
+              className="bg-background border-border mt-1"
             />
           </div>
           <div className="flex gap-3 pt-2">
             <Button
-              className="flex-1 bg-cyan-400 text-[#1a1f2e]"
+              className="flex-1 bg-primary text-primary-foreground"
               onClick={handleReset}
               disabled={isLoading || newPassword.length < 8}
             >

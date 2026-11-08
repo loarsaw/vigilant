@@ -155,7 +155,7 @@ export function InterviewRoomView({
   }
 
   return (
-    <div className="fixed inset-0 z-50 h-screen w-screen bg-[#0a0d14] flex overflow-hidden">
+    <div className="dark fixed inset-0 z-50 h-screen w-screen bg-background flex overflow-hidden">
       {/* Video area */}
       <div
         data-lk-theme="default"
@@ -177,12 +177,12 @@ export function InterviewRoomView({
           <div className="pointer-events-auto flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-sm text-slate-200">
               <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--chart-4))] animate-pulse" />
-              <span className="font-display font-semibold tracking-wide truncate max-w-[160px]">
+              <span className="font-display font-semibold tracking-tight truncate max-w-[160px]">
                 {candidateData.full_name}
               </span>
               <span className="w-px h-3.5 bg-white/15" />
               <Badge
-                className={`font-display font-semibold tracking-wide text-[11px] px-1.5 py-0 ${statusBadgeClass(interviewStatus)}`}
+                className={`font-display font-semibold tracking-tight text-[11px] px-1.5 py-0 ${statusBadgeClass(interviewStatus)}`}
               >
                 {formatStatus(interviewStatus)}
               </Badge>
@@ -285,7 +285,7 @@ export function InterviewRoomView({
             <Button
               onClick={() => setShowEndModal(true)}
               variant="outline"
-              className="w-full border-[hsl(var(--destructive)/0.4)] text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)] font-display font-semibold tracking-wide gap-2"
+              className="w-full border-[hsl(var(--destructive)/0.4)] text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)] font-display font-semibold tracking-tight gap-2"
             >
               <Square className="h-4 w-4" />
               End session
@@ -298,7 +298,7 @@ export function InterviewRoomView({
       <Dialog open={showEndModal} onOpenChange={setShowEndModal}>
         <DialogContent className="bg-card border-border/60 text-foreground sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display tracking-wide text-foreground">
+            <DialogTitle className="flex items-center gap-2 font-display tracking-tight text-foreground">
               <AlertTriangle className="h-5 w-5 text-[hsl(var(--chart-3))]" />
               End interview session
             </DialogTitle>
@@ -320,7 +320,7 @@ export function InterviewRoomView({
             <Button
               variant="ghost"
               onClick={() => setShowEndModal(false)}
-              className="font-display font-semibold tracking-wide text-muted-foreground hover:text-foreground"
+              className="font-display font-semibold tracking-tight text-muted-foreground hover:text-foreground"
               disabled={isEndingSession}
             >
               Cancel
@@ -328,7 +328,7 @@ export function InterviewRoomView({
             <Button
               onClick={handleEndInterview}
               disabled={isEndingSession}
-              className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.9)] text-[hsl(var(--destructive-foreground))] font-display font-semibold tracking-wide gap-2"
+              className="bg-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.9)] text-[hsl(var(--destructive-foreground))] font-display font-semibold tracking-tight gap-2"
             >
               {isEndingSession ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

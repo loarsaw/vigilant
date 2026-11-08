@@ -99,7 +99,7 @@ export function JobApplicationDetails() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h2 className="font-display text-3xl font-bold tracking-wide text-foreground">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">
               {candidateData.full_name}
             </h2>
             <div className="flex items-center gap-2 mt-1">
@@ -119,7 +119,7 @@ export function JobApplicationDetails() {
             <>
               <Button
                 variant="outline"
-                className="border-destructive/50 text-destructive hover:bg-destructive/10 font-display font-semibold tracking-wide"
+                className="border-destructive/50 text-destructive hover:bg-destructive/10 font-display font-semibold tracking-tight"
                 disabled={isApprovingOrRejecting}
                 onClick={() => rejectApplication(applicationId!)}
               >
@@ -131,7 +131,7 @@ export function JobApplicationDetails() {
                 Reject
               </Button>
               <Button
-                className="bg-[hsl(var(--chart-4))] hover:bg-[hsl(var(--chart-4)/0.85)] text-background font-display font-semibold tracking-wide"
+                className="bg-[hsl(var(--chart-4))] hover:bg-[hsl(var(--chart-4)/0.85)] text-background font-display font-semibold tracking-tight"
                 disabled={isApprovingOrRejecting}
                 onClick={() => approveApplication(applicationId!)}
               >
@@ -146,7 +146,7 @@ export function JobApplicationDetails() {
           ) : (
             <>
               <Button
-                className="bg-[hsl(var(--chart-4))] text-background font-display font-semibold tracking-wide"
+                className="bg-[hsl(var(--chart-4))] text-background font-display font-semibold tracking-tight"
                 disabled={true}
               >
                 {isApprovingOrRejecting ? (
@@ -166,7 +166,7 @@ export function JobApplicationDetails() {
           {currentApplication && (
             <Card className="bg-card border-border">
               <CardHeader>
-                <CardTitle className="font-display tracking-wide text-foreground flex items-center gap-2">
+                <CardTitle className="font-display tracking-tight text-foreground flex items-center gap-2">
                   <Briefcase className="h-5 w-5 text-primary" />
                   Application Overview
                 </CardTitle>
@@ -188,7 +188,7 @@ export function JobApplicationDetails() {
                     </div>
                   </div>
                   <Badge
-                    className={`font-display font-semibold tracking-wide capitalize ${statusBadgeClass}`}
+                    className={`font-display font-semibold tracking-tight capitalize ${statusBadgeClass}`}
                   >
                     {currentApplication.status}
                   </Badge>
@@ -234,7 +234,7 @@ export function JobApplicationDetails() {
 
                 <div className="flex items-center gap-2">
                   {currentApplication.is_shortlisted && (
-                    <Badge className="bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide">
+                    <Badge className="bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-tight">
                       Shortlisted
                     </Badge>
                   )}
@@ -262,7 +262,7 @@ export function JobApplicationDetails() {
                       </div>
                       {currentApplication.github_invite_status && (
                         <Badge
-                          className={`font-display font-semibold tracking-wide capitalize ${githubBadgeClass}`}
+                          className={`font-display font-semibold tracking-tight capitalize ${githubBadgeClass}`}
                         >
                           {currentApplication.github_invite_status}
                         </Badge>
@@ -296,7 +296,7 @@ export function JobApplicationDetails() {
 
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="font-display tracking-wide text-foreground flex items-center gap-2">
+              <CardTitle className="font-display tracking-tight text-foreground flex items-center gap-2">
                 <Award className="h-5 w-5 text-primary" />
                 Profile Overview
               </CardTitle>
@@ -401,8 +401,8 @@ export function JobApplicationDetails() {
                   <Badge
                     className={
                       candidateData.is_active
-                        ? "bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-wide"
-                        : "bg-muted text-muted-foreground border border-border font-display font-semibold tracking-wide"
+                        ? "bg-primary/10 text-primary border border-primary/30 font-display font-semibold tracking-tight"
+                        : "bg-muted text-muted-foreground border border-border font-display font-semibold tracking-tight"
                     }
                   >
                     {candidateData.is_active ? "Active" : "Inactive"}
@@ -425,13 +425,13 @@ export function JobApplicationDetails() {
           {/* Quick Actions */}
           <Card className="bg-card border-border">
             <CardHeader>
-              <CardTitle className="font-display tracking-wide text-foreground">
+              <CardTitle className="font-display tracking-tight text-foreground">
                 Quick Actions
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
-                className="w-full font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
+                className="w-full font-display font-semibold tracking-tight shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
                 onClick={() => setShowScheduleDialog(true)}
               >
                 <Calendar className="h-4 w-4 mr-2" />
@@ -439,7 +439,7 @@ export function JobApplicationDetails() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full font-display font-semibold tracking-wide"
+                className="w-full font-display font-semibold tracking-tight"
                 onClick={() => setShowEmailModal(true)}
               >
                 <Mail className="h-4 w-4 mr-2" />
@@ -448,7 +448,7 @@ export function JobApplicationDetails() {
               {(currentApplication?.resume_url || candidateData.resume_url) && (
                 <Button
                   variant="outline"
-                  className="w-full font-display font-semibold tracking-wide"
+                  className="w-full font-display font-semibold tracking-tight"
                   onClick={() =>
                     window.open(
                       currentApplication?.resume_url || candidateData.resume_url,

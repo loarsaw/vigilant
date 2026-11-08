@@ -51,7 +51,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white max-w-2xl">
+      <DialogContent className="bg-card border-border text-foreground max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add New Admin User</DialogTitle>
         </DialogHeader>
@@ -64,7 +64,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
                 placeholder="John Doe"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="bg-[#0f1419] border-gray-700 mt-1"
+                className="bg-background border-border mt-1"
               />
             </div>
             <div>
@@ -74,7 +74,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
                 placeholder="john@company.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="bg-[#0f1419] border-gray-700 mt-1"
+                className="bg-background border-border mt-1"
               />
             </div>
           </div>
@@ -87,9 +87,9 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="bg-[#0f1419] border-gray-700 mt-1"
+                className="bg-background border-border mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+              <p className="text-xs text-muted-foreground mt-1">Minimum 8 characters</p>
             </div>
             <div>
               <Label>Role *</Label>
@@ -97,7 +97,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
                 value={formData.role}
                 onValueChange={(v) => setFormData({ ...formData, role: v as "hr" | "interviewer" })}
               >
-                <SelectTrigger className="bg-[#0f1419] border-gray-700 text-white mt-1">
+                <SelectTrigger className="bg-background border-border text-foreground mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -115,7 +115,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
                 placeholder="e.g., Engineering"
                 value={formData.department}
                 onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                className="bg-[#0f1419] border-gray-700 mt-1"
+                className="bg-background border-border mt-1"
               />
             </div>
             <div>
@@ -124,7 +124,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
                 placeholder="e.g., Senior Manager"
                 value={formData.designation}
                 onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
-                className="bg-[#0f1419] border-gray-700 mt-1"
+                className="bg-background border-border mt-1"
               />
             </div>
           </div>
@@ -135,13 +135,13 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
               placeholder="+1-555-0123"
               value={formData.phone_number}
               onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-              className="bg-[#0f1419] border-gray-700 mt-1"
+              className="bg-background border-border mt-1"
             />
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button
-              className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+              className="flex-1 bg-primary hover:bg-primary-hover text-primary-foreground"
               onClick={handleSubmit}
               disabled={
                 isLoading || !formData.full_name || !formData.email || formData.password.length < 8
@@ -151,7 +151,7 @@ export function AddAdminDialog({ open, onOpenChange, onAdd, isLoading }: AddAdmi
             </Button>
             <Button
               variant="outline"
-              className="flex-1 border-gray-700 text-white"
+              className="flex-1 border-border text-foreground"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >

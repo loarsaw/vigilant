@@ -174,7 +174,7 @@ export function HiringPositions() {
       <div className="container mx-auto px-6 py-8 max-w-[1440px] space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+            <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
               Hiring Positions
             </h1>
             <p className="text-muted-foreground text-sm mt-0.5">
@@ -182,7 +182,7 @@ export function HiringPositions() {
             </p>
           </div>
           <Button
-            className="font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
+            className="font-display font-semibold tracking-tight shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
             onClick={openAdd}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -295,7 +295,7 @@ export function HiringPositions() {
             {hasActiveFilters && (
               <Button
                 variant="outline"
-                className="font-display font-semibold tracking-wide text-muted-foreground hover:text-foreground shrink-0"
+                className="font-display font-semibold tracking-tight text-muted-foreground hover:text-foreground shrink-0"
                 onClick={resetFilters}
               >
                 Clear
@@ -341,7 +341,7 @@ export function HiringPositions() {
                         <Briefcase className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-display text-xl font-semibold tracking-wide text-foreground">
+                        <h3 className="font-display text-xl font-semibold tracking-tight text-foreground">
                           {position.position_title}
                         </h3>
                         <p className="text-muted-foreground text-sm">{position.department}</p>
@@ -406,12 +406,12 @@ export function HiringPositions() {
                   >
                     <div className="flex items-center gap-2">
                       <Badge
-                        className={`font-display font-semibold tracking-wide ${getTypeBadge(position.employment_type)}`}
+                        className={`font-display font-semibold tracking-tight ${getTypeBadge(position.employment_type)}`}
                       >
                         {position.employment_type}
                       </Badge>
                       <Badge
-                        className={`font-display font-semibold tracking-wide ${
+                        className={`font-display font-semibold tracking-tight ${
                           position.is_active
                             ? "bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border-[hsl(var(--chart-4)/0.3)]"
                             : "bg-muted text-muted-foreground border-border"
@@ -475,7 +475,7 @@ export function HiringPositions() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || isLoadingPositions}
               >
@@ -484,7 +484,7 @@ export function HiringPositions() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page === pagination.totalPages || isLoadingPositions}
               >

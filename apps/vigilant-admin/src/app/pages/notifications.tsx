@@ -110,7 +110,7 @@ export function NotificationsPage() {
               <Bell className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+              <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
                 Notifications
               </h1>
               <p className="text-muted-foreground text-sm mt-0.5">
@@ -124,7 +124,7 @@ export function NotificationsPage() {
           {unreadCount > 0 && (
             <Button
               variant="outline"
-              className="font-display font-semibold tracking-wide"
+              className="font-display font-semibold tracking-tight"
               disabled={isMarkingAllRead}
               onClick={() => markAllRead()}
             >
@@ -141,7 +141,7 @@ export function NotificationsPage() {
         {/* Notifications list */}
         <Card className="border-border/60">
           <CardHeader>
-            <CardTitle className="font-display text-lg tracking-wide">All Notifications</CardTitle>
+            <CardTitle className="font-display text-lg tracking-tight">All Notifications</CardTitle>
             <CardDescription>Recent activity and alerts across your account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -191,7 +191,7 @@ export function NotificationsPage() {
                         )}
                         <div className="flex items-center gap-2 mt-2">
                           <Badge
-                            className={`font-display font-semibold tracking-wide text-xs ${getSeverityStyle(n.severity)}`}
+                            className={`font-display font-semibold tracking-tight text-xs ${getSeverityStyle(n.severity)}`}
                           >
                             {formatType(n.type)}
                           </Badge>

@@ -115,7 +115,7 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
   return (
     <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="font-display text-lg tracking-wide flex items-center gap-2">
+        <CardTitle className="font-display text-lg tracking-tight flex items-center gap-2">
           <ClipboardCheck className="h-5 w-5 text-primary" />
           Evaluation Scores
         </CardTitle>
@@ -163,7 +163,7 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
                     setRecommendation(value);
                     setSubmitSuccess(false);
                   }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm font-display font-semibold tracking-wide transition-colors ${recommendationClass(
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border text-sm font-display font-semibold tracking-tight transition-colors ${recommendationClass(
                     value,
                     active,
                   )}`}
@@ -201,7 +201,7 @@ const ScoreEvaluator: React.FC<ScoreEvaluatorProps> = ({ interviewSessionId }) =
         <Button
           onClick={handleSubmit}
           disabled={isSubmittingFeedback}
-          className="w-full font-display font-semibold tracking-wide gap-2"
+          className="w-full font-display font-semibold tracking-tight gap-2"
         >
           {isSubmittingFeedback ? "Submitting…" : "Submit feedback"}
         </Button>

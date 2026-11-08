@@ -83,7 +83,7 @@ export function InterviewList() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+            <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
               Upcoming Interviews
             </h1>
             <p className="text-muted-foreground text-sm mt-0.5">
@@ -169,7 +169,7 @@ export function InterviewList() {
                           <Video className="h-4 w-4 text-primary" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-foreground font-display font-semibold tracking-wide group-hover:text-primary transition-colors truncate">
+                          <p className="text-foreground font-display font-semibold tracking-tight group-hover:text-primary transition-colors truncate">
                             {session.position || "—"}
                           </p>
                           <p className="text-muted-foreground text-sm truncate capitalize">
@@ -206,7 +206,7 @@ export function InterviewList() {
                     {/* Right side */}
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <Badge
-                        className={`font-display font-semibold tracking-wide border capitalize ${getStatusStyle(session.status)}`}
+                        className={`font-display font-semibold tracking-tight border capitalize ${getStatusStyle(session.status)}`}
                       >
                         {session.status.replace("_", " ")}
                       </Badge>
@@ -232,7 +232,7 @@ export function InterviewList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setSessionPage(1)}
                 disabled={currentPage === 1 || isFetchingSessions}
               >
@@ -241,7 +241,7 @@ export function InterviewList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setSessionPage(currentPage - 1)}
                 disabled={currentPage === 1 || isFetchingSessions}
               >
@@ -251,7 +251,7 @@ export function InterviewList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setSessionPage(currentPage + 1)}
                 disabled={currentPage === totalPages || isFetchingSessions}
               >
@@ -260,7 +260,7 @@ export function InterviewList() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => setSessionPage(totalPages)}
                 disabled={currentPage === totalPages || isFetchingSessions}
               >

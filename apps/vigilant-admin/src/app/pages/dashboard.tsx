@@ -72,7 +72,7 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-7 flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+            <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
               Admin Dashboard
             </h1>
             <p className="text-muted-foreground text-sm mt-0.5">
@@ -82,13 +82,13 @@ export const Dashboard = () => {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              className="font-display font-semibold tracking-wide"
+              className="font-display font-semibold tracking-tight"
               onClick={() => navigate("/applications")}
             >
               View Positions
             </Button>
             <Button
-              className="font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
+              className="font-display font-semibold tracking-tight shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
               onClick={() => navigate("/candidates")}
             >
               View Candidates
@@ -165,7 +165,7 @@ export const Dashboard = () => {
         {/* Pipeline */}
         <Card className="mb-6 border-border/60">
           <CardHeader>
-            <CardTitle className="font-display text-lg tracking-wide">
+            <CardTitle className="font-display text-lg tracking-tight">
               Application Pipeline
             </CardTitle>
             <CardDescription>Current status of all applications</CardDescription>
@@ -179,7 +179,7 @@ export const Dashboard = () => {
                 <p className="text-muted-foreground">No applications in pipeline yet</p>
                 <Button
                   variant="outline"
-                  className="mt-4 font-display font-semibold tracking-wide"
+                  className="mt-4 font-display font-semibold tracking-tight"
                   onClick={() => navigate("/admin/positions")}
                 >
                   Create First Position
@@ -206,7 +206,7 @@ export const Dashboard = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="font-display text-lg tracking-wide">
+                <CardTitle className="font-display text-lg tracking-tight">
                   Upcoming Interviews
                 </CardTitle>
                 <CardDescription>Scheduled and in-progress interview sessions</CardDescription>
@@ -214,7 +214,7 @@ export const Dashboard = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => navigate("/applications")}
               >
                 View All
@@ -268,7 +268,7 @@ export const Dashboard = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="font-display font-semibold tracking-wide"
+                              className="font-display font-semibold tracking-tight"
                               onClick={() => navigate(`/candidates/${interview.candidate_id}`)}
                             >
                               View Details
@@ -283,7 +283,7 @@ export const Dashboard = () => {
                   <div className="mt-4 text-center">
                     <Button
                       variant="ghost"
-                      className="font-display font-semibold tracking-wide"
+                      className="font-display font-semibold tracking-tight"
                       onClick={() => navigate("/applications")}
                     >
                       View all {upcomingList.length} interviews
@@ -297,7 +297,7 @@ export const Dashboard = () => {
 
         <Card className="mt-6 border-border/60">
           <CardHeader>
-            <CardTitle className="font-display text-lg tracking-wide">Admin Team</CardTitle>
+            <CardTitle className="font-display text-lg tracking-tight">Admin Team</CardTitle>
             <CardDescription>{totalAdmins} active administrators</CardDescription>
           </CardHeader>
           <CardContent>
@@ -311,7 +311,7 @@ export const Dashboard = () => {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-display font-semibold tracking-wide"
+                className="font-display font-semibold tracking-tight"
                 onClick={() => navigate("/team")}
               >
                 Manage Team

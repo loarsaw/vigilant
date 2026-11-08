@@ -118,7 +118,7 @@ export function AdminList() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-display font-semibold tracking-wide text-foreground group-hover:text-primary transition-colors truncate">
+              <h3 className="text-lg font-display font-semibold tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
                 {admin.full_name}
               </h3>
             </div>
@@ -159,7 +159,7 @@ export function AdminList() {
         <div className="flex flex-col items-end gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <Badge
-              className={`font-display font-semibold tracking-wide border ${getRoleBadge(admin.role)}`}
+              className={`font-display font-semibold tracking-tight border ${getRoleBadge(admin.role)}`}
             >
               <span className="flex items-center gap-1">
                 {getRoleIcon(admin.role)}
@@ -169,7 +169,7 @@ export function AdminList() {
             {!admin.is_active && (
               <Badge
                 variant="outline"
-                className="font-display font-semibold tracking-wide border-[hsl(var(--destructive)/0.3)] text-[hsl(var(--destructive))] text-[10px]"
+                className="font-display font-semibold tracking-tight border-[hsl(var(--destructive)/0.3)] text-[hsl(var(--destructive))] text-[10px]"
               >
                 Inactive
               </Badge>
@@ -231,13 +231,13 @@ export function AdminList() {
       <div className="container mx-auto px-6 py-8 max-w-[1440px] space-y-6">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
-            <h1 className="font-display text-[28px] font-bold tracking-wide text-foreground">
+            <h1 className="font-display text-[28px] font-bold tracking-tight text-foreground">
               Admin Users
             </h1>
             <p className="text-muted-foreground text-sm mt-0.5">Total of {total} admin users</p>
           </div>
           <Button
-            className="font-display font-semibold tracking-wide shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
+            className="font-display font-semibold tracking-tight shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.55)]"
             onClick={() => setShowAddDialog(true)}
             disabled={isAdding}
           >
@@ -291,13 +291,13 @@ export function AdminList() {
 
         <Tabs defaultValue="all" className="space-y-6">
           <TabsList className="bg-card border border-border/60">
-            <TabsTrigger value="all" className="font-display font-semibold tracking-wide">
+            <TabsTrigger value="all" className="font-display font-semibold tracking-tight">
               All ({filteredAdmins.length})
             </TabsTrigger>
-            <TabsTrigger value="hr" className="font-display font-semibold tracking-wide">
+            <TabsTrigger value="hr" className="font-display font-semibold tracking-tight">
               HR ({filteredAdmins.filter((a) => a.role === "hr").length})
             </TabsTrigger>
-            <TabsTrigger value="interviewers" className="font-display font-semibold tracking-wide">
+            <TabsTrigger value="interviewers" className="font-display font-semibold tracking-tight">
               Interviewers ({filteredAdmins.filter((a) => a.role === "interviewer").length})
             </TabsTrigger>
           </TabsList>

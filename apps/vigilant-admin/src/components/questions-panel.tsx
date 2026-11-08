@@ -65,14 +65,14 @@ export function InterviewQuestionsPanel({
   return (
     <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-display text-lg tracking-wide text-primary">
+        <CardTitle className="flex items-center gap-2 font-display text-lg tracking-tight text-primary">
           <ListChecks className="w-5 h-5" />
           Interview Questions
         </CardTitle>
         <CardDescription className="flex items-center justify-between gap-2">
           <span>Generate a fresh set of questions for this session</span>
           {data && (
-            <Badge className="font-display font-semibold tracking-wide bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] shrink-0">
+            <Badge className="font-display font-semibold tracking-tight bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)] shrink-0">
               Attempt #{data.attempt_number}
             </Badge>
           )}
@@ -117,7 +117,7 @@ export function InterviewQuestionsPanel({
         <Button
           onClick={handleGenerate}
           disabled={isGeneratingQuestions}
-          className="w-full font-display font-semibold tracking-wide"
+          className="w-full font-display font-semibold tracking-tight"
           variant={data ? "outline" : "default"}
         >
           {isGeneratingQuestions ? (

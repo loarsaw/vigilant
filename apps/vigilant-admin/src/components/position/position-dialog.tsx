@@ -190,7 +190,7 @@ export function PositionDialog({
           [scrollbar-color:hsl(var(--border))_transparent]"
       >
         <DialogHeader>
-          <DialogTitle className="font-display tracking-wide">
+          <DialogTitle className="font-display tracking-tight">
             {editingPosition ? "Edit Position" : "Add New Position"}
           </DialogTitle>
         </DialogHeader>
@@ -410,7 +410,7 @@ export function PositionDialog({
 
           <div className="flex gap-3 pt-4">
             <Button
-              className="flex-1 font-display font-semibold tracking-wide"
+              className="flex-1 font-display font-semibold tracking-tight"
               onClick={handleSave}
               disabled={isLoading || !isValid}
             >
@@ -426,7 +426,7 @@ export function PositionDialog({
             </Button>
             <Button
               variant="outline"
-              className="flex-1 font-display font-semibold tracking-wide"
+              className="flex-1 font-display font-semibold tracking-tight"
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >

@@ -59,46 +59,46 @@ export function EmailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-[#1a1f2e] border-gray-800 text-white max-w-2xl">
+      <DialogContent className="bg-card border-border text-foreground max-w-2xl">
         <DialogHeader>
           <DialogTitle>Send Email to {candidateName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
           <div>
-            <Label className="text-gray-300">To</Label>
+            <Label className="text-foreground/80">To</Label>
             <Input
               value={candidateEmail}
-              className="bg-[#0f1419] border-gray-700 text-white mt-1"
+              className="bg-background border-border text-foreground mt-1"
               disabled
             />
           </div>
 
           <div>
-            <Label className="text-gray-300">Subject</Label>
+            <Label className="text-foreground/80">Subject</Label>
             <Input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Email subject"
-              className="bg-[#0f1419] border-gray-700 text-white mt-1"
+              className="bg-background border-border text-foreground mt-1"
               disabled={isSendingEmail}
             />
           </div>
 
           <div>
-            <Label className="text-gray-300">Message</Label>
+            <Label className="text-foreground/80">Message</Label>
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               placeholder="Write your message here..."
-              className="min-h-40 bg-[#0f1419] border-gray-700 text-white mt-1"
+              className="min-h-40 bg-background border-border text-foreground mt-1"
               disabled={isSendingEmail}
             />
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button
-              className="flex-1 bg-cyan-400 hover:bg-cyan-500 text-[#1a1f2e]"
+              className="flex-1 bg-primary hover:bg-primary-hover text-primary-foreground"
               onClick={handleSend}
               disabled={isSendingEmail}
             >
@@ -111,7 +111,7 @@ export function EmailModal({
             </Button>
             <Button
               variant="outline"
-              className="flex-1 border-gray-700 text-gray-300"
+              className="flex-1 border-border text-foreground/80"
               onClick={onClose}
               disabled={isSendingEmail}
             >

@@ -46,7 +46,7 @@ export function SessionConfigurationCard({
   return (
     <Card className="border-border/60">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-display text-lg tracking-wide text-primary">
+        <CardTitle className="flex items-center gap-2 font-display text-lg tracking-tight text-primary">
           <Zap className="w-5 h-5" />
           Session Configuration
         </CardTitle>
@@ -141,7 +141,7 @@ export function SessionConfigurationCard({
           <Button
             onClick={onDispatch}
             disabled={!canDispatch || isDispatching}
-            className="w-full font-display font-semibold tracking-wide flex items-center justify-center gap-2"
+            className="w-full font-display font-semibold tracking-tight flex items-center justify-center gap-2"
           >
             {isDispatching ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -162,7 +162,7 @@ export function SessionConfigurationCard({
             <p className="text-xs text-muted-foreground">Select a session type to begin</p>
           )}
           {dispatched && canDispatch && (
-            <Badge className="font-display font-semibold tracking-wide bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]">
+            <Badge className="font-display font-semibold tracking-tight bg-[hsl(var(--chart-4)/0.15)] text-[hsl(var(--chart-4))] border border-[hsl(var(--chart-4)/0.3)]">
               {sessionType === "dsa"
                 ? `Dispatched — DSA / ${dsaLanguage}`
                 : `Dispatched — ${framework} / ${level}`}

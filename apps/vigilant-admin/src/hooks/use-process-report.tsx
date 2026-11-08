@@ -45,16 +45,16 @@ function getProcessStatus(p: Process): ProcessStatus {
 function getProcessColors(status: ProcessStatus): { color: string; badgeColor: string } {
   switch (status) {
     case "unknown":
-      return { color: "text-red-400", badgeColor: "bg-red-500/20 text-red-400 border-red-500/30" };
+      return { color: "text-destructive", badgeColor: "bg-destructive/20 text-destructive border-destructive/30" };
     case "high_memory":
       return {
-        color: "text-yellow-400",
-        badgeColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+        color: "text-warning",
+        badgeColor: "bg-warning/20 text-warning border-warning/30",
       };
     default:
       return {
-        color: "text-green-400",
-        badgeColor: "bg-green-500/20 text-green-400 border-green-500/30",
+        color: "text-success",
+        badgeColor: "bg-success/20 text-success border-success/30",
       };
   }
 }

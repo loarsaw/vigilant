@@ -3,7 +3,7 @@ import { useState } from "react";
 import { EmailCard } from "@/components/admin-settings/email/email";
 import { LiveKitCard } from "@/components/admin-settings/livekit";
 import { GithubCard } from "@/components/admin-settings/github";
-import { SlackCard } from "@/components/admin-settings/slack";
+import { SlackCard, SlackRestricted } from "@/components/admin-settings/slack";
 import { useSlack } from "@/hooks/use-slack";
 import { useAdminAuth } from "@/hooks/use-auth";
 import { useLiveKit } from "@/hooks/use-livekit";
@@ -64,13 +64,12 @@ export function Settings() {
   const { isLiveKitConfigured } = useLiveKit();
   const { isGithubConfigured } = useGithub();
 
-  // The server only lets HR and super admins manage integrations, so don't
-  // show (or query) Slack for interviewers.
-  const { hasRole } = useAdminAuth();
+  // The server only lets HR and super admins manage integrations. Slack stays
+  // visible in the nav for everyone, but other roles get an explanation
+  // instead of the form (and we skip the request that would 403).
+  const { hasRole, role } = useAdminAuth();
   const canManageSlack = hasRole(["hr", "superadmin"]);
   const { isSlackConfigured } = useSlack(canManageSlack);
-
-  const visibleSections = SECTIONS.filter(({ key }) => key !== "slack" || canManageSlack);
 
   const statusMap: Record<SectionKey, boolean> = {
     email: isEmailConfigured,
@@ -88,7 +87,7 @@ export function Settings() {
     <div className="space-y-6 p-10 bg-background min-h-screen">
       <div className="mb-8">
         <div className="mb-8">
-          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-wide text-foreground flex items-center gap-3">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-foreground flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
               <Settings2 className="h-8 w-8 text-primary" />
             </div>
@@ -102,7 +101,7 @@ export function Settings() {
         <div className="flex flex-col md:flex-row gap-6">
           <nav className="md:w-56 shrink-0">
             <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
-              {visibleSections.map(({ key, label, icon: Icon }) => {
+              {SECTIONS.map(({ key, label, icon: Icon }) => {
                 const isActive = activeSection === key;
                 const isConfigured = statusMap[key];
                 return (
@@ -111,8 +110,8 @@ export function Settings() {
                     onClick={() => setActiveSection(key)}
                     className={`flex items-center gap-3 px-3.5 py-2.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors text-left border-l-2 ${
                       isActive
-                        ? "bg-primary/10 text-foreground border-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40 border-transparent"
+                        ? "bg-accent text-accent-foreground border-primary"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50 border-transparent"
                     }`}
                   >
                     <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
@@ -120,9 +119,9 @@ export function Settings() {
                     {key !== "ai" &&
                       key !== "audit" &&
                       (isConfigured ? (
-                        <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <CheckCircle2 aria-label="Configured" className="h-3.5 w-3.5 text-success shrink-0" />
                       ) : (
-                        <Circle className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
+                        <Circle aria-label="Not configured" className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0" />
                       ))}
                   </button>
                 );
@@ -141,9 +140,12 @@ export function Settings() {
             {activeSection === "github" && (
               <GithubCard editMode={editMode} setEditMode={setEditMode} />
             )}
-            {activeSection === "slack" && canManageSlack && (
-              <SlackCard editMode={editMode} setEditMode={setEditMode} />
-            )}
+            {activeSection === "slack" &&
+              (canManageSlack ? (
+                <SlackCard editMode={editMode} setEditMode={setEditMode} />
+              ) : (
+                <SlackRestricted role={role} />
+              ))}
             {activeSection === "ai" && <AIProvidersCard />}
 
             {activeSection === "retention" && (

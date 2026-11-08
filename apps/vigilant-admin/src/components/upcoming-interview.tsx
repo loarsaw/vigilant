@@ -32,13 +32,13 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
   }, [nextInterview?.interview_type]);
 
   return (
-    <Card className="bg-[#1a1f2e] border-gray-800">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white">Next Interview</CardTitle>
+        <CardTitle className="text-foreground">Next Interview</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading && (
-          <div className="flex items-center gap-2 text-gray-400 text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading...
           </div>
@@ -46,22 +46,22 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
 
         {!isLoading && nextInterview && (
           <>
-            <div className="bg-[#0f1419] rounded-lg border border-gray-700 p-4 space-y-3">
+            <div className="bg-background rounded-lg border border-border p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-white font-medium text-sm">{interviewTitle}</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-400/10 text-cyan-400 border border-cyan-400/20">
+                <span className="text-foreground font-medium text-sm">{interviewTitle}</span>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                   {nextInterview.status}
                 </span>
               </div>
 
               {nextInterview.interviewer_name && (
-                <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <User className="h-4 w-4" />
                   Interviewer: {nextInterview.interviewer_name}
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Calendar className="h-4 w-4" />
                 {new Date(nextInterview.scheduled_at).toLocaleDateString("en-US", {
                   weekday: "short",
@@ -74,7 +74,7 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
                 })}
               </div>
 
-              <div className="flex items-center gap-2 text-gray-400 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Clock className="h-4 w-4" />
                 {nextInterview.scheduled_duration} min
               </div>
@@ -89,7 +89,7 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
                   window.open(nextInterview.interview_url, "_blank");
                 }
               }}
-              className="w-full mt-2 flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium text-sm py-2 px-4 rounded-lg transition-colors"
+              className="w-full mt-2 flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-primary-foreground font-medium text-sm py-2 px-4 rounded-lg transition-colors"
             >
               <Video className="h-4 w-4" />
               Join Interview
@@ -98,7 +98,7 @@ export function UpcomingInterview({ candidateId }: UpcomingInterviewProps) {
         )}
 
         {!isLoading && !nextInterview && (
-          <div className="flex flex-col items-center justify-center py-4 text-gray-500 space-y-2">
+          <div className="flex flex-col items-center justify-center py-4 text-muted-foreground space-y-2">
             <CalendarX className="h-8 w-8" />
             <p className="text-sm">No upcoming interviews</p>
           </div>

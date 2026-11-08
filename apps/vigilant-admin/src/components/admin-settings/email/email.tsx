@@ -264,7 +264,7 @@ export function EmailCard({
           <Mail className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1">
-          <h2 className="font-display text-lg font-semibold tracking-wide text-foreground">
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
             Email Configuration
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -276,7 +276,7 @@ export function EmailCard({
         {isEmailConfigured && (
           <button
             onClick={() => toggleEditMode("email")}
-            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-wide"
+            className="px-3 py-1.5 text-sm bg-primary/10 hover:bg-primary/20 text-primary rounded-md transition-colors flex items-center gap-2 font-display font-semibold tracking-tight"
           >
             <Edit3 className="h-4 w-4" />
             {editMode.email ? "Cancel" : "Edit"}
@@ -356,7 +356,7 @@ export function EmailCard({
           <button
             onClick={handleSave}
             disabled={isSavingEmail}
-            className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-wide text-sm rounded-md transition-colors flex items-center justify-center gap-2 shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.5)]"
+            className="w-full mt-2 px-4 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-primary-foreground font-display font-semibold tracking-tight text-sm rounded-md transition-colors flex items-center justify-center gap-2"
           >
             {isSavingEmail ? (
               <>
